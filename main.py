@@ -7,11 +7,14 @@ import base64
 import random
 import urllib
 import sqlite3
-import time,datetime
+import time
 import threading
 import json
-
 import os,os.path
+import stat
+import subprocess
+from datetime import datetime,timedelta
+#from dateutil import tz
 
 from struct import *
 from collections import namedtuple
@@ -63,92 +66,226 @@ def delete(path):
         delete(path + dir + '/')
     xbmcvfs.rmdir(path)
 
-'''
-    unsigned int    iClientIndex;                              /*!< @brief (required) the index of this timer given by the client. PVR_TIMER_NO_CLIENT_INDEX indicates that the index was not yet set by the client, for example for new timers created by
-                                                                    Kodi and passed the first time to the client. A valid index must be greater than PVR_TIMER_NO_CLIENT_INDEX. */
-    unsigned int    iParentClientIndex;                        /*!< @brief (optional) for timers scheduled by a repeating timer, the index of the repeating timer that scheduled this timer (it's PVR_TIMER.iClientIndex value). Use PVR_TIMER_NO_PARENT
-                                                                    to indicate that this timer was no scheduled by a repeating timer. */
-    int             iClientChannelUid;                         /*!< @brief (optional) unique identifier of the channel to record on. PVR_TIMER_ANY_CHANNEL will denote "any channel", not a specific one. PVR_CHANNEL_INVALID_UID denotes that channel uid is not available.*/
-    time_t          startTime;                                 /*!< @brief (optional) start time of the recording in UTC. Instant timers that are sent to the add-on by Kodi will have this value set to 0.*/
-    time_t          endTime;                                   /*!< @brief (optional) end time of the recording in UTC. */
-    bool            bStartAnyTime;                             /*!< @brief (optional) for EPG based (not Manual) timers indicates startTime does not apply. Default = false */
-    bool            bEndAnyTime;                               /*!< @brief (optional) for EPG based (not Manual) timers indicates endTime does not apply. Default = false */
-    PVR_TIMER_STATE state;                                     /*!< @brief (required) the state of this timer */
-    unsigned int    iTimerType;                                /*!< @brief (required) the type of this timer. It is private to the addon and can be freely defined by the addon. The value must be greater than PVR_TIMER_TYPE_NONE.
-                                                                    Kodi does not interpret this value (except for checking for PVR_TIMER_TYPE_NONE), but will pass the right id to the addon with every PVR_TIMER instance, thus the addon easily can determine
-                                                                    the timer type. */
-    char            strTitle[PVR_ADDON_NAME_STRING_LENGTH];    /*!< @brief (required) a title for this timer */
-    char            strEpgSearchString[PVR_ADDON_NAME_STRING_LENGTH]; /*!< @brief (optional) a string used to search epg data for repeating epg-based timers. Format is backend-dependent, for example regexp */
-    bool            bFullTextEpgSearch;                        /*!< @brief (optional) indicates, whether strEpgSearchString is to match against the epg episode title only or also against "other" epg data (backend-dependent) */
-    char            strDirectory[PVR_ADDON_URL_STRING_LENGTH]; /*!< @brief (optional) the (relative) directory where the recording will be stored in */
-    char            strSummary[PVR_ADDON_DESC_STRING_LENGTH];  /*!< @brief (optional) the summary for this timer */
-    int             iPriority;                                 /*!< @brief (optional) the priority of this timer */
-    int             iLifetime;                                 /*!< @brief (optional) lifetime of recordings created by this timer. > 0 days after which recordings will be deleted by the backend, < 0 addon defined integer list reference, == 0 disabled */
-    int             iMaxRecordings;                            /*!< @brief (optional) maximum number of recordings this timer shall create. > 0 number of recordings, < 0 addon defined integer list reference, == 0 disabled */
-    unsigned int    iRecordingGroup;                           /*!< @brief (optional) integer ref to addon/backend defined list of recording groups*/
-    time_t          firstDay;                                  /*!< @brief (optional) the first day this timer is active, for repeating timers */
-    unsigned int    iWeekdays;                                 /*!< @brief (optional) week days, for repeating timers */
-    unsigned int    iPreventDuplicateEpisodes;                 /*!< @brief (optional) 1 if backend should only record new episodes in case of a repeating epg-based timer, 0 if all episodes shall be recorded (no duplicate detection). Actual algorithm for
-                                                                    duplicate detection is defined by the backend. Addons may define own values for different duplicate detection algorithms, thus this is not just a bool.*/
-    unsigned int    iEpgUid;                                   /*!< @brief (optional) EPG event id associated with this timer. Event ids must be unique for a channel. Valid ids must be greater than EPG_TAG_INVALID_UID. */
-    unsigned int    iMarginStart;                              /*!< @brief (optional) if set, the backend starts the recording iMarginStart minutes before startTime. */
-    unsigned int    iMarginEnd;                                /*!< @brief (optional) if set, the backend ends the recording iMarginEnd minutes after endTime. */
-    int             iGenreType;                                /*!< @brief (optional) genre type */
-    int             iGenreSubType;                             /*!< @brief (optional) genre sub type */
-    char            strSeriesLink[PVR_ADDON_URL_STRING_LENGTH]; /*!< @brief (optional) series link for this timer. If set for an epg-based timer rule, matching events will be found by checking strSeriesLink instead of strTitle (and bFullTextEpgSearch) */
 
 
-'''
-#I I i I I i i i I 1024s 1024s i 1024s 1024s i i i I i I I I I I i i 1024s
+@plugin.route('/play/<channelid>')
+def play(channelid):
+    rpc = '{"jsonrpc":"2.0","method":"Player.Open","id":305,"params":{"item":{"channelid":%s}}}' % channelid
+    r = requests.post('http://localhost:8080/jsonrpc',data=rpc)
+    log(r)
+    log(r.content)
+
+@plugin.route('/play_name/<channelname>')
+def play_name(channelname):
+    channel_urls = plugin.get_storage("channel_urls")
+    url = channel_urls.get(channelname)
+    if url:
+        cmd = ["ffplay",url]
+        subprocess.Popen(cmd)
+
+
+def utc2local (utc):
+    epoch = time.mktime(utc.timetuple())
+    offset = datetime.fromtimestamp (epoch) - datetime.utcfromtimestamp (epoch)
+    return utc + offset
+
+def str2dt(string_date):
+    format ='%Y-%m-%d %H:%M:%S'
+    try:
+        res = datetime.strptime(string_date, format)
+    except TypeError:
+        res = datetime(*(time.strptime(string_date, format)[0:6]))
+    return utc2local(res)
+
+def total_seconds(td):
+    return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
+
+@plugin.route('/record_once/<channelname>/<title>/<starttime>/<endtime>')
+def record_once(channelname,title,starttime,endtime):
+    channel_urls = plugin.get_storage("channel_urls")
+    url = channel_urls.get(channelname)
+
+    starttime = str2dt(starttime)
+    endtime = str2dt(endtime)
+    length = endtime - starttime
+    seconds = total_seconds(length)
+    log((starttime,endtime,length))
+    filename = "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime)
+    path = os.path.join(xbmc.translatePath(r'c:\temp'),urllib.quote_plus(filename)+'.ts')
+
+    cmd = ["ffmpeg","-i",url,"-t",str(seconds),"-c","copy",path]
+    log(cmd)
+    subprocess.Popen(cmd,shell=False)
+
+@plugin.route('/record_once/<channelname>/<title>/<starttime>/<endtime>')
+def record_daily(channelname,title,starttime,endtime):
+    pass
+
+@plugin.route('/record_whenever/<channelname>/<title>')
+def record_always(channelname,title):
+    pass
+
+@plugin.route('/broadcast/<channelname>/<title>/<starttime>/<endtime>')
+def broadcast(channelname,title,starttime,endtime):
+    #log((channelname,title,starttime,endtime))
+    items = []
+    #TODO format dates
+    items.append({
+        'label': "Record Once - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime),
+        'path': plugin.url_for(record_once,channelname=channelname,title=title,starttime=starttime,endtime=endtime)
+    })
+    items.append({
+        'label': "Record Daily - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime),
+        'path': plugin.url_for(record_daily,channelname=channelname,title=title,starttime=starttime,endtime=endtime)
+    })
+    items.append({
+        'label': "Record Always - %s - %s" % (channelname,title),
+        'path': plugin.url_for(record_always,channelname=channelname,title=title)
+    })
+    if False:
+        items.append({
+            'label': "Watch Once - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime),
+            'path': plugin.url_for(record_once,channelname=channelname,title=title,starttime=starttime,endtime=endtime)
+        })
+        items.append({
+            'label': "Watch Daily - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime),
+            'path': plugin.url_for(record_daily,channelname=channelname,title=title,starttime=starttime,endtime=endtime)
+        })
+        items.append({
+            'label': "Watch Always - %s - %s" % (channelname,title),
+            'path': plugin.url_for(record_always,channelname=channelname,title=title)
+        })
+    return items
+
+
+
+@plugin.route('/channel/<channelname>/<channelid>')
+def channel(channelname,channelid):
+    rpc = '{"jsonrpc":"2.0","method":"PVR.GetBroadcasts","id":306,"params":{"channelid":%s,"properties":["title","plot","plotoutline","starttime","endtime","runtime","progress","progresspercentage","genre","episodename","episodenum","episodepart","firstaired","hastimer","isactive","parentalrating","wasactive","thumbnail","rating"]}}' % channelid
+    r = requests.get('http://localhost:8080/jsonrpc?request='+urllib.quote_plus(rpc))
+    content = r.content
+    j = json.loads(content)
+    log(j)
+    broadcasts = j.get('result').get('broadcasts')
+    if not broadcasts:
+        return
+    items = []
+    for b in broadcasts:
+        starttime = b.get('starttime')
+        endtime = b.get('endtime')
+        title = b.get('title')
+        broadcastid=str(b.get('broadcastid'))
+        #log(starttime)
+        start = str2dt(starttime) # +  timedelta(seconds=-time.timezone) #TODO check summer time
+        #log(start)
+        label = "%02d:%02d %s" % (start.hour,start.minute,b.get('label'))
+        context_items = []
+        context_items.append(("Play RPC" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play,channelid=channelid))))
+        context_items.append(("Play ffplay" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_name,channelname=channelname))))
+        items.append({
+            'label': label,
+            'path': plugin.url_for(broadcast,channelname=channelname,title=title.encode("utf8"),starttime=starttime,endtime=endtime),
+            'context_menu': context_items,
+        })
+    return items
+
+
+@plugin.route('/group/<channelgroupid>')
+def group(channelgroupid):
+    channel_urls = plugin.get_storage("channel_urls")
+    rpc = '{"jsonrpc":"2.0","method":"PVR.GetChannels","id":312,"params":{"channelgroupid":%s,"properties":["thumbnail","channeltype","hidden","locked","channel","lastplayed","broadcastnow","broadcastnext"]}}' % channelgroupid
+    r = requests.get('http://localhost:8080/jsonrpc?request='+urllib.quote_plus(rpc))
+    content = r.content
+    j = json.loads(content)
+    #log(j)
+    channels = j.get('result').get('channels')
+    items = []
+    for c in channels:
+        #log(c)
+        label = c.get('label')
+        channelname = c.get('channel')
+        channelid = str(c.get('channelid'))
+        #log((name,cid))
+        context_items = []
+        context_items.append(("Play RPC" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play,channelid=channelid))))
+        context_items.append(("Play ffplay" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_name,channelname=channelname))))
+        items.append({
+            'label': channelname,
+            'path': plugin.url_for(channel,channelname=channelname,channelid=channelid),
+            'context_menu': context_items,
+            #'path': channel_urls[channelname],
+            #'is_playable': True,
+            #'info_type': 'Video',
+            #'info':{"mediatype": "movie", "title": channelname}
+        })
+    return items
+
+@plugin.route('/groups')
+def groups():
+    rpc = '{"jsonrpc":"2.0","method":"PVR.GetChannelGroups","id":311,"params":{"channeltype":"tv"}}'
+    r = requests.get('http://localhost:8080/jsonrpc?request='+urllib.quote_plus(rpc))
+    content = r.content
+    j = json.loads(content)
+    #log(j)
+    channelgroups = j.get('result').get('channelgroups')
+    items = []
+    for channelgroup in channelgroups:
+        log(channelgroup)
+        items.append({
+            'label': channelgroup.get('label'),
+            'path': plugin.url_for(group,channelgroupid=str(channelgroup.get('channelgroupid')))
+
+        })
+    return items
+
+@plugin.route('/m3u')
+def m3u():
+    m3uUrl = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uUrl')
+    #log(m3uUrl)
+    m3uFile = 'special://profile/addon_data/plugin.video.iptv.recorder/channels.m3u'
+    xbmcvfs.copy(m3uUrl,m3uFile)
+    f = xbmcvfs.File(m3uFile)
+    data = f.read()
+    #log(data)
+    channel_urls = plugin.get_storage("channel_urls")
+    channel_urls.clear()
+    channels = re.findall('#EXTINF:(.*?)\n(.*?)\n',data,flags=(re.I|re.DOTALL))
+    for channel in channels:
+        #log(channel)
+        match = re.search('tvg-name="(.*?)"',channel[0])
+        if match:
+            name = match.group(1)
+        else:
+            name = channel[0].rsplit(',',1)[-1]
+        url = channel[1]
+        #log((name,url))
+        channel_urls[name] = url
+    channel_urls.sync()
+
 @plugin.route('/service')
 def service():
-    log("XXX")
-    path = "special://temp/timers/"
-    dirs, files = xbmcvfs.listdir(path)
-    i = 1000
-    for file in files:
-        f = xbmcvfs.File(path+file,'rb')
-        timer = f.read()
-        #log(timer)
-        #log(len(timer))
-        #log(timer)
-        f.close()
-        fmt = '@I I iqqbbiI  1024s1024sb1024s1024s iiiIqII IIIii1024s 4x'
-
-        #log(calcsize(fmt))
-        Timer = namedtuple('Timer', 'iClientIndex iParentClientIndex iClientChannelUid startTime endTime bStartAnyTime bEndAnyTime state iTimerType strTitle strEpgSearchString bFullTextEpgSearch strDirectory strSummary iPriority iLifetime iMaxRecordings iRecordingGroup firstDay iWeekdays iPreventDuplicateEpisodes iEpgUid iMarginStart iMarginEnd iGenreType iGenreSubType strSeriesLink')
-        t = Timer._make(unpack(fmt, timer))
-        #print t
-        #for k,v in t._asdict().iteritems():
-        #    print k + ":" + repr(v)
-        t = t._replace(iClientIndex = i)
-        data = pack(fmt, *t)
-        #log(data)
-        f = xbmcvfs.File(path+file,'wb')
-        f.write(data)
-        f.close()
-        i += 1
-        startTime = datetime.datetime(1970, 1, 1) + datetime.timedelta(seconds=t.startTime)
-        endTime = datetime.datetime(1970, 1, 1) + datetime.timedelta(seconds=t.endTime)
-        #log(start)
-
-        #AlarmClock(name,command,time[,silent,loop])
-        dt = startTime - datetime.datetime.now()
-        alarmTime = ((dt.days * 86400) + dt.seconds) / 60
-        alarmTime = 1
-        name = "alarm %s" % i
-        pluginUrl = "plugin://plugin.video.iptv.recorder/record/%s" % i
-        xbmc.executebuiltin('AlarmClock(%s,RunPlugin(%s),%s)' % (name,pluginUrl,alarmTime))
-
-
-@plugin.route('/record/<id>')
-def record(id):
-    log("ZZZ record %s" % id)
+    log("SERVICE")
 
 @plugin.route('/')
 def index():
     items = []
     context_items = []
+
+    items.append(
+    {
+        'label': "Channel Groups",
+        'path': plugin.url_for('groups'),
+        'thumbnail':get_icon_path('settings'),
+        'context_menu': context_items,
+    })
+
+    items.append(
+    {
+        'label': "Load Channel m3u",
+        'path': plugin.url_for('m3u'),
+        'thumbnail':get_icon_path('settings'),
+        'context_menu': context_items,
+    })
 
     items.append(
     {
