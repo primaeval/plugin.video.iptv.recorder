@@ -14,7 +14,7 @@ import os,os.path
 import stat
 import subprocess
 from datetime import datetime,timedelta
-#from dateutil import tz
+import uuid
 
 from struct import *
 from collections import namedtuple
@@ -111,11 +111,26 @@ def record_once(channelname,title,starttime,endtime):
     seconds = total_seconds(length)
     log((starttime,endtime,length))
     filename = "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime)
-    path = os.path.join(xbmc.translatePath(r'c:\temp'),urllib.quote_plus(filename)+'.ts')
+    filename = urllib.quote_plus(filename)+'.ts'
+    path = os.path.join(xbmc.translatePath(r'c:\temp'),filename)
 
-    cmd = ["ffmpeg","-i",url,"-t",str(seconds),"-c","copy",path]
+    cmd = ["ffmpeg","-y","-i",url,"-t",str(seconds),"-c","copy",path]
     log(cmd)
-    subprocess.Popen(cmd,shell=False)
+    #subprocess.Popen(cmd,shell=False)
+    directory = "special://profile/addon_data/plugin.video.iptv.recorder/jobs/"
+    xbmcvfs.mkdirs(directory)
+    job = str(uuid.uuid1())
+    py = directory + job + ".py"
+    f = xbmcvfs.File(py,'wb')
+    f.write("import subprocess\n")
+    f.write("cmd = %s\n" % repr(cmd))
+    f.write("subprocess.Popen(cmd,shell=True)\n")
+    f.close()
+    #pytask = "\"c:\\python27.64\\pythonw\" \"%s\"" % xbmc.translatePath(py)
+    st = "%02d:%02d" % (starttime.hour,starttime.minute)
+    cmd = ["schtasks","/create","/tn",job,"/sc","once","/st",st,"/tr",r"c:\python27.64\pythonw.exe %s" % xbmc.translatePath(py)]
+    log(cmd)
+    subprocess.Popen(cmd,shell=True)
 
 @plugin.route('/record_once/<channelname>/<title>/<starttime>/<endtime>')
 def record_daily(channelname,title,starttime,endtime):
