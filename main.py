@@ -100,37 +100,69 @@ def str2dt(string_date):
 def total_seconds(td):
     return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
 
+@plugin.route('/jobs')
+def jobs():
+    jobs = plugin.get_storage("jobs")
+    log(jobs)
+    items = []
+    for j in sorted(jobs, key= lambda x: x[2]):
+        log((j,jobs[j]))
+        channelname,title,starttime,endtime = json.loads(jobs[j])
+        items.append({
+            'label': "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime),
+            'path': plugin.url_for(delete_job,job=j)
+        })
+    return items
+
+@plugin.route('/delete_job/<job>')
+def delete_job(job):
+    jobs = plugin.get_storage("jobs")
+    cmd = ["schtasks","/delete","/f","/tn",job]
+    log(cmd)
+    subprocess.Popen(cmd,shell=True)
+
+    directory = "special://profile/addon_data/plugin.video.iptv.recorder/jobs/"
+    xbmcvfs.mkdirs(directory)
+    pyjob = directory + job + ".py"
+    xbmcvfs.delete(pyjob)
+    del jobs[job]
+
 @plugin.route('/record_once/<channelname>/<title>/<starttime>/<endtime>')
 def record_once(channelname,title,starttime,endtime):
     channel_urls = plugin.get_storage("channel_urls")
     url = channel_urls.get(channelname)
 
-    starttime = str2dt(starttime)
-    endtime = str2dt(endtime)
-    length = endtime - starttime
+    local_starttime = str2dt(starttime)
+    local_endtime = str2dt(endtime)
+    length = local_endtime - local_starttime
     seconds = total_seconds(length)
-    log((starttime,endtime,length))
-    filename = "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime)
-    filename = urllib.quote_plus(filename)+'.ts'
-    path = os.path.join(xbmc.translatePath(r'c:\temp'),filename)
+    log((local_starttime,local_endtime,length))
+    label = "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,local_starttime,local_endtime)
+    filename = urllib.quote_plus(label)+'.ts'
+    path = os.path.join(xbmc.translatePath(plugin.get_setting('recordings')),filename)
 
-    cmd = ["ffmpeg","-y","-i",url,"-t",str(seconds),"-c","copy",path]
+    cmd = [xbmc.translatePath(plugin.get_setting('ffmpeg')),"-y","-i",url,"-t",str(seconds),"-c","copy",path]
     log(cmd)
-    #subprocess.Popen(cmd,shell=False)
+
     directory = "special://profile/addon_data/plugin.video.iptv.recorder/jobs/"
     xbmcvfs.mkdirs(directory)
     job = str(uuid.uuid1())
-    py = directory + job + ".py"
-    f = xbmcvfs.File(py,'wb')
+    pyjob = directory + job + ".py"
+    f = xbmcvfs.File(pyjob,'wb')
     f.write("import subprocess\n")
     f.write("cmd = %s\n" % repr(cmd))
     f.write("subprocess.Popen(cmd,shell=True)\n")
     f.close()
-    #pytask = "\"c:\\python27.64\\pythonw\" \"%s\"" % xbmc.translatePath(py)
-    st = "%02d:%02d" % (starttime.hour,starttime.minute)
-    cmd = ["schtasks","/create","/tn",job,"/sc","once","/st",st,"/tr",r"c:\python27.64\pythonw.exe %s" % xbmc.translatePath(py)]
+
+    st = "%02d:%02d" % (local_starttime.hour,local_starttime.minute)
+    sd = "%02d/%02d/%04d" % (local_starttime.day,local_starttime.month,local_starttime.year)
+    cmd = ["schtasks","/create","/f","/tn",job,"/sc","once","/st",st,"/sd",sd,"/tr","%s %s" % (xbmc.translatePath(plugin.get_setting('python')),xbmc.translatePath(pyjob))]
     log(cmd)
     subprocess.Popen(cmd,shell=True)
+
+    jobs = plugin.get_storage("jobs")
+    job_description = json.dumps((channelname,title,starttime,endtime))
+    jobs[job] = job_description
 
 @plugin.route('/record_once/<channelname>/<title>/<starttime>/<endtime>')
 def record_daily(channelname,title,starttime,endtime):
@@ -290,6 +322,14 @@ def index():
     {
         'label': "Channel Groups",
         'path': plugin.url_for('groups'),
+        'thumbnail':get_icon_path('settings'),
+        'context_menu': context_items,
+    })
+
+    items.append(
+    {
+        'label': "Recording Jobs",
+        'path': plugin.url_for('jobs'),
         'thumbnail':get_icon_path('settings'),
         'context_menu': context_items,
     })
