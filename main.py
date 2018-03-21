@@ -107,11 +107,13 @@ def total_seconds(td):
 @plugin.route('/jobs')
 def jobs():
     jobs = plugin.get_storage("jobs")
-    #log(jobs)
+    jjobs = {x:json.loads(jobs[x]) for x in jobs}
+    log(jjobs)
     items = []
-    for j in sorted(jobs, key= lambda x: x[2]):
+    #TODO sort options
+    for j in sorted(jjobs, key=lambda x: (jjobs[x][2]),reverse=True):
         #log((j,jobs[j]))
-        channelname,title,starttime,endtime = json.loads(jobs[j])
+        channelname,title,starttime,endtime = jjobs[j] #json.loads(jobs[j])
         items.append({
             'label': "%s - %s[CR][COLOR grey]%s %s - %s[/COLOR]" % (channelname,title,day(str2dt(starttime)),starttime,endtime),
             'path': plugin.url_for(delete_job,job=j)
@@ -454,6 +456,7 @@ def recordings():
     dir = plugin.get_setting('recordings')
     dirs, files = xbmcvfs.listdir(dir)
     items = []
+    #TODO sort options
     for file in sorted(files):
         if file.endswith('.ts'):
             path = os.path.join(xbmc.translatePath(dir),file)
