@@ -126,6 +126,7 @@ def delete_job(job):
     pyjob = directory + job + ".py"
     xbmcvfs.delete(pyjob)
     del jobs[job]
+    xbmc.executebuiltin('Container.Refresh')
 
 @plugin.route('/record_once/<channelname>/<title>/<starttime>/<endtime>')
 def record_once(channelname,title,starttime,endtime):
@@ -163,6 +164,7 @@ def record_once(channelname,title,starttime,endtime):
     jobs = plugin.get_storage("jobs")
     job_description = json.dumps((channelname,title,starttime,endtime))
     jobs[job] = job_description
+    xbmc.executebuiltin('Container.Refresh')
 
 @plugin.route('/record_once/<channelname>/<title>/<starttime>/<endtime>')
 def record_daily(channelname,title,starttime,endtime):
@@ -204,10 +206,25 @@ def broadcast(channelname,title,starttime,endtime):
         })
     return items
 
+def day(timestamp):
+    if timestamp:
+        today = datetime.today()
+        tomorrow = today + timedelta(days=1)
+        yesterday = today - timedelta(days=1)
+        if today.date() == timestamp.date():
+            return 'Today'
+        elif tomorrow.date() == timestamp.date():
+            return 'Tomorrow'
+        elif yesterday.date() == timestamp.date():
+            return 'Yesterday'
+        else:
+            return timestamp.strftime("%A")
 
 
 @plugin.route('/channel/<channelname>/<channelid>')
 def channel(channelname,channelid):
+    jobs = plugin.get_storage("jobs")
+    job_descriptions = {jobs[x]:x for x in jobs}
     rpc = '{"jsonrpc":"2.0","method":"PVR.GetBroadcasts","id":306,"params":{"channelid":%s,"properties":["title","plot","plotoutline","starttime","endtime","runtime","progress","progresspercentage","genre","episodename","episodenum","episodepart","firstaired","hastimer","isactive","parentalrating","wasactive","thumbnail","rating"]}}' % channelid
     r = requests.get('http://localhost:8080/jsonrpc?request='+urllib.quote_plus(rpc))
     content = r.content
@@ -221,13 +238,21 @@ def channel(channelname,channelid):
         starttime = b.get('starttime')
         endtime = b.get('endtime')
         title = b.get('title')
+        job_description = json.dumps((channelname,title,starttime,endtime))
         broadcastid=str(b.get('broadcastid'))
         #log(starttime)
         start = str2dt(starttime) # +  timedelta(seconds=-time.timezone) #TODO check summer time
         #log(start)
-        label = "%02d:%02d %s" % (start.hour,start.minute,b.get('label'))
+        recording = ""
+        if job_description in job_descriptions:
+            recording = "[COLOR red]RECORD[/COLOR]"
+        label = "%02d:%02d %s %s[CR][COLOR grey]%s[/COLOR]" % (start.hour,start.minute,b.get('label'),recording,day(start))
         context_items = []
-        context_items.append(("Play RPC" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play,channelid=channelid))))
+        if recording:
+            context_items.append(("Cancel Record" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job,job=job_descriptions[job_description]))))
+        else:
+            context_items.append(("Record Once" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_once,channelname=channelname,title=title,starttime=starttime,endtime=endtime))))
+        context_items.append(("Play PVR" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play,channelid=channelid))))
         context_items.append(("Play ffplay" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_name,channelname=channelname))))
         items.append({
             'label': label,
@@ -307,7 +332,7 @@ def m3u():
         url = channel[1]
         #log((name,url))
         channel_urls[name] = url
-    channel_urls.sync()
+    #channel_urls.sync()
 
 @plugin.route('/service')
 def service():
