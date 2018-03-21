@@ -1,7 +1,7 @@
 <settings>
 <category label="Basic">
-    <setting id="minutes.before" label="Minutes Before" type="number" default="0"  />
-    <setting id="minutes.after" label="Minutes After" type="number" default="0"  />
+    <setting id="minutes.before" label="Minutes Before" type="number" default="1"  />
+    <setting id="minutes.after" label="Minutes After" type="number" default="1"  />
 
     <setting id="task.scheduler" label="Use Task Scheduler on Windows" type="bool" default="false"  />
 
