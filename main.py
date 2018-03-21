@@ -489,6 +489,14 @@ def index():
 
     items.append(
     {
+        'label': "Recordings Folder",
+        'path': plugin.get_setting('recordings'),
+        'thumbnail':get_icon_path('settings'),
+        'context_menu': context_items,
+    })
+
+    items.append(
+    {
         'label': "(Re)Load Channel m3u",
         'path': plugin.url_for('m3u'),
         'thumbnail':get_icon_path('settings'),
