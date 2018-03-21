@@ -438,6 +438,13 @@ def service():
     #log("SERVICE")
     pass
 
+@plugin.route('/delete_recording/<label>/<path>')
+def delete_recording(label,path):
+    if not (xbmcgui.Dialog().yesno("IPTV Recorder","[COLOR red]Delete Recording?[/COLOR]",label)):
+        return
+    xbmcvfs.delete(path)
+    xbmc.executebuiltin('Container.Refresh')
+
 @plugin.route('/recordings')
 def recordings():
     dir = plugin.get_setting('recordings')
@@ -448,11 +455,14 @@ def recordings():
             path = os.path.join(xbmc.translatePath(dir),file)
             label = urllib.unquote_plus(file)[0:-3]
             #TODO save some info from broadcast
+            context_items = []
+            context_items.append(("Delete Recording" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_recording,label=label,path=path))))
             items.append({
                 'label': label,
                 'path': path,
-                'thumbnail':get_icon_path('movies'),
+                'thumbnail':get_icon_path('tv'),
                 'is_playable': True,
+                'context_menu': context_items,
                 'info_type': 'Video',
                 'info':{"title": label}
             })
@@ -467,7 +477,7 @@ def index():
     {
         'label': "Channel Groups",
         'path': plugin.url_for('groups'),
-        'thumbnail':get_icon_path('settings'),
+        'thumbnail':get_icon_path('folder'),
         'context_menu': context_items,
     })
 
@@ -475,7 +485,7 @@ def index():
     {
         'label': "Recording Jobs",
         'path': plugin.url_for('jobs'),
-        'thumbnail':get_icon_path('settings'),
+        'thumbnail':get_icon_path('recordings'),
         'context_menu': context_items,
     })
 
@@ -483,7 +493,7 @@ def index():
     {
         'label': "Recordings",
         'path': plugin.url_for('recordings'),
-        'thumbnail':get_icon_path('settings'),
+        'thumbnail':get_icon_path('recordings'),
         'context_menu': context_items,
     })
 
@@ -491,7 +501,7 @@ def index():
     {
         'label': "Recordings Folder",
         'path': plugin.get_setting('recordings'),
-        'thumbnail':get_icon_path('settings'),
+        'thumbnail':get_icon_path('recordings'),
         'context_menu': context_items,
     })
 
