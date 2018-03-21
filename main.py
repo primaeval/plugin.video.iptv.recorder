@@ -438,6 +438,26 @@ def service():
     #log("SERVICE")
     pass
 
+@plugin.route('/recordings')
+def recordings():
+    dir = plugin.get_setting('recordings')
+    dirs, files = xbmcvfs.listdir(dir)
+    items = []
+    for file in sorted(files):
+        if file.endswith('.ts'):
+            path = os.path.join(xbmc.translatePath(dir),file)
+            label = urllib.unquote_plus(file)[0:-3]
+            #TODO save some info from broadcast
+            items.append({
+                'label': label,
+                'path': path,
+                'thumbnail':get_icon_path('movies'),
+                'is_playable': True,
+                'info_type': 'Video',
+                'info':{"title": label}
+            })
+    return items
+
 @plugin.route('/')
 def index():
     items = []
@@ -455,6 +475,14 @@ def index():
     {
         'label': "Recording Jobs",
         'path': plugin.url_for('jobs'),
+        'thumbnail':get_icon_path('settings'),
+        'context_menu': context_items,
+    })
+
+    items.append(
+    {
+        'label': "Recordings",
+        'path': plugin.url_for('recordings'),
         'thumbnail':get_icon_path('settings'),
         'context_menu': context_items,
     })
