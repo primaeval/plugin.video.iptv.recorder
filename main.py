@@ -169,9 +169,18 @@ def ffmpeg_location():
         os.chmod(ffmpeg, st.st_mode | stat.S_IEXEC)
 
 
-@plugin.route('/record_once/<channelname>/<title>/<starttime>/<endtime>')
-def record_once(channelname,title,starttime,endtime):
+@plugin.route('/record_once/<broadcastid>/<channelname>/<title>/<starttime>/<endtime>')
+def record_once(broadcastid,channelname,title,starttime,endtime):
     #TODO check for ffmpeg process already recording if job is re-added
+    log((broadcastid,channelname,title,starttime,endtime))
+    rpc = '{"jsonrpc":"2.0","method":"PVR.GetBroadcastDetails","id":1,"params":{"broadcastid":%s,"properties":["title","plot","plotoutline","starttime","endtime","runtime","progress","progresspercentage","genre","episodename","episodenum","episodepart","firstaired","hastimer","isactive","parentalrating","wasactive","thumbnail","rating"]}}' % broadcastid
+    r = requests.get('http://localhost:8080/jsonrpc?request='+urllib.quote_plus(rpc))
+    content = r.content
+    j = json.loads(content)
+    log(j)
+    broadcastdetails = j.get('result').get('broadcastdetails')
+    #if not broadcasts:
+    #    return
 
     channel_urls = plugin.get_storage("channel_urls")
     if not len(channel_urls.keys()):
@@ -208,6 +217,9 @@ def record_once(channelname,title,starttime,endtime):
     #ffmpeg = "notepad"
     cmd = [ffmpeg,"-y","-i",url,"-t",str(seconds),"-c","copy",path]
     #log(cmd)
+
+    #TODO make nfo
+    f = xbmcvfs.File(path+'.json','w').write(json.dumps(broadcastdetails))
 
     directory = "special://profile/addon_data/plugin.video.iptv.recorder/jobs/"
     xbmcvfs.mkdirs(directory)
@@ -256,7 +268,7 @@ def record_once(channelname,title,starttime,endtime):
     jobs[job] = job_description
     xbmc.executebuiltin('Container.Refresh')
 
-@plugin.route('/record_once/<channelname>/<title>/<starttime>/<endtime>')
+@plugin.route('/record_daily/<channelname>/<title>/<starttime>/<endtime>')
 def record_daily(channelname,title,starttime,endtime):
     pass
 
@@ -264,14 +276,14 @@ def record_daily(channelname,title,starttime,endtime):
 def record_always(channelname,title):
     pass
 
-@plugin.route('/broadcast/<channelname>/<title>/<starttime>/<endtime>')
-def broadcast(channelname,title,starttime,endtime):
+@plugin.route('/broadcast/<broadcastid>/<channelname>/<title>/<starttime>/<endtime>')
+def broadcast(broadcastid,channelname,title,starttime,endtime):
     #log((channelname,title,starttime,endtime))
     items = []
     #TODO format dates
     items.append({
         'label': "Record Once - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime),
-        'path': plugin.url_for(record_once,channelname=channelname,title=title,starttime=starttime,endtime=endtime)
+        'path': plugin.url_for(record_once,broadcastid=broadcastid,channelname=channelname,title=title,starttime=starttime,endtime=endtime)
     })
 
     if False:
@@ -285,7 +297,7 @@ def broadcast(channelname,title,starttime,endtime):
         })
         items.append({
             'label': "Watch Once - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime),
-            'path': plugin.url_for(record_once,channelname=channelname,title=title,starttime=starttime,endtime=endtime)
+            'path': plugin.url_for(record_once,broadcastid=broadcastid,channelname=channelname,title=title,starttime=starttime,endtime=endtime)
         })
         items.append({
             'label': "Watch Daily - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime),
@@ -328,7 +340,7 @@ def channel(channelname,channelid):
         return
     items = []
     for b in broadcasts:
-        #log(b)
+        log(b)
         starttime = b.get('starttime')
         endtime = b.get('endtime')
         title = b.get('title')
@@ -347,12 +359,12 @@ def channel(channelname,channelid):
         if recording:
             context_items.append(("Cancel Record" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job,job=job_descriptions[job_description]))))
         else:
-            context_items.append(("Record Once" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_once,channelname=channelname.encode("utf8"),title=title.encode("utf8"),starttime=starttime,endtime=endtime))))
+            context_items.append(("Record Once" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_once,broadcastid=broadcastid,channelname=channelname.encode("utf8"),title=title.encode("utf8"),starttime=starttime,endtime=endtime))))
         context_items.append(("Play PVR" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play,channelid=channelid))))
         context_items.append(("Play ffplay" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_name,channelname=channelname.encode("utf8")))))
         items.append({
             'label': label,
-            'path': plugin.url_for(broadcast,channelname=channelname.encode("utf8"),title=title.encode("utf8"),starttime=starttime,endtime=endtime),
+            'path': plugin.url_for(broadcast,broadcastid=broadcastid,channelname=channelname.encode("utf8"),title=title.encode("utf8"),starttime=starttime,endtime=endtime),
             'thumbnail': thumbnail,
             'context_menu': context_items,
             'info_type': 'Video',
@@ -446,6 +458,14 @@ def recordings():
     for file in sorted(files):
         if file.endswith('.ts'):
             path = os.path.join(xbmc.translatePath(dir),file)
+            j = xbmcvfs.File(path+'.json','r').read()
+            if j:
+                broadcastdetails = json.loads(j)
+            else:
+                broadcastdetails = {}
+            genre = broadcastdetails.get('genre')
+            if genre:
+                genre= ','.join(genre)
             label = urllib.unquote_plus(file)[0:-3]
             #TODO save some info from broadcast
             items.append({
@@ -454,7 +474,7 @@ def recordings():
                 'thumbnail':get_icon_path('movies'),
                 'is_playable': True,
                 'info_type': 'Video',
-                'info':{"title": label}
+                'info':{"title": label, "plot": broadcastdetails.get('plot'), "genre": genre}
             })
     return items
 
@@ -483,6 +503,14 @@ def index():
     {
         'label': "Recordings",
         'path': plugin.url_for('recordings'),
+        'thumbnail':get_icon_path('settings'),
+        'context_menu': context_items,
+    })
+
+    items.append(
+    {
+        'label': "Recordings Folder",
+        'path': plugin.get_setting('recordings'),
         'thumbnail':get_icon_path('settings'),
         'context_menu': context_items,
     })
