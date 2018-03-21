@@ -80,7 +80,11 @@ def play_name(channelname):
     channel_urls = plugin.get_storage("channel_urls")
     url = channel_urls.get(channelname)
     if url:
-        cmd = [plugin.get_setting('external.player'),plugin.get_setting('external.player.args'),url]
+        cmd = [plugin.get_setting('external.player')]
+        args = plugin.get_setting('external.player.args')
+        if args:
+            cmd.append(args)
+        cmd.append(url)
         subprocess.Popen(cmd)
 
 
