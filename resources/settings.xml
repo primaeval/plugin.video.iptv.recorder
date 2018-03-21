@@ -1,5 +1,10 @@
 <settings>
 <category label="Basic">
+    <setting id="minutes.before" label="Minutes Before" type="number" default="0"  />
+    <setting id="minutes.after" label="Minutes After" type="number" default="0"  />
+
+    <setting id="task.scheduler" label="Use Task Scheduler on Windows" type="bool" default="false"  />
+
     <setting id="recordings" label="Recordings Folder" type="folder" default="special://temp"/>
     <setting id="ffmpeg" label="ffmpeg exe" type="file" default="ffmpeg"/>
     <setting id="python" label="python(w) exe" type="file" default="python"  />

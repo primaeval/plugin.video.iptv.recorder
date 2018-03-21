@@ -28,7 +28,7 @@ big_list_view = False
 def addon_id():
     return xbmcaddon.Addon().getAddonInfo('id')
 
-def #log(v):
+def log(v):
     xbmc.log(repr(v),xbmc.LOGERROR)
 
 
@@ -116,26 +116,62 @@ def jobs():
 
 @plugin.route('/delete_job/<job>')
 def delete_job(job):
+    #TODO stop ffmpeg task
+
     if not (xbmcgui.Dialog().yesno("IPTV Recorder","Cancel Record?")):
         return
     jobs = plugin.get_storage("jobs")
 
-    windows = False
-    task_scheduler = False
-    if windows and task_scheduler:
+    if windows() and plugin.get_setting('task.scheduler') == 'true':
         cmd = ["schtasks","/delete","/f","/tn",job]
         #log(cmd)
         subprocess.Popen(cmd,shell=True)
+    else:
+        xbmc.executebuiltin('CancelAlarm(%s,True)' % job)
 
     directory = "special://profile/addon_data/plugin.video.iptv.recorder/jobs/"
     xbmcvfs.mkdirs(directory)
     pyjob = directory + job + ".py"
+
+    pid = xbmcvfs.File(pyjob+'.uuid').read()
+    if pid:
+        if windows():
+            subprocess.Popen(["taskkill","/im",pid],shell=True)
+        else:
+            subprocess.Popen(["kill","-9",pid])
+
     xbmcvfs.delete(pyjob)
     del jobs[job]
     xbmc.executebuiltin('Container.Refresh')
 
+def windows():
+    if os.name == 'nt':
+        return True
+    else:
+        return False
+
+def android_get_current_appid():
+    with open("/proc/%d/cmdline" % os.getpid()) as fp:
+        return fp.read().rstrip("\0")
+
+def ffmpeg_location():
+    ffmpeg_src = xbmc.translatePath(plugin.get_setting('ffmpeg'))
+    if xbmc.getCondVisibility('system.platform.android'):
+        ffmpeg_dst = '/data/data/%s/ffmpeg' % android_get_current_appid()
+    else:
+        return ffmpeg_src
+    if not xbmcvfs.exists(ffmpeg_dst) and ffmpeg_src != ffmpeg_dst:
+        xbmcvfs.copy(ffmpeg_src,ffmpeg)
+
+    st = os.stat(ffmpeg)
+    if not (st.st_mode | stat.S_IEXEC):
+        os.chmod(ffmpeg, st.st_mode | stat.S_IEXEC)
+
+
 @plugin.route('/record_once/<channelname>/<title>/<starttime>/<endtime>')
 def record_once(channelname,title,starttime,endtime):
+    #TODO check for ffmpeg process already recording if job is re-added
+
     channel_urls = plugin.get_storage("channel_urls")
     if not len(channel_urls.keys()):
         m3u()
@@ -145,34 +181,74 @@ def record_once(channelname,title,starttime,endtime):
 
     local_starttime = str2dt(starttime)
     local_endtime = str2dt(endtime)
+    label = "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,local_starttime,local_endtime)
+
+    before = int(plugin.get_setting('minutes.before') or "0")
+    after = int(plugin.get_setting('minutes.after') or "0")
+    #log((before,after))
+    local_starttime = local_starttime - timedelta(minutes=before)
+    local_endtime = local_endtime + timedelta(minutes=after)
+
+    now = datetime.now()
+    if (local_starttime < now) and (local_endtime > now):
+        local_starttime = now
+        immediate = True
+    else:
+        immediate = False
+    #log((immediate,now,local_starttime,local_endtime))
+
     length = local_endtime - local_starttime
     seconds = total_seconds(length)
     #log((local_starttime,local_endtime,length))
-    label = "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,local_starttime,local_endtime)
+
     filename = urllib.quote_plus(label)+'.ts'
     path = os.path.join(xbmc.translatePath(plugin.get_setting('recordings')),filename)
-
-    cmd = [xbmc.translatePath(plugin.get_setting('ffmpeg')),"-y","-i",url,"-t",str(seconds),"-c","copy",path]
+    ffmpeg = ffmpeg_location()
+    #ffmpeg = "notepad"
+    cmd = [ffmpeg,"-y","-i",url,"-t",str(seconds),"-c","copy",path]
     #log(cmd)
 
     directory = "special://profile/addon_data/plugin.video.iptv.recorder/jobs/"
     xbmcvfs.mkdirs(directory)
     job = str(uuid.uuid1())
     pyjob = directory + job + ".py"
+
     f = xbmcvfs.File(pyjob,'wb')
     f.write("import subprocess\n")
     f.write("cmd = %s\n" % repr(cmd))
-    f.write("subprocess.Popen(cmd,shell=True)\n")
+    f.write("p = subprocess.Popen(cmd,shell=%s)\n" % windows())
+    f.write("f = open(r'%s','w+')\n" % xbmc.translatePath(pyjob+'.uuid'))
+    f.write("f.write(repr(p.pid))")
     f.close()
 
-    windows = False
-    task_scheduler = False
-    if windows and task_scheduler:
-        st = "%02d:%02d" % (local_starttime.hour,local_starttime.minute)
-        sd = "%02d/%02d/%04d" % (local_starttime.day,local_starttime.month,local_starttime.year)
-        cmd = ["schtasks","/create","/f","/tn",job,"/sc","once","/st",st,"/sd",sd,"/tr","%s %s" % (xbmc.translatePath(plugin.get_setting('python')),xbmc.translatePath(pyjob))]
-        #log(cmd)
-        subprocess.Popen(cmd,shell=True)
+    if windows() and plugin.get_setting('task.scheduler') == 'true':
+
+        if immediate:
+            cmd = 'RunScript(%s)' % (pyjob)
+            xbmc.executebuiltin(cmd)
+        else:
+            st = "%02d:%02d" % (local_starttime.hour,local_starttime.minute)
+            sd = "%02d/%02d/%04d" % (local_starttime.day,local_starttime.month,local_starttime.year)
+            cmd = ["schtasks","/create","/f","/tn",job,"/sc","once","/st",st,"/sd",sd,"/tr","%s %s" % (xbmc.translatePath(plugin.get_setting('python')),xbmc.translatePath(pyjob))]
+            #log(cmd)
+            subprocess.Popen(cmd,shell=True)
+    else:
+        now = datetime.now()
+        diff = local_starttime - now
+        minutes = ((diff.days * 86400) + diff.seconds) / 60
+        #minutes = 1
+        if minutes < 1:
+            if local_endtime > now:
+                cmd = 'RunScript(%s)' % (pyjob)
+                xbmc.executebuiltin(cmd)
+            else:
+                #pass
+                xbmcvfs.delete(pyjob)
+                return #TODO
+        else:
+            cmd = 'AlarmClock(%s,RunScript(%s),%d,True)' % (job,pyjob,minutes)
+            #log(cmd)
+            xbmc.executebuiltin(cmd)
 
     jobs = plugin.get_storage("jobs")
     job_description = json.dumps((channelname,title,starttime,endtime))
@@ -359,6 +435,7 @@ def m3u():
 @plugin.route('/service')
 def service():
     #log("SERVICE")
+    pass
 
 @plugin.route('/')
 def index():
@@ -383,7 +460,7 @@ def index():
 
     items.append(
     {
-        'label': "Load Channel m3u",
+        'label': "(Re)Load Channel m3u",
         'path': plugin.url_for('m3u'),
         'thumbnail':get_icon_path('settings'),
         'context_menu': context_items,
