@@ -171,12 +171,15 @@ def ffmpeg_location():
     else:
         ffmpeg = ffmpeg_src
 
-    st = os.stat(ffmpeg)
-    if not (st.st_mode | stat.S_IEXEC):
-        try:
-            os.chmod(ffmpeg, st.st_mode | stat.S_IEXEC)
-        except:
-            log("chmod failed")
+    try:
+        st = os.stat(ffmpeg)
+        if not (st.st_mode | stat.S_IEXEC):
+            try:
+                os.chmod(ffmpeg, st.st_mode | stat.S_IEXEC)
+            except:
+                pass
+    except:
+        pass
     return ffmpeg
 
 
@@ -214,7 +217,7 @@ def record_once(channelname,title,starttime,endtime):
     seconds = total_seconds(length)
     #log((local_starttime,local_endtime,length))
 
-    filename = urllib.quote_plus(label)+'.ts'
+    filename = urllib.quote_plus(label.encode("utf8"))+'.ts'
     path = os.path.join(xbmc.translatePath(plugin.get_setting('recordings')),filename)
     ffmpeg = ffmpeg_location()
     #ffmpeg = "notepad"
@@ -449,6 +452,13 @@ def m3u():
 def service():
     #log("SERVICE")
     pass
+    #TODO delete old timers
+    jobs = plugin.get_storage("jobs")
+    jobs_copy = dict(jobs)
+    for job in jobs_copy:
+        channelname,title,starttime,endtime = json.loads(jobs_copy[job])
+        record_once(channelname,title,starttime,endtime)
+
 
 @plugin.route('/delete_recording/<label>/<path>')
 def delete_recording(label,path):
