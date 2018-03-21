@@ -137,6 +137,10 @@ def delete_job(job):
 @plugin.route('/record_once/<channelname>/<title>/<starttime>/<endtime>')
 def record_once(channelname,title,starttime,endtime):
     channel_urls = plugin.get_storage("channel_urls")
+    if not len(channel_urls.keys()):
+        m3u()
+    if not len(channel_urls.keys()):
+        xbmcgui.Dialog().notification("IPTV Recorder","No m3u Channels found!")
     url = channel_urls.get(channelname)
 
     local_starttime = str2dt(starttime)
@@ -192,15 +196,16 @@ def broadcast(channelname,title,starttime,endtime):
         'label': "Record Once - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime),
         'path': plugin.url_for(record_once,channelname=channelname,title=title,starttime=starttime,endtime=endtime)
     })
-    items.append({
-        'label': "Record Daily - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime),
-        'path': plugin.url_for(record_daily,channelname=channelname,title=title,starttime=starttime,endtime=endtime)
-    })
-    items.append({
-        'label': "Record Always - %s - %s" % (channelname,title),
-        'path': plugin.url_for(record_always,channelname=channelname,title=title)
-    })
+
     if False:
+        items.append({
+            'label': "Record Daily - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime),
+            'path': plugin.url_for(record_daily,channelname=channelname,title=title,starttime=starttime,endtime=endtime)
+        })
+        items.append({
+            'label': "Record Always - %s - %s" % (channelname,title),
+            'path': plugin.url_for(record_always,channelname=channelname,title=title)
+        })
         items.append({
             'label': "Watch Once - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime),
             'path': plugin.url_for(record_once,channelname=channelname,title=title,starttime=starttime,endtime=endtime)
@@ -260,12 +265,12 @@ def channel(channelname,channelid):
         if recording:
             context_items.append(("Cancel Record" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job,job=job_descriptions[job_description]))))
         else:
-            context_items.append(("Record Once" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_once,channelname=channelname,title=title,starttime=starttime,endtime=endtime))))
+            context_items.append(("Record Once" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_once,channelname=channelname.encode("utf8"),title=title.encode("utf8"),starttime=starttime,endtime=endtime))))
         context_items.append(("Play PVR" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play,channelid=channelid))))
-        context_items.append(("Play ffplay" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_name,channelname=channelname))))
+        context_items.append(("Play ffplay" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_name,channelname=channelname.encode("utf8")))))
         items.append({
             'label': label,
-            'path': plugin.url_for(broadcast,channelname=channelname,title=title.encode("utf8"),starttime=starttime,endtime=endtime),
+            'path': plugin.url_for(broadcast,channelname=channelname.encode("utf8"),title=title.encode("utf8"),starttime=starttime,endtime=endtime),
             'context_menu': context_items,
         })
     return items
