@@ -165,14 +165,20 @@ def ffmpeg_location():
     ffmpeg_src = xbmc.translatePath(plugin.get_setting('ffmpeg'))
     if xbmc.getCondVisibility('system.platform.android'):
         ffmpeg_dst = '/data/data/%s/ffmpeg' % android_get_current_appid()
+        if not xbmcvfs.exists(ffmpeg_dst) and ffmpeg_src != ffmpeg_dst:
+            xbmcvfs.copy(ffmpeg_src,ffmpeg_dst)
+        ffmpeg = ffmpeg_dst
     else:
-        return ffmpeg_src
-    if not xbmcvfs.exists(ffmpeg_dst) and ffmpeg_src != ffmpeg_dst:
-        xbmcvfs.copy(ffmpeg_src,ffmpeg)
+        ffmpeg = ffmpeg_src
 
     st = os.stat(ffmpeg)
     if not (st.st_mode | stat.S_IEXEC):
-        os.chmod(ffmpeg, st.st_mode | stat.S_IEXEC)
+        try:
+            os.chmod(ffmpeg, st.st_mode | stat.S_IEXEC)
+        except:
+            log("chmod failed")
+    return ffmpeg
+
 
 
 @plugin.route('/record_once/<channelname>/<title>/<starttime>/<endtime>')
