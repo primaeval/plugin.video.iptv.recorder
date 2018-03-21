@@ -109,17 +109,23 @@ def jobs():
         log((j,jobs[j]))
         channelname,title,starttime,endtime = json.loads(jobs[j])
         items.append({
-            'label': "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime),
+            'label': "%s - %s[CR][COLOR grey]%s %s - %s[/COLOR]" % (channelname,title,day(str2dt(starttime)),starttime,endtime),
             'path': plugin.url_for(delete_job,job=j)
         })
     return items
 
 @plugin.route('/delete_job/<job>')
 def delete_job(job):
+    if not (xbmcgui.Dialog().yesno("IPTV Recorder","Cancel Record?")):
+        return
     jobs = plugin.get_storage("jobs")
-    cmd = ["schtasks","/delete","/f","/tn",job]
-    log(cmd)
-    subprocess.Popen(cmd,shell=True)
+
+    windows = False
+    task_scheduler = False
+    if windows and task_scheduler:
+        cmd = ["schtasks","/delete","/f","/tn",job]
+        log(cmd)
+        subprocess.Popen(cmd,shell=True)
 
     directory = "special://profile/addon_data/plugin.video.iptv.recorder/jobs/"
     xbmcvfs.mkdirs(directory)
@@ -155,11 +161,14 @@ def record_once(channelname,title,starttime,endtime):
     f.write("subprocess.Popen(cmd,shell=True)\n")
     f.close()
 
-    st = "%02d:%02d" % (local_starttime.hour,local_starttime.minute)
-    sd = "%02d/%02d/%04d" % (local_starttime.day,local_starttime.month,local_starttime.year)
-    cmd = ["schtasks","/create","/f","/tn",job,"/sc","once","/st",st,"/sd",sd,"/tr","%s %s" % (xbmc.translatePath(plugin.get_setting('python')),xbmc.translatePath(pyjob))]
-    log(cmd)
-    subprocess.Popen(cmd,shell=True)
+    windows = False
+    task_scheduler = False
+    if windows and task_scheduler:
+        st = "%02d:%02d" % (local_starttime.hour,local_starttime.minute)
+        sd = "%02d/%02d/%04d" % (local_starttime.day,local_starttime.month,local_starttime.year)
+        cmd = ["schtasks","/create","/f","/tn",job,"/sc","once","/st",st,"/sd",sd,"/tr","%s %s" % (xbmc.translatePath(plugin.get_setting('python')),xbmc.translatePath(pyjob))]
+        log(cmd)
+        subprocess.Popen(cmd,shell=True)
 
     jobs = plugin.get_storage("jobs")
     job_description = json.dumps((channelname,title,starttime,endtime))
