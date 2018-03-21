@@ -141,6 +141,7 @@ def delete_job(job):
             subprocess.Popen(["kill","-9",pid])
 
     xbmcvfs.delete(pyjob)
+    xbmcvfs.delete(pyjob+'.uuid')
     del jobs[job]
     xbmc.executebuiltin('Container.Refresh')
 
