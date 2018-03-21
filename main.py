@@ -80,7 +80,7 @@ def play_name(channelname):
     channel_urls = plugin.get_storage("channel_urls")
     url = channel_urls.get(channelname)
     if url:
-        cmd = ["ffplay",url]
+        cmd = [plugin.get_setting('external.player'),plugin.get_setting('external.player.args'),url]
         subprocess.Popen(cmd)
 
 
@@ -348,8 +348,8 @@ def channel(channelname,channelid):
             context_items.append(("Cancel Record" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job,job=job_descriptions[job_description]))))
         else:
             context_items.append(("Record Once" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_once,channelname=channelname.encode("utf8"),title=title.encode("utf8"),starttime=starttime,endtime=endtime))))
-        context_items.append(("Play PVR" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play,channelid=channelid))))
-        context_items.append(("Play ffplay" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_name,channelname=channelname.encode("utf8")))))
+        context_items.append(("PVR Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play,channelid=channelid))))
+        context_items.append(("External Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_name,channelname=channelname.encode("utf8")))))
         items.append({
             'label': label,
             'path': plugin.url_for(broadcast,channelname=channelname.encode("utf8"),title=title.encode("utf8"),starttime=starttime,endtime=endtime),
@@ -381,8 +381,8 @@ def group(channelgroupid):
         channel_thumbnails[channelname] = thumbnail
         #log((name,cid))
         context_items = []
-        context_items.append(("Play RPC" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play,channelid=channelid))))
-        context_items.append(("Play ffplay" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_name,channelname=channelname))))
+        context_items.append(("PVR Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play,channelid=channelid))))
+        context_items.append(("External Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_name,channelname=channelname.encode("utf8")))))
         items.append({
             'label': channelname,
             'path': plugin.url_for(channel,channelname=channelname,channelid=channelid),
