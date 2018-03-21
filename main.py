@@ -28,7 +28,7 @@ big_list_view = False
 def addon_id():
     return xbmcaddon.Addon().getAddonInfo('id')
 
-def log(v):
+def #log(v):
     xbmc.log(repr(v),xbmc.LOGERROR)
 
 
@@ -72,8 +72,8 @@ def delete(path):
 def play(channelid):
     rpc = '{"jsonrpc":"2.0","method":"Player.Open","id":305,"params":{"item":{"channelid":%s}}}' % channelid
     r = requests.post('http://localhost:8080/jsonrpc',data=rpc)
-    log(r)
-    log(r.content)
+    #log(r)
+    #log(r.content)
 
 @plugin.route('/play_name/<channelname>')
 def play_name(channelname):
@@ -103,10 +103,10 @@ def total_seconds(td):
 @plugin.route('/jobs')
 def jobs():
     jobs = plugin.get_storage("jobs")
-    log(jobs)
+    #log(jobs)
     items = []
     for j in sorted(jobs, key= lambda x: x[2]):
-        log((j,jobs[j]))
+        #log((j,jobs[j]))
         channelname,title,starttime,endtime = json.loads(jobs[j])
         items.append({
             'label': "%s - %s[CR][COLOR grey]%s %s - %s[/COLOR]" % (channelname,title,day(str2dt(starttime)),starttime,endtime),
@@ -124,7 +124,7 @@ def delete_job(job):
     task_scheduler = False
     if windows and task_scheduler:
         cmd = ["schtasks","/delete","/f","/tn",job]
-        log(cmd)
+        #log(cmd)
         subprocess.Popen(cmd,shell=True)
 
     directory = "special://profile/addon_data/plugin.video.iptv.recorder/jobs/"
@@ -147,13 +147,13 @@ def record_once(channelname,title,starttime,endtime):
     local_endtime = str2dt(endtime)
     length = local_endtime - local_starttime
     seconds = total_seconds(length)
-    log((local_starttime,local_endtime,length))
+    #log((local_starttime,local_endtime,length))
     label = "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,local_starttime,local_endtime)
     filename = urllib.quote_plus(label)+'.ts'
     path = os.path.join(xbmc.translatePath(plugin.get_setting('recordings')),filename)
 
     cmd = [xbmc.translatePath(plugin.get_setting('ffmpeg')),"-y","-i",url,"-t",str(seconds),"-c","copy",path]
-    log(cmd)
+    #log(cmd)
 
     directory = "special://profile/addon_data/plugin.video.iptv.recorder/jobs/"
     xbmcvfs.mkdirs(directory)
@@ -171,7 +171,7 @@ def record_once(channelname,title,starttime,endtime):
         st = "%02d:%02d" % (local_starttime.hour,local_starttime.minute)
         sd = "%02d/%02d/%04d" % (local_starttime.day,local_starttime.month,local_starttime.year)
         cmd = ["schtasks","/create","/f","/tn",job,"/sc","once","/st",st,"/sd",sd,"/tr","%s %s" % (xbmc.translatePath(plugin.get_setting('python')),xbmc.translatePath(pyjob))]
-        log(cmd)
+        #log(cmd)
         subprocess.Popen(cmd,shell=True)
 
     jobs = plugin.get_storage("jobs")
@@ -237,30 +237,35 @@ def day(timestamp):
 
 @plugin.route('/channel/<channelname>/<channelid>')
 def channel(channelname,channelid):
+    channel_thumbnails = plugin.get_storage("channel_thumbnails")
+    thumbnail = channel_thumbnails.get(channelname)
     jobs = plugin.get_storage("jobs")
     job_descriptions = {jobs[x]:x for x in jobs}
-    rpc = '{"jsonrpc":"2.0","method":"PVR.GetBroadcasts","id":306,"params":{"channelid":%s,"properties":["title","plot","plotoutline","starttime","endtime","runtime","progress","progresspercentage","genre","episodename","episodenum","episodepart","firstaired","hastimer","isactive","parentalrating","wasactive","thumbnail","rating"]}}' % channelid
+    rpc = '{"jsonrpc":"2.0","method":"PVR.GetBroadcasts","id":1,"params":{"channelid":%s,"properties":["title","plot","plotoutline","starttime","endtime","runtime","progress","progresspercentage","genre","episodename","episodenum","episodepart","firstaired","hastimer","isactive","parentalrating","wasactive","thumbnail","rating"]}}' % channelid
     r = requests.get('http://localhost:8080/jsonrpc?request='+urllib.quote_plus(rpc))
     content = r.content
     j = json.loads(content)
-    log(j)
+    #log(j)
     broadcasts = j.get('result').get('broadcasts')
     if not broadcasts:
         return
     items = []
     for b in broadcasts:
+        #log(b)
         starttime = b.get('starttime')
         endtime = b.get('endtime')
         title = b.get('title')
+        plot = b.get('plot')
+        genre = ','.join(b.get('genre'))
         job_description = json.dumps((channelname,title,starttime,endtime))
         broadcastid=str(b.get('broadcastid'))
         #log(starttime)
-        start = str2dt(starttime) # +  timedelta(seconds=-time.timezone) #TODO check summer time
+        start = str2dt(starttime)
         #log(start)
         recording = ""
         if job_description in job_descriptions:
             recording = "[COLOR red]RECORD[/COLOR]"
-        label = "%02d:%02d %s %s[CR][COLOR grey]%s[/COLOR]" % (start.hour,start.minute,b.get('label'),recording,day(start))
+        label = "[COLOR grey]%s %02d:%02d[/COLOR] %s %s" % (day(start),start.hour,start.minute,b.get('label'),recording)
         context_items = []
         if recording:
             context_items.append(("Cancel Record" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job,job=job_descriptions[job_description]))))
@@ -271,7 +276,10 @@ def channel(channelname,channelid):
         items.append({
             'label': label,
             'path': plugin.url_for(broadcast,channelname=channelname.encode("utf8"),title=title.encode("utf8"),starttime=starttime,endtime=endtime),
+            'thumbnail': thumbnail,
             'context_menu': context_items,
+            'info_type': 'Video',
+            'info':{"title": channelname, "plot":plot,"genre":genre}
         })
     return items
 
@@ -279,7 +287,8 @@ def channel(channelname,channelid):
 @plugin.route('/group/<channelgroupid>')
 def group(channelgroupid):
     channel_urls = plugin.get_storage("channel_urls")
-    rpc = '{"jsonrpc":"2.0","method":"PVR.GetChannels","id":312,"params":{"channelgroupid":%s,"properties":["thumbnail","channeltype","hidden","locked","channel","lastplayed","broadcastnow","broadcastnext"]}}' % channelgroupid
+    channel_thumbnails = plugin.get_storage("channel_thumbnails")
+    rpc = '{"jsonrpc":"2.0","method":"PVR.GetChannels","id":1,"params":{"channelgroupid":%s,"properties":["thumbnail","channeltype","hidden","locked","channel","lastplayed","broadcastnow","broadcastnext"]}}' % channelgroupid
     r = requests.get('http://localhost:8080/jsonrpc?request='+urllib.quote_plus(rpc))
     content = r.content
     j = json.loads(content)
@@ -291,6 +300,8 @@ def group(channelgroupid):
         label = c.get('label')
         channelname = c.get('channel')
         channelid = str(c.get('channelid'))
+        thumbnail = c.get('thumbnail')
+        channel_thumbnails[channelname] = thumbnail
         #log((name,cid))
         context_items = []
         context_items.append(("Play RPC" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play,channelid=channelid))))
@@ -299,16 +310,13 @@ def group(channelgroupid):
             'label': channelname,
             'path': plugin.url_for(channel,channelname=channelname,channelid=channelid),
             'context_menu': context_items,
-            #'path': channel_urls[channelname],
-            #'is_playable': True,
-            #'info_type': 'Video',
-            #'info':{"mediatype": "movie", "title": channelname}
+            'thumbnail': thumbnail,
         })
     return items
 
 @plugin.route('/groups')
 def groups():
-    rpc = '{"jsonrpc":"2.0","method":"PVR.GetChannelGroups","id":311,"params":{"channeltype":"tv"}}'
+    rpc = '{"jsonrpc":"2.0","method":"PVR.GetChannelGroups","id":1,"params":{"channeltype":"tv"}}'
     r = requests.get('http://localhost:8080/jsonrpc?request='+urllib.quote_plus(rpc))
     content = r.content
     j = json.loads(content)
@@ -316,7 +324,7 @@ def groups():
     channelgroups = j.get('result').get('channelgroups')
     items = []
     for channelgroup in channelgroups:
-        log(channelgroup)
+        #log(channelgroup)
         items.append({
             'label': channelgroup.get('label'),
             'path': plugin.url_for(group,channelgroupid=str(channelgroup.get('channelgroupid')))
@@ -350,7 +358,7 @@ def m3u():
 
 @plugin.route('/service')
 def service():
-    log("SERVICE")
+    #log("SERVICE")
 
 @plugin.route('/')
 def index():
