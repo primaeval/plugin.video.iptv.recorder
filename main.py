@@ -388,10 +388,43 @@ def channel(channelname,channelid):
         })
     return items
 
+@plugin.route('/remove_favourite_channel/<channelname>')
+def remove_favourite_channel(channelname):
+    favourite_channels = plugin.get_storage("favourite_channels")
+    del favourite_channels[channelname]
+    xbmc.executebuiltin('Container.Refresh')
+
+@plugin.route('/add_favourite_channel/<channelname>/<channelid>/<thumbnail>')
+def add_favourite_channel(channelname,channelid,thumbnail):
+    favourite_channels = plugin.get_storage("favourite_channels")
+    favourite_channels[channelname] = json.dumps((channelid,thumbnail))
+    xbmc.executebuiltin('Container.Refresh')
+
+@plugin.route('/favourite_channels')
+def favourite_channels():
+    favourite_channels = plugin.get_storage("favourite_channels")
+    items = []
+    for channelname in favourite_channels:
+        channelid,thumbnail = json.loads(favourite_channels.get(channelname))
+        context_items = []
+        context_items.append(("PVR Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play,channelid=channelid))))
+        context_items.append(("External Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_name,channelname=channelname.encode("utf8")))))
+        if channelname not in favourite_channels:
+            context_items.append(("Add Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(add_favourite_channel,channelname=channelname,channelid=channelid,thumbnail=thumbnail))))
+        else:
+            context_items.append(("Remove Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_favourite_channel,channelname=channelname))))
+        items.append({
+            'label': channelname,
+            'path': plugin.url_for(channel,channelname=channelname,channelid=channelid),
+            'context_menu': context_items,
+            'thumbnail': thumbnail,
+        })
+    return items
 
 @plugin.route('/group/<channelgroupid>')
 def group(channelgroupid):
     channel_urls = plugin.get_storage("channel_urls")
+    favourite_channels = plugin.get_storage("favourite_channels")
     channel_thumbnails = plugin.get_storage("channel_thumbnails")
     rpc = '{"jsonrpc":"2.0","method":"PVR.GetChannels","id":1,"params":{"channelgroupid":%s,"properties":["thumbnail","channeltype","hidden","locked","channel","lastplayed","broadcastnow","broadcastnext"]}}' % channelgroupid
     r = requests.get('http://localhost:8080/jsonrpc?request='+urllib.quote_plus(rpc))
@@ -411,6 +444,10 @@ def group(channelgroupid):
         context_items = []
         context_items.append(("PVR Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play,channelid=channelid))))
         context_items.append(("External Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_name,channelname=channelname.encode("utf8")))))
+        if label not in favourite_channels:
+            context_items.append(("Add Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(add_favourite_channel,channelname=channelname,channelid=channelid,thumbnail=thumbnail))))
+        else:
+            context_items.append(("Remove Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_favourite_channel,channelname=channelname))))
         items.append({
             'label': channelname,
             'path': plugin.url_for(channel,channelname=channelname,channelid=channelid),
@@ -531,6 +568,14 @@ def recordings():
 def index():
     items = []
     context_items = []
+
+    items.append(
+    {
+        'label': "Favourite Channels",
+        'path': plugin.url_for('favourite_channels'),
+        'thumbnail':get_icon_path('favourites'),
+        'context_menu': context_items,
+    })
 
     items.append(
     {
