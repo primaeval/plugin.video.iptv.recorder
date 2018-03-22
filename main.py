@@ -109,7 +109,7 @@ def total_seconds(td):
 def jobs():
     jobs = plugin.get_storage("jobs")
     jjobs = {x:json.loads(jobs[x]) for x in jobs}
-    log(jjobs)
+    #log(jjobs)
     items = []
     #TODO sort options
     for j in sorted(jjobs, key=lambda x: (jjobs[x][2]),reverse=True):
