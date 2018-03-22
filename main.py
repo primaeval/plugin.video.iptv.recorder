@@ -122,10 +122,11 @@ def jobs():
     return items
 
 @plugin.route('/delete_job/<job>')
-def delete_job(job,kill=True):
+def delete_job(job,kill=True,ask=True):
+    log(("DELETE JOB",job))
     #TODO stop ffmpeg task
 
-    if not (xbmcgui.Dialog().yesno("IPTV Recorder","Cancel Record?")):
+    if ask and not (xbmcgui.Dialog().yesno("IPTV Recorder","Cancel Record?")):
         return
     jobs = plugin.get_storage("jobs")
 
@@ -504,6 +505,7 @@ def service():
 
 @plugin.route('/start')
 def start():
+    #log("START")
     #TODO delete old timers
     jobs = plugin.get_storage("jobs")
     jobs_copy = dict(jobs)
@@ -516,7 +518,7 @@ def start():
         if st > now and not (windows() and plugin.get_setting('task.scheduler') == "true"):
             record_once(channelname,title,starttime,endtime)
         if et < now:
-            delete_job(job)
+            delete_job(job,ask=False)
 
 
 @plugin.route('/delete_recording/<label>/<path>')

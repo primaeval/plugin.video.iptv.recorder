@@ -5,20 +5,23 @@ import base64
 import time, datetime
 
 servicing = False
+#xbmc.log("SERVER")
 
 def Service():
     global servicing
     if servicing:
         return
     servicing = True
-    xbmc.log("SERVICE")
-    xbmc.executebuiltin('XBMC.RunPlugin(plugin://plugin.video.plugin.video.iptv.recorder/service)')
+    #xbmc.log("SERVICE",xbmc.LOGERROR)
+    xbmc.executebuiltin('XBMC.RunPlugin(plugin://plugin.video.iptv.recorder/service)')
     time.sleep(2)
     servicing = False
 
 if __name__ == '__main__':
+    #xbmc.log("SERVER MAIN",xbmc.LOGERROR)
     ADDON = xbmcaddon.Addon('plugin.video.iptv.recorder')
-    xbmc.executebuiltin('XBMC.RunPlugin(plugin://plugin.video.plugin.video.iptv.recorder/start)')
+    xbmc.executebuiltin('XBMC.RunPlugin(plugin://plugin.video.iptv.recorder/start)')
+    #xbmc.log("SERVER after start",xbmc.LOGERROR)
     try:
         if ADDON.getSetting('service') == 'true':
             monitor = xbmc.Monitor()
