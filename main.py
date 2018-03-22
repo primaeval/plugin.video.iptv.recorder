@@ -130,6 +130,30 @@ def jobs():
         })
     return items
 
+@plugin.route('/rules')
+def rules():
+    jobs = plugin.get_storage("channel_always_jobs")
+    jjobs = {x:json.loads(jobs[x]) for x in jobs}
+    #log(jjobs)
+    items = []
+    #TODO sort options
+    for j in sorted(jjobs, key=lambda x: (jjobs[x][1]),reverse=True):
+        #log((j,jobs[j]))
+        channelid,channelname,title = jjobs[j] #json.loads(jobs[j])
+        items.append({
+            'label': "%s - %s" % (channelname,title),
+            'path': plugin.url_for(delete_channel_always_job,job=j)
+        })
+    return items
+
+@plugin.route('/delete_channel_always_job/<job>')
+def delete_channel_always_job(job):
+    if not (xbmcgui.Dialog().yesno("IPTV Recorder","Cancel Recording Rule?")):
+        return
+    jobs = plugin.get_storage("channel_always_jobs")
+    del jobs[job]
+    xbmc.executebuiltin('Container.Refresh')
+
 @plugin.route('/delete_job/<job>')
 def delete_job(job,kill=True,ask=True):
     #log(("DELETE JOB",job))
@@ -298,12 +322,16 @@ def record_once(channelname,title,starttime,endtime):
 def record_daily(channelname,title,starttime,endtime):
     pass
 
-@plugin.route('/record_whenever/<channelname>/<title>')
-def record_always(channelname,title):
-    pass
+@plugin.route('/record_always/<channelid>/<channelname>/<title>')
+def record_always(channelid,channelname,title):
+    jobs = plugin.get_storage("channel_always_jobs")
+    job_description = json.dumps((channelid,channelname,title))
+    job = str(uuid.uuid1())
+    jobs[job] = job_description
+    service()
 
-@plugin.route('/broadcast/<channelname>/<title>/<starttime>/<endtime>')
-def broadcast(channelname,title,starttime,endtime):
+@plugin.route('/broadcast/<channelid>/<channelname>/<title>/<starttime>/<endtime>')
+def broadcast(channelid,channelname,title,starttime,endtime):
     #log((channelname,title,starttime,endtime))
     items = []
     #TODO format dates
@@ -311,16 +339,16 @@ def broadcast(channelname,title,starttime,endtime):
         'label': "Record Once - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime),
         'path': plugin.url_for(record_once,channelname=channelname,title=title,starttime=starttime,endtime=endtime)
     })
-
+    items.append({
+        'label': "Record Always - %s - %s" % (channelname,title),
+        'path': plugin.url_for(record_always,channelid=channelid,channelname=channelname,title=title)
+    })
     if False:
         items.append({
             'label': "Record Daily - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime),
             'path': plugin.url_for(record_daily,channelname=channelname,title=title,starttime=starttime,endtime=endtime)
         })
-        items.append({
-            'label': "Record Always - %s - %s" % (channelname,title),
-            'path': plugin.url_for(record_always,channelname=channelname,title=title)
-        })
+
         items.append({
             'label': "Watch Once - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime),
             'path': plugin.url_for(record_once,channelname=channelname,title=title,starttime=starttime,endtime=endtime)
@@ -361,7 +389,10 @@ def channel(channelname,channelid):
     content = r.content
     j = json.loads(content)
     #log(j)
-    broadcasts = j.get('result').get('broadcasts')
+    result = j.get('result')
+    if not result:
+        return
+    broadcasts = result.get('broadcasts')
     if not broadcasts:
         return
     items = []
@@ -390,7 +421,7 @@ def channel(channelname,channelid):
         context_items.append(("External Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_name,channelname=channelname.encode("utf8")))))
         items.append({
             'label': label,
-            'path': plugin.url_for(broadcast,channelname=channelname.encode("utf8"),title=title.encode("utf8"),starttime=starttime,endtime=endtime),
+            'path': plugin.url_for(broadcast,channelid=channelid,channelname=channelname.encode("utf8"),title=title.encode("utf8"),starttime=starttime,endtime=endtime),
             'thumbnail': thumbnail,
             'context_menu': context_items,
             'info_type': 'Video',
@@ -514,7 +545,26 @@ def m3u():
 
 @plugin.route('/service')
 def service():
-    pass
+    jobs = plugin.get_storage("channel_always_jobs")
+    for job in jobs:
+        channelid,channelname,job_title = json.loads(jobs[job])
+        rpc = '{"jsonrpc":"2.0","method":"PVR.GetBroadcasts","id":1,"params":{"channelid":%s,"properties":["title","plot","plotoutline","starttime","endtime","runtime","progress","progresspercentage","genre","episodename","episodenum","episodepart","firstaired","hastimer","isactive","parentalrating","wasactive","thumbnail","rating"]}}' % channelid
+        r = requests.get('http://localhost:8080/jsonrpc?request='+urllib.quote_plus(rpc))
+        content = r.content
+        j = json.loads(content)
+        #log(j)
+        broadcasts = j.get('result').get('broadcasts')
+        if not broadcasts:
+            continue
+        for b in broadcasts:
+            #log(b)
+            starttime = b.get('starttime')
+            endtime = b.get('endtime')
+            title = b.get('title')
+            if job_title == title:
+                record_once(channelname,title,starttime,endtime)
+
+
 
 @plugin.route('/start')
 def start():
@@ -612,6 +662,14 @@ def index():
     {
         'label': "Recording Jobs",
         'path': plugin.url_for('jobs'),
+        'thumbnail':get_icon_path('recordings'),
+        'context_menu': context_items,
+    })
+
+    items.append(
+    {
+        'label': "Recording Rules",
+        'path': plugin.url_for('rules'),
         'thumbnail':get_icon_path('recordings'),
         'context_menu': context_items,
     })
