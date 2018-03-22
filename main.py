@@ -518,6 +518,7 @@ def service():
 
 @plugin.route('/start')
 def start():
+    m3u()
     #log("START")
     #TODO delete old timers
     jobs = plugin.get_storage("jobs")
@@ -558,6 +559,8 @@ def delete_all_recordings():
 
 @plugin.route('/recordings')
 def recordings():
+    channel_thumbnails = plugin.get_storage("channel_thumbnails")
+
     dir = plugin.get_setting('recordings')
     dirs, files = xbmcvfs.listdir(dir)
     items = []
@@ -566,6 +569,8 @@ def recordings():
         if file.endswith('.ts'):
             path = os.path.join(xbmc.translatePath(dir),file)
             label = urllib.unquote_plus(file)[0:-3]
+            channelname = label.split(' - ',1)[0] #TODO meta info
+            thumbnail = channel_thumbnails.get(channelname)
             #TODO save some info from broadcast
             context_items = []
             context_items.append(("Delete Recording" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_recording,label=label,path=path))))
@@ -574,7 +579,7 @@ def recordings():
             items.append({
                 'label': label,
                 'path': path,
-                'thumbnail':get_icon_path('tv'),
+                'thumbnail': thumbnail or get_icon_path('tv'),
                 'is_playable': True,
                 'context_menu': context_items,
                 'info_type': 'Video',
