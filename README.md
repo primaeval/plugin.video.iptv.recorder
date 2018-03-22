@@ -3,7 +3,7 @@
 
 Kodi addon for recording streams from the IPTV Simple Client pvr plugin.
 
-Adding recording to the IPTV Simple Client is possible and has been done but it is too hard for most people to build for their devices.
+Adding recording from the IPTV Simple Client is possible and has been done but it is too hard for most people to build for their devices.
 
 This addon is an easily extensible python addon that should work with any device.
 
