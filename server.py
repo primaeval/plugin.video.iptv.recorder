@@ -20,6 +20,7 @@ def Service():
 if __name__ == '__main__':
     #xbmc.log("SERVER MAIN",xbmc.LOGERROR)
     ADDON = xbmcaddon.Addon('plugin.video.iptv.recorder')
+    time.sleep(30)
     xbmc.executebuiltin('XBMC.RunPlugin(plugin://plugin.video.iptv.recorder/start)')
     #xbmc.log("SERVER after start",xbmc.LOGERROR)
     try:
