@@ -13,5 +13,9 @@
     <setting id="external.player.args" label="External Player Arguments" type="text" default="-fs"  />
 
     <setting id="debug" label="Debugging Menu Items" type="bool" default="false"  />
+
+    <setting id="external.m3u" label="External m3u" type="enum" default="None" values="None|File|Url" />
+    <setting id="external.m3u.file" label="External m3u File" type="file" default=""/>
+    <setting id="external.m3u.url" label="External m3u Url" type="text" default=""/>
 </category>
 </settings>

@@ -88,6 +88,15 @@ def play_name(channelname):
         cmd.append(url)
         subprocess.Popen(cmd)
 
+@plugin.route('/play_external/<path>')
+def play_external(path):
+    cmd = [plugin.get_setting('external.player')]
+    args = plugin.get_setting('external.player.args')
+    if args:
+        cmd.append(args)
+    cmd.append(xbmc.translatePath(path))
+    subprocess.Popen(cmd)
+
 
 def utc2local (utc):
     epoch = time.mktime(utc.timetuple())
@@ -479,6 +488,10 @@ def groups():
 def m3u():
     m3uUrl = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uUrl')
     #log(m3uUrl)
+    if plugin.get_setting('external.m3u') == "1":
+        m3uUrl = plugin.get_setting('external.m3u.file')
+    elif plugin.get_setting('external.m3u') == "2":
+        m3uUrl = plugin.get_setting('external.m3u.url')
     m3uFile = 'special://profile/addon_data/plugin.video.iptv.recorder/channels.m3u'
     xbmcvfs.copy(m3uUrl,m3uFile)
     f = xbmcvfs.File(m3uFile)
@@ -516,6 +529,8 @@ def start():
         et = str2dt(endtime)
         now = datetime.now()
         if st > now and not (windows() and plugin.get_setting('task.scheduler') == "true"):
+            #log(("XXX",now,st,et,channelname,title,starttime,endtime))
+            delete_job(job,ask=False)
             record_once(channelname,title,starttime,endtime)
         if et < now:
             delete_job(job,ask=False)
@@ -530,7 +545,7 @@ def delete_recording(label,path):
 
 @plugin.route('/delete_all_recordings')
 def delete_all_recordings():
-    if not (xbmcgui.Dialog().yesno("IPTV Recorder","[COLOR red]Delete All Recording?[/COLOR]")):
+    if not (xbmcgui.Dialog().yesno("IPTV Recorder","[COLOR red]Delete All Recordings?[/COLOR]")):
         return
     dir = plugin.get_setting('recordings')
     dirs, files = xbmcvfs.listdir(dir)
@@ -555,6 +570,7 @@ def recordings():
             context_items = []
             context_items.append(("Delete Recording" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_recording,label=label,path=path))))
             context_items.append(("Delete All Recordings" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_all_recordings))))
+            context_items.append(("External Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_external,path=path))))
             items.append({
                 'label': label,
                 'path': path,
