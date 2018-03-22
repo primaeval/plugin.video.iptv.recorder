@@ -30,6 +30,6 @@ https://github.com/primaeval/repository.primaeval/raw/master/zips/repository.pri
 * cron jobs on Linux.
 * Repeat Timers.
 * Watch Timers.
-* More robust ffmpeg process handling. restarts.
+* More robust ffmpeg process handling.
 * More meta nfo.
 * Pull in xmltv and m3u directly.
