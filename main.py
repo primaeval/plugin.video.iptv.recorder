@@ -14,6 +14,7 @@ import os,os.path
 import stat
 import subprocess
 from datetime import datetime,timedelta
+#TODO strptime bug fix
 import uuid
 
 from struct import *
@@ -121,7 +122,7 @@ def jobs():
     return items
 
 @plugin.route('/delete_job/<job>')
-def delete_job(job):
+def delete_job(job,kill=True):
     #TODO stop ffmpeg task
 
     if not (xbmcgui.Dialog().yesno("IPTV Recorder","Cancel Record?")):
@@ -139,15 +140,15 @@ def delete_job(job):
     xbmcvfs.mkdirs(directory)
     pyjob = directory + job + ".py"
 
-    pid = xbmcvfs.File(pyjob+'.uuid').read()
-    if pid:
+    pid = xbmcvfs.File(pyjob+'.pid').read()
+    if pid and kill:
         if windows():
             subprocess.Popen(["taskkill","/im",pid],shell=True)
         else:
             subprocess.Popen(["kill","-9",pid])
 
     xbmcvfs.delete(pyjob)
-    xbmcvfs.delete(pyjob+'.uuid')
+    xbmcvfs.delete(pyjob+'.pid')
     del jobs[job]
     xbmc.executebuiltin('Container.Refresh')
 
@@ -171,16 +172,20 @@ def ffmpeg_location():
     else:
         ffmpeg = ffmpeg_src
 
-    try:
-        st = os.stat(ffmpeg)
-        if not (st.st_mode | stat.S_IEXEC):
-            try:
-                os.chmod(ffmpeg, st.st_mode | stat.S_IEXEC)
-            except:
-                pass
-    except:
-        pass
-    return ffmpeg
+    if ffmpeg:
+        try:
+            st = os.stat(ffmpeg)
+            if not (st.st_mode | stat.S_IEXEC):
+                try:
+                    os.chmod(ffmpeg, st.st_mode | stat.S_IEXEC)
+                except:
+                    pass
+        except:
+            pass
+    if xbmcvfs.exists(ffmpeg):
+        return ffmpeg
+    else:
+        xbmcgui.Dialog().notification("IPTV Recorder","ffmpeg exe not found!")
 
 
 
@@ -220,6 +225,8 @@ def record_once(channelname,title,starttime,endtime):
     filename = urllib.quote_plus(label.encode("utf8"))+'.ts'
     path = os.path.join(xbmc.translatePath(plugin.get_setting('recordings')),filename)
     ffmpeg = ffmpeg_location()
+    if not ffmpeg:
+        return
     #ffmpeg = "notepad"
     cmd = [ffmpeg,"-y","-i",url,"-t",str(seconds),"-c","copy",path]
     #log(cmd)
@@ -230,11 +237,14 @@ def record_once(channelname,title,starttime,endtime):
     pyjob = directory + job + ".py"
 
     f = xbmcvfs.File(pyjob,'wb')
-    f.write("import subprocess\n")
+    f.write("import os,subprocess\n")
     f.write("cmd = %s\n" % repr(cmd))
     f.write("p = subprocess.Popen(cmd,shell=%s)\n" % windows())
-    f.write("f = open(r'%s','w+')\n" % xbmc.translatePath(pyjob+'.uuid'))
-    f.write("f.write(repr(p.pid))")
+    f.write("f = open(r'%s','w+')\n" % xbmc.translatePath(pyjob+'.pid'))
+    f.write("f.write(repr(p.pid))\n")
+    f.write("f.close()\n")
+    #f.write("p.wait()\n")
+    #f.write("os.unlink(%s)\n" % xbmc.translatePath(pyjob+'.pid'))
     f.close()
 
     if windows() and plugin.get_setting('task.scheduler') == 'true':
@@ -450,14 +460,23 @@ def m3u():
 
 @plugin.route('/service')
 def service():
-    #log("SERVICE")
     pass
+
+@plugin.route('/start')
+def start():
     #TODO delete old timers
     jobs = plugin.get_storage("jobs")
     jobs_copy = dict(jobs)
     for job in jobs_copy:
         channelname,title,starttime,endtime = json.loads(jobs_copy[job])
-        record_once(channelname,title,starttime,endtime)
+        #delete_job(job,kill=False) #TODO more logic
+        st = str2dt(starttime)
+        et = str2dt(endtime)
+        now = datetime.now()
+        if st > now and not (windows() and plugin.get_setting('task.scheduler') == "true"):
+            record_once(channelname,title,starttime,endtime)
+        if et < now:
+            delete_job(job)
 
 
 @plugin.route('/delete_recording/<label>/<path>')
@@ -465,6 +484,19 @@ def delete_recording(label,path):
     if not (xbmcgui.Dialog().yesno("IPTV Recorder","[COLOR red]Delete Recording?[/COLOR]",label)):
         return
     xbmcvfs.delete(path)
+    xbmc.executebuiltin('Container.Refresh')
+
+@plugin.route('/delete_all_recordings')
+def delete_all_recordings():
+    if not (xbmcgui.Dialog().yesno("IPTV Recorder","[COLOR red]Delete All Recording?[/COLOR]")):
+        return
+    dir = plugin.get_setting('recordings')
+    dirs, files = xbmcvfs.listdir(dir)
+    items = []
+    for file in sorted(files):
+        if file.endswith('.ts'):
+            path = os.path.join(xbmc.translatePath(dir),file)
+            xbmcvfs.delete(path)
     xbmc.executebuiltin('Container.Refresh')
 
 @plugin.route('/recordings')
@@ -480,6 +512,7 @@ def recordings():
             #TODO save some info from broadcast
             context_items = []
             context_items.append(("Delete Recording" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_recording,label=label,path=path))))
+            context_items.append(("Delete All Recordings" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_all_recordings))))
             items.append({
                 'label': label,
                 'path': path,
@@ -528,21 +561,30 @@ def index():
         'context_menu': context_items,
     })
 
-    items.append(
-    {
-        'label': "(Re)Load Channel m3u",
-        'path': plugin.url_for('m3u'),
-        'thumbnail':get_icon_path('settings'),
-        'context_menu': context_items,
-    })
+    if plugin.get_setting('debug') == "true":
+        items.append(
+        {
+            'label': "(Re)Load Channel m3u",
+            'path': plugin.url_for('m3u'),
+            'thumbnail':get_icon_path('settings'),
+            'context_menu': context_items,
+        })
 
-    items.append(
-    {
-        'label': "Service",
-        'path': plugin.url_for('service'),
-        'thumbnail':get_icon_path('settings'),
-        'context_menu': context_items,
-    })
+        items.append(
+        {
+            'label': "Service",
+            'path': plugin.url_for('service'),
+            'thumbnail':get_icon_path('settings'),
+            'context_menu': context_items,
+        })
+
+        items.append(
+        {
+            'label': "Start",
+            'path': plugin.url_for('start'),
+            'thumbnail':get_icon_path('settings'),
+            'context_menu': context_items,
+        })
 
     return items
 

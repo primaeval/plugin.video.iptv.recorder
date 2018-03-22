@@ -18,7 +18,7 @@ def Service():
 
 if __name__ == '__main__':
     ADDON = xbmcaddon.Addon('plugin.video.iptv.recorder')
-
+    xbmc.executebuiltin('XBMC.RunPlugin(plugin://plugin.video.plugin.video.iptv.recorder/start)')
     try:
         if ADDON.getSetting('service') == 'true':
             monitor = xbmc.Monitor()

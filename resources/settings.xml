@@ -8,8 +8,10 @@
     <setting id="recordings" label="Recordings Folder" type="folder" default="special://temp"/>
     <setting id="ffmpeg" label="ffmpeg exe" type="file" default="ffmpeg"/>
     <setting id="python" label="python(w) exe" type="file" default="python"  />
-    
+
     <setting id="external.player" label="External Player" type="file" default="ffplay"  />
-    <setting id="external.player.args" label="External Player Arguments" type="text" default="-fs"  />    
+    <setting id="external.player.args" label="External Player Arguments" type="text" default="-fs"  />
+
+    <setting id="debug" label="Debugging Menu Items" type="bool" default="false"  />
 </category>
 </settings>
