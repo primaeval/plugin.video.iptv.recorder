@@ -229,6 +229,7 @@ def record_once(channelname,title,starttime,endtime):
         return
     #ffmpeg = "notepad"
     cmd = [ffmpeg,"-y","-i",url,"-t",str(seconds),"-c","copy",path]
+    probe_cmd = [ffmpeg,"-i",url]
     #log(cmd)
 
     directory = "special://profile/addon_data/plugin.video.iptv.recorder/jobs/"
@@ -238,6 +239,8 @@ def record_once(channelname,title,starttime,endtime):
 
     f = xbmcvfs.File(pyjob,'wb')
     f.write("import os,subprocess\n")
+    f.write("probe_cmd = %s\n" % repr(probe_cmd))
+    f.write("subprocess.call(probe_cmd,shell=%s)\n" % windows())
     f.write("cmd = %s\n" % repr(cmd))
     f.write("p = subprocess.Popen(cmd,shell=%s)\n" % windows())
     f.write("f = open(r'%s','w+')\n" % xbmc.translatePath(pyjob+'.pid'))
