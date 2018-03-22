@@ -123,7 +123,7 @@ def jobs():
 
 @plugin.route('/delete_job/<job>')
 def delete_job(job,kill=True,ask=True):
-    log(("DELETE JOB",job))
+    #log(("DELETE JOB",job))
     #TODO stop ffmpeg task
 
     if ask and not (xbmcgui.Dialog().yesno("IPTV Recorder","Cancel Record?")):
