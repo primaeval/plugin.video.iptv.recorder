@@ -544,6 +544,7 @@ def favourite_channels():
     for channelname in favourite_channels:
         channelid,thumbnail = json.loads(favourite_channels.get(channelname))
         context_items = []
+        context_items.append(("Add Title Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search,channelid=channelid,channelname=channelname.encode("utf8")))))
         context_items.append(("PVR Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play,channelid=channelid))))
         context_items.append(("External Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_name,channelname=channelname.encode("utf8")))))
         if channelname not in favourite_channels:
