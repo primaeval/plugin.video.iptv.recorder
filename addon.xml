@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <addon id="plugin.video.iptv.recorder"
-version="0.0.1"
+version="0.0.2"
 name="IPTV Recorder"
 provider-name="primaeval">
 <requires>
@@ -13,8 +13,12 @@ provider-name="primaeval">
 </extension>
 <extension point="xbmc.service" library="server.py" start="login"/>
 <extension point="xbmc.addon.metadata">
-  <summary lang="en"></summary>
-  <description lang="en"></description>
+  <summary lang="en">Record from IPTV Simple Client with ffmpeg.</summary>
+  <description lang="en">
+Set your recording path and ffmpeg location.
+On Android ffmpeg will be copied to /data/data to be runnable.
+Complex stream handling might need an extra script instead of ffmpeg.
+ffmpeg simply copies the stream into a transport stream container.</description>
   <disclaimer lang="en"></disclaimer>
 </extension>
 </addon>
