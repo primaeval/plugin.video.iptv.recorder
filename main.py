@@ -131,6 +131,7 @@ def jobs():
             'label': "%s - %s[CR][COLOR grey]%s %s - %s[/COLOR]" % (channelname,title,day(str2dt(starttime)),starttime,endtime),
             'path': plugin.url_for(delete_job,job=j),
             'context_menu': context_items,
+            'thumbnail':get_icon_path('recordings'),
         })
     return items
 
@@ -147,7 +148,8 @@ def rules():
         channelid,channelname,title = jjobs[j] #json.loads(jobs[j])
         items.append({
             'label': "%s - %s" % (channelname,title),
-            'path': plugin.url_for(delete_channel_always_job,job=j)
+            'path': plugin.url_for(delete_channel_always_job,job=j),
+            'thumbnail':get_icon_path('recordings'),
         })
 
     jobs = plugin.get_storage("channel_daily_jobs")
@@ -159,7 +161,8 @@ def rules():
         channelid,channelname,title,starttime,endtime = jjobs[j] #json.loads(jobs[j])
         items.append({
             'label': "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,str2dt(starttime).time(),str2dt(endtime).time()),
-            'path': plugin.url_for(delete_channel_daily_job,job=j)
+            'path': plugin.url_for(delete_channel_daily_job,job=j),
+            'thumbnail':get_icon_path('recordings'),
         })
 
     return items
@@ -387,15 +390,18 @@ def broadcast(channelid,channelname,title,starttime,endtime):
     #TODO format dates
     items.append({
         'label': "Record Once - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime),
-        'path': plugin.url_for(record_once,channelname=channelname,title=title,starttime=starttime,endtime=endtime)
+        'path': plugin.url_for(record_once,channelname=channelname,title=title,starttime=starttime,endtime=endtime),
+        'thumbnail':get_icon_path('recordings'),
     })
     items.append({
         'label': "Record Always - %s - %s" % (channelname,title),
-        'path': plugin.url_for(record_always,channelid=channelid,channelname=channelname,title=title)
+        'path': plugin.url_for(record_always,channelid=channelid,channelname=channelname,title=title),
+        'thumbnail':get_icon_path('recordings'),
     })
     items.append({
         'label': "Record Daily - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,str2dt(starttime).time(),str2dt(endtime).time()),
-        'path': plugin.url_for(record_daily,channelid=channelid,channelname=channelname,title=title,starttime=starttime,endtime=endtime)
+        'path': plugin.url_for(record_daily,channelid=channelid,channelname=channelname,title=title,starttime=starttime,endtime=endtime),
+        'thumbnail':get_icon_path('recordings'),
     })
     if False:
         items.append({
