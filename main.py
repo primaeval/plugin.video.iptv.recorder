@@ -170,7 +170,7 @@ def delete_channel_always_job(job):
         return
     jobs = plugin.get_storage("channel_always_jobs")
     del jobs[job]
-    xbmc.executebuiltin('Container.Refresh')
+    refresh()
 
 @plugin.route('/delete_channel_daily_job/<job>')
 def delete_channel_daily_job(job):
@@ -178,7 +178,7 @@ def delete_channel_daily_job(job):
         return
     jobs = plugin.get_storage("channel_daily_jobs")
     del jobs[job]
-    xbmc.executebuiltin('Container.Refresh')
+    refresh()
 
 @plugin.route('/delete_all_jobs')
 def delete_all_jobs(ask=True):
@@ -186,7 +186,7 @@ def delete_all_jobs(ask=True):
         return
     jobs = plugin.get_storage("jobs")
     jobs.clear()
-    xbmc.executebuiltin('Container.Refresh')
+    refresh()
 
 @plugin.route('/delete_job/<job>')
 def delete_job(job,kill=True,ask=True):
@@ -221,7 +221,7 @@ def delete_job(job,kill=True,ask=True):
     xbmcvfs.delete(pyjob+'.pid')
     del jobs[job]
     if sys.argv[1] != '-1':
-        xbmc.executebuiltin('Container.Refresh')
+        refresh()
 
 def windows():
     if os.name == 'nt':
@@ -355,10 +355,13 @@ def record_once(channelname,title,starttime,endtime):
             #log(cmd)
             xbmc.executebuiltin(cmd)
 
-
     jobs[job] = job_description
+    refresh()
 
-    if sys.argv[1] != '-1':
+def refresh():
+    containerAddonName = xbmc.getInfoLabel('Container.PluginName')
+    AddonName = xbmcaddon.Addon().getAddonInfo('id')
+    if containerAddonName == AddonName:
         xbmc.executebuiltin('Container.Refresh')
 
 @plugin.route('/record_once/<channelid>/<channelname>/<title>/<starttime>/<endtime>')
@@ -479,13 +482,13 @@ def channel(channelname,channelid):
 def remove_favourite_channel(channelname):
     favourite_channels = plugin.get_storage("favourite_channels")
     del favourite_channels[channelname]
-    xbmc.executebuiltin('Container.Refresh')
+    refresh()
 
 @plugin.route('/add_favourite_channel/<channelname>/<channelid>/<thumbnail>')
 def add_favourite_channel(channelname,channelid,thumbnail):
     favourite_channels = plugin.get_storage("favourite_channels")
     favourite_channels[channelname] = json.dumps((channelid,thumbnail))
-    xbmc.executebuiltin('Container.Refresh')
+    refresh()
 
 @plugin.route('/favourite_channels')
 def favourite_channels():
@@ -591,6 +594,7 @@ def m3u():
 
 @plugin.route('/service')
 def service():
+    m3u()
     cache = {}
     jobs = plugin.get_storage("channel_always_jobs")
     for job in jobs:
@@ -670,7 +674,7 @@ def delete_recording(label,path):
     if not (xbmcgui.Dialog().yesno("IPTV Recorder","[COLOR red]Delete Recording?[/COLOR]",label)):
         return
     xbmcvfs.delete(path)
-    xbmc.executebuiltin('Container.Refresh')
+    refresh()
 
 @plugin.route('/delete_all_recordings')
 def delete_all_recordings():
@@ -683,7 +687,7 @@ def delete_all_recordings():
         if file.endswith('.ts'):
             path = os.path.join(xbmc.translatePath(dir),file)
             xbmcvfs.delete(path)
-    xbmc.executebuiltin('Container.Refresh')
+    refresh()
 
 @plugin.route('/recordings')
 def recordings():
