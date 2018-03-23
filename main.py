@@ -152,6 +152,19 @@ def rules():
             'thumbnail':get_icon_path('recordings'),
         })
 
+    jobs = plugin.get_storage("channel_always_search_jobs")
+    jjobs = {x:json.loads(jobs[x]) for x in jobs}
+    #log(jjobs)
+    #TODO sort options
+    for j in sorted(jjobs, key=lambda x: (jjobs[x][1]),reverse=True):
+        #log((j,jobs[j]))
+        channelid,channelname,title = jjobs[j] #json.loads(jobs[j])
+        items.append({
+            'label': "%s - %s" % (channelname,title),
+            'path': plugin.url_for(delete_channel_always_job,job=j),
+            'thumbnail':get_icon_path('recordings'),
+        })
+
     jobs = plugin.get_storage("channel_daily_jobs")
     jjobs = {x:json.loads(jobs[x]) for x in jobs}
     #log(jjobs)
@@ -383,6 +396,17 @@ def record_always(channelid,channelname,title):
     jobs[job] = job_description
     service()
 
+@plugin.route('/record_always_search/<channelid>/<channelname>')
+def record_always_search(channelid,channelname):
+    title = xbmcgui.Dialog().input("IPTV Recorder: Title Search regex?")
+    if not title:
+        return
+    jobs = plugin.get_storage("channel_always_search_jobs")
+    job_description = json.dumps((channelid,channelname,title))
+    job = str(uuid.uuid1())
+    jobs[job] = job_description
+    service()
+
 @plugin.route('/broadcast/<channelid>/<channelname>/<title>/<starttime>/<endtime>')
 def broadcast(channelid,channelname,title,starttime,endtime):
     #log((channelname,title,starttime,endtime))
@@ -538,6 +562,7 @@ def group(channelgroupid):
         channel_thumbnails[channelname] = thumbnail
         #log((name,cid))
         context_items = []
+        context_items.append(("Add Title Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search,channelid=channelid,channelname=channelname.encode("utf8")))))
         context_items.append(("PVR Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play,channelid=channelid))))
         context_items.append(("External Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_name,channelname=channelname.encode("utf8")))))
         if label not in favourite_channels:
@@ -598,6 +623,10 @@ def m3u():
         channel_urls[name] = url
     #channel_urls.sync()
 
+@plugin.route('/service_start')
+def service_start():
+    threading.Thread(target=service).start()
+
 @plugin.route('/service')
 def service():
     m3u()
@@ -620,6 +649,29 @@ def service():
             endtime = b.get('endtime')
             title = b.get('title')
             if job_title == title:
+                record_once(channelname,title,starttime,endtime)
+
+    jobs = plugin.get_storage("channel_always_search_jobs")
+    for job in jobs:
+        channelid,channelname,job_title = json.loads(jobs[job])
+        if channelid in cache:
+            broadcasts = cache[channelid]
+        else:
+            rpc = '{"jsonrpc":"2.0","method":"PVR.GetBroadcasts","id":1,"params":{"channelid":%s,"properties":["title","plot","plotoutline","starttime","endtime","runtime","progress","progresspercentage","genre","episodename","episodenum","episodepart","firstaired","hastimer","isactive","parentalrating","wasactive","thumbnail","rating"]}}' % channelid
+            r = requests.get('http://localhost:8080/jsonrpc?request='+urllib.quote_plus(rpc))
+            content = r.content
+            j = json.loads(content)
+            #log(j)
+            broadcasts = j.get('result').get('broadcasts')
+            if not broadcasts:
+                continue
+        for b in broadcasts:
+            #log(b)
+            starttime = b.get('starttime')
+            endtime = b.get('endtime')
+            title = b.get('title')
+            #log((title,job_title,re.search(title,job_title,flags=re.I)))
+            if re.search(job_title,title,flags=re.I):
                 record_once(channelname,title,starttime,endtime)
 
     jobs = plugin.get_storage("channel_daily_jobs")
@@ -753,6 +805,7 @@ def index():
         'thumbnail':get_icon_path('recordings'),
         'context_menu': context_items,
     })
+
 
     items.append(
     {
