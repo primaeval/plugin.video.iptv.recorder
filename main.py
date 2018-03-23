@@ -196,6 +196,8 @@ def delete_job(job,kill=True,ask=True):
     if ask and not (xbmcgui.Dialog().yesno("IPTV Recorder","Cancel Record?")):
         return
     jobs = plugin.get_storage("jobs")
+    if job not in jobs:
+        return
 
     if windows() and plugin.get_setting('task.scheduler') == 'true':
         cmd = ["schtasks","/delete","/f","/tn",job]
@@ -218,7 +220,8 @@ def delete_job(job,kill=True,ask=True):
     xbmcvfs.delete(pyjob)
     xbmcvfs.delete(pyjob+'.pid')
     del jobs[job]
-    xbmc.executebuiltin('Container.Refresh')
+    if sys.argv[1] != '-1':
+        xbmc.executebuiltin('Container.Refresh')
 
 def windows():
     if os.name == 'nt':
@@ -271,6 +274,11 @@ def record_once(channelname,title,starttime,endtime):
     local_starttime = str2dt(starttime)
     local_endtime = str2dt(endtime)
     label = "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,local_starttime,local_endtime)
+
+    jobs = plugin.get_storage("jobs")
+    job_description = json.dumps((channelname,title,starttime,endtime))
+    if job_description in jobs.values():
+        return
 
     before = int(plugin.get_setting('minutes.before') or "0")
     after = int(plugin.get_setting('minutes.after') or "0")
@@ -347,10 +355,11 @@ def record_once(channelname,title,starttime,endtime):
             #log(cmd)
             xbmc.executebuiltin(cmd)
 
-    jobs = plugin.get_storage("jobs")
-    job_description = json.dumps((channelname,title,starttime,endtime))
+
     jobs[job] = job_description
-    xbmc.executebuiltin('Container.Refresh')
+
+    if sys.argv[1] != '-1':
+        xbmc.executebuiltin('Container.Refresh')
 
 @plugin.route('/record_once/<channelid>/<channelname>/<title>/<starttime>/<endtime>')
 def record_daily(channelid,channelname,title,starttime,endtime):
@@ -630,9 +639,9 @@ def service():
             #TODO add margin of time and fuzzy title match
             title = re.sub('\[.*?\]','',title).strip()
             job_title = re.sub('\[.*?\]','',job_title).strip()
-            log((title,job_title,st,jst,et,jet))
+            #log((title,job_title,st,jst,et,jet))
             if title == job_title and st == jst and et == jet:
-                log("RECORD ONCE")
+                #log("RECORD ONCE")
                 record_once(channelname,title,starttime,endtime)
 
 @plugin.route('/start')
