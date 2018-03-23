@@ -328,9 +328,14 @@ def record_once(channelname,title,starttime,endtime):
         xbmcgui.Dialog().notification("IPTV Recorder","No m3u Channels found!")
 
     url = channel_urls.get(channelname)
-    url,sheaders = url.split('|',1)
+    if not url:
+        xbmc.log("No url for %s" % channelname,xbmc.LOGERROR)
+        return
+    url_headers = url.split('|',1)
+    url = url_headers[0]
     headers = {}
-    if sheaders:
+    if len(url_headers) == 2:
+        sheaders = url_headers[1]
         aheaders = sheaders.split('&')
         if aheaders:
             for h in aheaders:
