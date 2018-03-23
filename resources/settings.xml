@@ -17,7 +17,7 @@
 
 <category label="Windows">
     <setting id="task.scheduler" label="Use Task Scheduler on Windows" type="bool" default="false"  />
-    <setting id="python" label="python(w) exe" type="file" default="python"  />
+    <setting id="python" label="python(w) exe" type="file" default="pythonw.exe"  />
 </category>
 
 <category label="External Data">
