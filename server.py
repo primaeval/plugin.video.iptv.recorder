@@ -18,9 +18,11 @@ def Service():
     servicing = False
 
 if __name__ == '__main__':
+    #TODO enable Web Server
+    #xbmc.startServer(xbmc.SERVER_WEBSERVER, False)
     #xbmc.log("SERVER MAIN",xbmc.LOGERROR)
     ADDON = xbmcaddon.Addon('plugin.video.iptv.recorder')
-    time.sleep(30)
+    time.sleep(60) #TODO wait for xmltv data to be loaded
     xbmc.executebuiltin('XBMC.RunPlugin(plugin://plugin.video.iptv.recorder/start)')
     #xbmc.log("SERVER after start",xbmc.LOGERROR)
     try:
@@ -64,4 +66,3 @@ if __name__ == '__main__':
     except:
         pass
 
-        

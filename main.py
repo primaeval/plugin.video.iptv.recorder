@@ -124,18 +124,23 @@ def jobs():
     for j in sorted(jjobs, key=lambda x: (jjobs[x][2]),reverse=True):
         #log((j,jobs[j]))
         channelname,title,starttime,endtime = jjobs[j] #json.loads(jobs[j])
+        context_items = []
+        context_items.append(("Delete Job" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job,job=j))))
+        context_items.append(("Delete All Jobs" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_all_jobs))))
         items.append({
             'label': "%s - %s[CR][COLOR grey]%s %s - %s[/COLOR]" % (channelname,title,day(str2dt(starttime)),starttime,endtime),
-            'path': plugin.url_for(delete_job,job=j)
+            'path': plugin.url_for(delete_job,job=j),
+            'context_menu': context_items,
         })
     return items
 
 @plugin.route('/rules')
 def rules():
+    items = []
+
     jobs = plugin.get_storage("channel_always_jobs")
     jjobs = {x:json.loads(jobs[x]) for x in jobs}
     #log(jjobs)
-    items = []
     #TODO sort options
     for j in sorted(jjobs, key=lambda x: (jjobs[x][1]),reverse=True):
         #log((j,jobs[j]))
@@ -144,6 +149,19 @@ def rules():
             'label': "%s - %s" % (channelname,title),
             'path': plugin.url_for(delete_channel_always_job,job=j)
         })
+
+    jobs = plugin.get_storage("channel_daily_jobs")
+    jjobs = {x:json.loads(jobs[x]) for x in jobs}
+    #log(jjobs)
+    #TODO sort options
+    for j in sorted(jjobs, key=lambda x: (jjobs[x][1]),reverse=True):
+        #log((j,jobs[j]))
+        channelid,channelname,title,starttime,endtime = jjobs[j] #json.loads(jobs[j])
+        items.append({
+            'label': "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,str2dt(starttime).time(),str2dt(endtime).time()),
+            'path': plugin.url_for(delete_channel_daily_job,job=j)
+        })
+
     return items
 
 @plugin.route('/delete_channel_always_job/<job>')
@@ -152,6 +170,22 @@ def delete_channel_always_job(job):
         return
     jobs = plugin.get_storage("channel_always_jobs")
     del jobs[job]
+    xbmc.executebuiltin('Container.Refresh')
+
+@plugin.route('/delete_channel_daily_job/<job>')
+def delete_channel_daily_job(job):
+    if not (xbmcgui.Dialog().yesno("IPTV Recorder","Cancel Recording Rule?")):
+        return
+    jobs = plugin.get_storage("channel_daily_jobs")
+    del jobs[job]
+    xbmc.executebuiltin('Container.Refresh')
+
+@plugin.route('/delete_all_jobs')
+def delete_all_jobs(ask=True):
+    if ask and not (xbmcgui.Dialog().yesno("IPTV Recorder","Delete All Jobs?")):
+        return
+    jobs = plugin.get_storage("jobs")
+    jobs.clear()
     xbmc.executebuiltin('Container.Refresh')
 
 @plugin.route('/delete_job/<job>')
@@ -274,7 +308,7 @@ def record_once(channelname,title,starttime,endtime):
     f = xbmcvfs.File(pyjob,'wb')
     f.write("import os,subprocess\n")
     f.write("probe_cmd = %s\n" % repr(probe_cmd))
-    f.write("subprocess.call(probe_cmd,shell=%s)\n" % windows())
+    f.write("subprocess.call(probe_cmd,shell=%s)\n" % windows()) #TODO maybe optional
     f.write("cmd = %s\n" % repr(cmd))
     f.write("p = subprocess.Popen(cmd,shell=%s)\n" % windows())
     f.write("f = open(r'%s','w+')\n" % xbmc.translatePath(pyjob+'.pid'))
@@ -318,9 +352,13 @@ def record_once(channelname,title,starttime,endtime):
     jobs[job] = job_description
     xbmc.executebuiltin('Container.Refresh')
 
-@plugin.route('/record_once/<channelname>/<title>/<starttime>/<endtime>')
-def record_daily(channelname,title,starttime,endtime):
-    pass
+@plugin.route('/record_once/<channelid>/<channelname>/<title>/<starttime>/<endtime>')
+def record_daily(channelid,channelname,title,starttime,endtime):
+    jobs = plugin.get_storage("channel_daily_jobs")
+    job_description = json.dumps((channelid,channelname,title,starttime,endtime))
+    job = str(uuid.uuid1())
+    jobs[job] = job_description
+    service()
 
 @plugin.route('/record_always/<channelid>/<channelname>/<title>')
 def record_always(channelid,channelname,title):
@@ -343,12 +381,11 @@ def broadcast(channelid,channelname,title,starttime,endtime):
         'label': "Record Always - %s - %s" % (channelname,title),
         'path': plugin.url_for(record_always,channelid=channelid,channelname=channelname,title=title)
     })
+    items.append({
+        'label': "Record Daily - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,str2dt(starttime).time(),str2dt(endtime).time()),
+        'path': plugin.url_for(record_daily,channelid=channelid,channelname=channelname,title=title,starttime=starttime,endtime=endtime)
+    })
     if False:
-        items.append({
-            'label': "Record Daily - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime),
-            'path': plugin.url_for(record_daily,channelname=channelname,title=title,starttime=starttime,endtime=endtime)
-        })
-
         items.append({
             'label': "Watch Once - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime),
             'path': plugin.url_for(record_once,channelname=channelname,title=title,starttime=starttime,endtime=endtime)
@@ -545,6 +582,7 @@ def m3u():
 
 @plugin.route('/service')
 def service():
+    cache = {}
     jobs = plugin.get_storage("channel_always_jobs")
     for job in jobs:
         channelid,channelname,job_title = json.loads(jobs[job])
@@ -556,6 +594,7 @@ def service():
         broadcasts = j.get('result').get('broadcasts')
         if not broadcasts:
             continue
+        cache[channelid] = broadcasts
         for b in broadcasts:
             #log(b)
             starttime = b.get('starttime')
@@ -564,7 +603,37 @@ def service():
             if job_title == title:
                 record_once(channelname,title,starttime,endtime)
 
-
+    jobs = plugin.get_storage("channel_daily_jobs")
+    for job in jobs:
+        channelid,channelname,job_title,job_starttime,job_endtime = json.loads(jobs[job])
+        if channelid in cache:
+            broadcasts = cache[channelid]
+        else:
+            rpc = '{"jsonrpc":"2.0","method":"PVR.GetBroadcasts","id":1,"params":{"channelid":%s,"properties":["title","plot","plotoutline","starttime","endtime","runtime","progress","progresspercentage","genre","episodename","episodenum","episodepart","firstaired","hastimer","isactive","parentalrating","wasactive","thumbnail","rating"]}}' % channelid
+            r = requests.get('http://localhost:8080/jsonrpc?request='+urllib.quote_plus(rpc))
+            content = r.content
+            j = json.loads(content)
+            #log(j)
+            broadcasts = j.get('result').get('broadcasts')
+            if not broadcasts:
+                continue
+        for b in broadcasts:
+            #log(b)
+            starttime = b.get('starttime')
+            endtime = b.get('endtime')
+            title = b.get('title')
+            st = str2dt(starttime).time()
+            jst = str2dt(job_starttime).time()
+            et = str2dt(endtime).time()
+            jet = str2dt(job_endtime).time()
+            #log((st,jst,et,jet))
+            #TODO add margin of time and fuzzy title match
+            title = re.sub('\[.*?\]','',title).strip()
+            job_title = re.sub('\[.*?\]','',job_title).strip()
+            log((title,job_title,st,jst,et,jet))
+            if title == job_title and st == jst and et == jet:
+                log("RECORD ONCE")
+                record_once(channelname,title,starttime,endtime)
 
 @plugin.route('/start')
 def start():
