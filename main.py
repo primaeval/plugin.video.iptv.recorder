@@ -146,10 +146,13 @@ def rules():
     for j in sorted(jjobs, key=lambda x: (jjobs[x][1]),reverse=True):
         #log((j,jobs[j]))
         channelid,channelname,title = jjobs[j] #json.loads(jobs[j])
+        context_items = []
+        context_items.append(("Delete Job" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_channel_always_job,job=j))))
         items.append({
             'label': "%s - %s" % (channelname,title),
             'path': plugin.url_for(delete_channel_always_job,job=j),
             'thumbnail':get_icon_path('recordings'),
+            'context_menu': context_items,
         })
 
     jobs = plugin.get_storage("channel_always_search_jobs")
@@ -159,10 +162,13 @@ def rules():
     for j in sorted(jjobs, key=lambda x: (jjobs[x][1]),reverse=True):
         #log((j,jobs[j]))
         channelid,channelname,title = jjobs[j] #json.loads(jobs[j])
+        context_items = []
+        context_items.append(("Delete Job" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_channel_always_search_job,job=j))))
         items.append({
             'label': "%s - %s" % (channelname,title),
-            'path': plugin.url_for(delete_channel_always_job,job=j),
+            'path': plugin.url_for(delete_channel_always_search_job,job=j),
             'thumbnail':get_icon_path('recordings'),
+            'context_menu': context_items,
         })
 
     jobs = plugin.get_storage("channel_daily_jobs")
@@ -172,13 +178,24 @@ def rules():
     for j in sorted(jjobs, key=lambda x: (jjobs[x][1]),reverse=True):
         #log((j,jobs[j]))
         channelid,channelname,title,starttime,endtime = jjobs[j] #json.loads(jobs[j])
+        context_items = []
+        context_items.append(("Delete Job" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_channel_daily_job,job=j))))
         items.append({
             'label': "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,str2dt(starttime).time(),str2dt(endtime).time()),
             'path': plugin.url_for(delete_channel_daily_job,job=j),
             'thumbnail':get_icon_path('recordings'),
+            'context_menu': context_items,
         })
 
     return items
+
+@plugin.route('/delete_channel_always_search_job/<job>')
+def delete_channel_always_search_job(job):
+    if not (xbmcgui.Dialog().yesno("IPTV Recorder","Cancel Recording Rule?")):
+        return
+    jobs = plugin.get_storage("channel_always_search_jobs")
+    del jobs[job]
+    refresh()
 
 @plugin.route('/delete_channel_always_job/<job>')
 def delete_channel_always_job(job):
