@@ -326,7 +326,16 @@ def record_once(channelname,title,starttime,endtime):
         m3u()
     if not len(channel_urls.keys()):
         xbmcgui.Dialog().notification("IPTV Recorder","No m3u Channels found!")
+
     url = channel_urls.get(channelname)
+    url,sheaders = url.split('|',1)
+    headers = {}
+    if sheaders:
+        aheaders = sheaders.split('&')
+        if aheaders:
+            for h in aheaders:
+                k,v = h.split('=',1)
+                headers[k] = v
 
     local_starttime = str2dt(starttime)
     local_endtime = str2dt(endtime)
@@ -361,8 +370,15 @@ def record_once(channelname,title,starttime,endtime):
     if not ffmpeg:
         return
     #ffmpeg = "notepad"
-    cmd = [ffmpeg,"-y","-i",url,"-t",str(seconds),"-c","copy",path]
-    probe_cmd = [ffmpeg,"-i",url]
+    cmd = [ffmpeg]
+    for h in headers:
+        cmd.append("-headers")
+        cmd.append("%s:%s" % (h,headers[h]))
+    cmd.append("-i")
+    cmd.append(url)
+    probe_cmd = cmd
+    cmd = probe_cmd + ["-y","-t",str(seconds),"-c","copy",path]
+    #probe_cmd = [ffmpeg,"-i",url]
     #log(cmd)
 
     directory = "special://profile/addon_data/plugin.video.iptv.recorder/jobs/"
