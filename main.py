@@ -171,6 +171,22 @@ def rules():
             'context_menu': context_items,
         })
 
+    jobs = plugin.get_storage("channel_always_search_plot_jobs")
+    jjobs = {x:json.loads(jobs[x]) for x in jobs}
+    #log(jjobs)
+    #TODO sort options
+    for j in sorted(jjobs, key=lambda x: (jjobs[x][1]),reverse=True):
+        #log((j,jobs[j]))
+        channelid,channelname,title = jjobs[j] #json.loads(jobs[j])
+        context_items = []
+        context_items.append(("Delete Job" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_channel_always_search_plot_job,job=j))))
+        items.append({
+            'label': "%s - %s" % (channelname,title),
+            'path': plugin.url_for(delete_channel_always_search_plot_job,job=j),
+            'thumbnail':get_icon_path('recordings'),
+            'context_menu': context_items,
+        })
+
     jobs = plugin.get_storage("channel_daily_jobs")
     jjobs = {x:json.loads(jobs[x]) for x in jobs}
     #log(jjobs)
@@ -194,6 +210,14 @@ def delete_channel_always_search_job(job):
     if not (xbmcgui.Dialog().yesno("IPTV Recorder","Cancel Recording Rule?")):
         return
     jobs = plugin.get_storage("channel_always_search_jobs")
+    del jobs[job]
+    refresh()
+
+@plugin.route('/delete_channel_always_search_plot_job/<job>')
+def delete_channel_always_search_plot_job(job):
+    if not (xbmcgui.Dialog().yesno("IPTV Recorder","Cancel Recording Rule?")):
+        return
+    jobs = plugin.get_storage("channel_always_search_plot_jobs")
     del jobs[job]
     refresh()
 
@@ -424,6 +448,18 @@ def record_always_search(channelid,channelname):
     jobs[job] = job_description
     service()
 
+
+@plugin.route('/record_always_search_plot/<channelid>/<channelname>')
+def record_always_search_plot(channelid,channelname):
+    title = xbmcgui.Dialog().input("IPTV Recorder: Plot Search regex?")
+    if not title:
+        return
+    jobs = plugin.get_storage("channel_always_search_plot_jobs")
+    job_description = json.dumps((channelid,channelname,title))
+    job = str(uuid.uuid1())
+    jobs[job] = job_description
+    service()
+
 @plugin.route('/broadcast/<channelid>/<channelname>/<title>/<starttime>/<endtime>')
 def broadcast(channelid,channelname,title,starttime,endtime):
     #log((channelname,title,starttime,endtime))
@@ -545,6 +581,7 @@ def favourite_channels():
         channelid,thumbnail = json.loads(favourite_channels.get(channelname))
         context_items = []
         context_items.append(("Add Title Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search,channelid=channelid,channelname=channelname.encode("utf8")))))
+        context_items.append(("Add Plot Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search_plot,channelid=channelid,channelname=channelname.encode("utf8")))))
         context_items.append(("PVR Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play,channelid=channelid))))
         context_items.append(("External Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_name,channelname=channelname.encode("utf8")))))
         if channelname not in favourite_channels:
@@ -581,6 +618,7 @@ def group(channelgroupid):
         #log((name,cid))
         context_items = []
         context_items.append(("Add Title Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search,channelid=channelid,channelname=channelname.encode("utf8")))))
+        context_items.append(("Add Plot Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search_plot,channelid=channelid,channelname=channelname.encode("utf8")))))
         context_items.append(("PVR Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play,channelid=channelid))))
         context_items.append(("External Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_name,channelname=channelname.encode("utf8")))))
         if label not in favourite_channels:
@@ -683,6 +721,7 @@ def service():
             broadcasts = j.get('result').get('broadcasts')
             if not broadcasts:
                 continue
+            cache[channelid] = broadcasts
         for b in broadcasts:
             #log(b)
             starttime = b.get('starttime')
@@ -690,6 +729,31 @@ def service():
             title = b.get('title')
             #log((title,job_title,re.search(title,job_title,flags=re.I)))
             if re.search(job_title,title,flags=re.I):
+                record_once(channelname,title,starttime,endtime)
+
+    jobs = plugin.get_storage("channel_always_search_plot_jobs")
+    for job in jobs:
+        channelid,channelname,job_plot = json.loads(jobs[job])
+        if channelid in cache:
+            broadcasts = cache[channelid]
+        else:
+            rpc = '{"jsonrpc":"2.0","method":"PVR.GetBroadcasts","id":1,"params":{"channelid":%s,"properties":["title","plot","plotoutline","starttime","endtime","runtime","progress","progresspercentage","genre","episodename","episodenum","episodepart","firstaired","hastimer","isactive","parentalrating","wasactive","thumbnail","rating"]}}' % channelid
+            r = requests.get('http://localhost:8080/jsonrpc?request='+urllib.quote_plus(rpc))
+            content = r.content
+            j = json.loads(content)
+            #log(j)
+            broadcasts = j.get('result').get('broadcasts')
+            if not broadcasts:
+                continue
+            cache[channelid] = broadcasts
+        for b in broadcasts:
+            #log(b)
+            starttime = b.get('starttime')
+            endtime = b.get('endtime')
+            title = b.get('title')
+            plot = b.get('plot')
+            #log((job_plot,plot,re.search(job_plot,plot,flags=re.I)))
+            if re.search(job_plot,plot,flags=re.I):
                 record_once(channelname,title,starttime,endtime)
 
     jobs = plugin.get_storage("channel_daily_jobs")
@@ -706,6 +770,7 @@ def service():
             broadcasts = j.get('result').get('broadcasts')
             if not broadcasts:
                 continue
+            cache[channelid] = broadcasts
         for b in broadcasts:
             #log(b)
             starttime = b.get('starttime')
