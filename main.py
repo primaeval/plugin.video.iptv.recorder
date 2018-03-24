@@ -267,18 +267,17 @@ def delete_all_jobs(ask=True):
 
 @plugin.route('/delete_job/<job>')
 def delete_job(job,kill=True,ask=True):
-    #log(("DELETE JOB",job))
-    #TODO stop ffmpeg task
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+    c = conn.cursor()
+    job_details = c.execute("SELECT * FROM jobs WHERE uuid=?",(job,)).fetchone()
+    if not job_details:
+        return
 
     if ask and not (xbmcgui.Dialog().yesno("IPTV Recorder","Cancel Record?")):
-        return
-    jobs = plugin.get_storage("jobs")
-    if job not in jobs:
         return
 
     if windows() and plugin.get_setting('task.scheduler') == 'true':
         cmd = ["schtasks","/delete","/f","/tn",job]
-        #log(cmd)
         subprocess.Popen(cmd,shell=True)
     else:
         xbmc.executebuiltin('CancelAlarm(%s,True)' % job)
@@ -292,11 +291,15 @@ def delete_job(job,kill=True,ask=True):
         if windows():
             subprocess.Popen(["taskkill","/im",pid],shell=True)
         else:
+            #TODO correct kill switch
             subprocess.Popen(["kill","-9",pid])
 
     xbmcvfs.delete(pyjob)
     xbmcvfs.delete(pyjob+'.pid')
-    del jobs[job]
+
+    conn.execute("DELETE FROM jobs WHERE uuid=?",(job,))
+    conn.commit()
+    conn.close()
 
     refresh()
 
@@ -653,31 +656,38 @@ def channel(channelname,channelid):
 
 @plugin.route('/remove_favourite_channel/<channelname>')
 def remove_favourite_channel(channelname):
-    favourite_channels = plugin.get_storage("favourite_channels")
-    del favourite_channels[channelname]
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+    conn.execute("DELETE FROM favourites WHERE channelname=?",(channelname,))
+    conn.commit()
+    conn.close()
+
     refresh()
 
 @plugin.route('/add_favourite_channel/<channelname>/<channelid>/<thumbnail>')
 def add_favourite_channel(channelname,channelid,thumbnail):
-    favourite_channels = plugin.get_storage("favourite_channels")
-    favourite_channels[channelname] = json.dumps((channelid,thumbnail))
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+    conn.execute("INSERT OR REPLACE INTO favourites(channelname,channelid,logo) VALUES(?,?,?)",
+    [channelname,channelid,thumbnail])
+    conn.commit()
+    conn.close()
+
     refresh()
 
 @plugin.route('/favourite_channels')
 def favourite_channels():
-    favourite_channels = plugin.get_storage("favourite_channels")
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+    c = conn.cursor()
+    favourite_channels = c.execute("SELECT * FROM favourites").fetchall()
+
     items = []
-    for channelname in favourite_channels:
-        channelid,thumbnail = json.loads(favourite_channels.get(channelname))
+    for channelname,channelid,thumbnail in favourite_channels:
+        #channelid,thumbnail = json.loads(favourite_channels.get(channelname))
         context_items = []
-        context_items.append(("Add Title Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search,channelid=channelid,channelname=channelname.encode("utf8")))))
-        context_items.append(("Add Plot Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search_plot,channelid=channelid,channelname=channelname.encode("utf8")))))
-        context_items.append(("PVR Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play,channelid=channelid))))
-        context_items.append(("External Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_name,channelname=channelname.encode("utf8")))))
-        if channelname not in favourite_channels:
-            context_items.append(("Add Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(add_favourite_channel,channelname=channelname,channelid=channelid,thumbnail=thumbnail))))
-        else:
-            context_items.append(("Remove Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_favourite_channel,channelname=channelname))))
+        #context_items.append(("Add Title Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search,channelid=channelid,channelname=channelname.encode("utf8")))))
+        #context_items.append(("Add Plot Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search_plot,channelid=channelid,channelname=channelname.encode("utf8")))))
+        context_items.append(("Play Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel,channelname=channelname.encode("utf8")))))
+        context_items.append(("Play Channel External" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external,channelname=channelname.encode("utf8")))))
+        context_items.append(("Remove Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_favourite_channel,channelname=channelname))))
         items.append({
             'label': channelname,
             'path': plugin.url_for(channel,channelname=channelname,channelid=channelid),
@@ -712,10 +722,15 @@ def group(channelgroup):
         channels = c.execute("SELECT * FROM streams ORDER BY name").fetchall()
     else:
         streams = c.execute("SELECT * FROM streams WHERE groups=? ORDER BY name",(channelgroup,)).fetchall()
+    favourites = c.execute("SELECT channelname FROM favourites").fetchall()
+    favourites = [x[0] for x in favourites]
     #log(channels)
     items = []
     for c in streams:
         name,tvg_name,tvg_id,tvg_logo,groups,url = c
+        channelname = name
+        channelid = tvg_id
+        thumbnail = tvg_logo
         #id,name,logo = c
         #log(c)
         #label = c.get('label')
@@ -729,13 +744,15 @@ def group(channelgroup):
         #context_items.append(("Add Plot Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search_plot,channelid=channelid,channelname=channelname.encode("utf8")))))
         #context_items.append(("PVR Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play,channelid=channelid))))
         #context_items.append(("External Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_name,channelname=channelname.encode("utf8")))))
-        #if label not in favourite_channels:
-        #    context_items.append(("Add Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(add_favourite_channel,channelname=channelname,channelid=channelid,thumbnail=thumbnail))))
-        #else:
-        #    context_items.append(("Remove Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_favourite_channel,channelname=channelname))))
+        context_items.append(("Play Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel,channelname=channelname.encode("utf8")))))
+        context_items.append(("Play Channel External" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external,channelname=channelname.encode("utf8")))))
+        if channelname not in favourites:
+            context_items.append(("Add Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(add_favourite_channel,channelname=channelname,channelid=channelid,thumbnail=thumbnail))))
+        else:
+            context_items.append(("Remove Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_favourite_channel,channelname=channelname))))
         items.append({
             'label': name,
-            'path': plugin.url_for(channel,channelname=name,channelid=tvg_id),
+            'path': plugin.url_for(channel,channelname=name,channelid=channelid),
             'context_menu': context_items,
             'thumbnail': tvg_logo,
         })
@@ -769,6 +786,7 @@ def groups():
 
 @plugin.route('/m3u')
 def m3u():
+    return
     m3uUrl = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uUrl')
     #log(m3uUrl)
     if plugin.get_setting('external.m3u') == "1":
@@ -801,6 +819,7 @@ def service_start():
 
 @plugin.route('/service')
 def service():
+    return
     m3u()
     cache = {}
     jobs = plugin.get_storage("channel_always_jobs")
@@ -907,6 +926,7 @@ def service():
 
 @plugin.route('/start')
 def start():
+    return
     m3u()
     #log("START")
     #TODO delete old timers
@@ -1061,6 +1081,7 @@ def xmltv():
     conn.execute('CREATE TABLE IF NOT EXISTS programmes(channelid TEXT, title TEXT, sub_title TEXT, start TEXT, stop TEXT, date TEXT, description TEXT, episode TEXT, categories TEXT, PRIMARY KEY(channelid, start))')
     #TODO check primary key
     conn.execute('CREATE TABLE IF NOT EXISTS streams(name TEXT, tvg_name TEXT, tvg_id TEXT, tvg_logo TEXT, groups TEXT, url TEXT, PRIMARY KEY(name))')
+    conn.execute('CREATE TABLE IF NOT EXISTS favourites(channelname TEXT, channelid TEXT, logo TEXT, PRIMARY KEY(channelname))')
     conn.execute('CREATE TABLE IF NOT EXISTS jobs(uuid TEXT, channelid TEXT, channelname TEXT, title TEXT, start TEXT, stop TEXT, PRIMARY KEY (uuid))')
 
     data = xbmcvfs.File(xml,'rb').read()
