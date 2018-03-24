@@ -674,7 +674,11 @@ def groups():
 
 @plugin.route('/m3u')
 def m3u():
-    m3uUrl = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uUrl')
+    if xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uPath') == "0":
+        m3uUrl = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uPath')
+    else:
+        m3uUrl = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uUrl')
+
     #log(m3uUrl)
     if plugin.get_setting('external.m3u') == "1":
         m3uUrl = plugin.get_setting('external.m3u.file')
