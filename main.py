@@ -511,6 +511,8 @@ def record_always_search(channelid,channelname):
     conn.commit()
     conn.close()
 
+    service()
+
 
 @plugin.route('/record_always_search_plot/<channelid>/<channelname>')
 def record_always_search_plot(channelid,channelname):
@@ -747,6 +749,16 @@ def m3u():
 def service_start():
     threading.Thread(target=service).start()
 
+@plugin.route('/full_service')
+def full_service():
+    xmltv()
+    service()
+
+@plugin.route('/start')
+def start():
+    if not xbmcvfs.exists(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile'))):
+        xmltv()
+    service()
 
 @plugin.route('/service')
 def service():
@@ -785,28 +797,6 @@ def service():
             for p in programmes:
                 channel , title , sub_title , start , stop , date , description , episode, categories = p
                 record_once(jchannelid,jchannelname,title,start,stop)
-
-
-@plugin.route('/start')
-def start():
-    return
-    m3u()
-    #log("START")
-    #TODO delete old timers
-    jobs = plugin.get_storage("jobs")
-    jobs_copy = dict(jobs)
-    for job in jobs_copy:
-        channelname,title,starttime,endtime = json.loads(jobs_copy[job])
-        #delete_job(job,kill=False) #TODO more logic
-        st = str2dt(starttime)
-        et = str2dt(endtime)
-        now = datetime.now()
-        if st > now and not (windows() and plugin.get_setting('task.scheduler') == "true"):
-            #log(("XXX",now,st,et,channelname,title,starttime,endtime))
-            delete_job(job,ask=False)
-            record_once(channelname,title,starttime,endtime)
-        if et < now:
-            delete_job(job,ask=False)
 
 
 @plugin.route('/delete_recording/<label>/<path>')
@@ -1088,14 +1078,6 @@ def index():
     })
 
     if plugin.get_setting('debug') == "true":
-        items.append(
-        {
-            'label': "(Re)Load Channel m3u",
-            'path': plugin.url_for('m3u'),
-            'thumbnail':get_icon_path('settings'),
-            'context_menu': context_items,
-        })
-
         items.append(
         {
             'label': "Service",

@@ -13,7 +13,7 @@ def Service():
         return
     servicing = True
     #xbmc.log("SERVICE",xbmc.LOGERROR)
-    xbmc.executebuiltin('XBMC.RunPlugin(plugin://plugin.video.iptv.recorder/service)')
+    xbmc.executebuiltin('XBMC.RunPlugin(plugin://plugin.video.iptv.recorder/full_service)')
     time.sleep(2)
     servicing = False
 
