@@ -77,10 +77,26 @@ def play(channelid):
     #log(r)
     #log(r.content)
 
-@plugin.route('/play_name/<channelname>')
-def play_name(channelname):
-    channel_urls = plugin.get_storage("channel_urls")
-    url = channel_urls.get(channelname)
+@plugin.route('/play_channel/<channelname>')
+def play_channel(channelname):
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+    c = conn.cursor()
+    channel = c.execute("SELECT * FROM streams WHERE name=?",(channelname,)).fetchone()
+    if not channel:
+        return
+    name,tvg_name,tvg_id,tvg_logo,groups,url = channel
+
+    xbmc.Player().play(url)
+
+@plugin.route('/play_channel_external/<channelname>')
+def play_channel_external(channelname):
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+    c = conn.cursor()
+    channel = c.execute("SELECT * FROM streams WHERE name=?",(channelname,)).fetchone()
+    if not channel:
+        return
+    name,tvg_name,tvg_id,tvg_logo,groups,url = channel
+
     if url:
         cmd = [plugin.get_setting('external.player')]
         args = plugin.get_setting('external.player.args')
@@ -565,20 +581,33 @@ def channel(channelname,channelid):
     name,tvg_name,tvg_id,tvg_logo,groups,url = channel
     log(channel)
     programmes = c.execute("SELECT * FROM programmes WHERE channelid=?",(channelid,)).fetchall()
+    jobs = c.execute("SELECT * FROM jobs WHERE channelid=?",(channelid,)).fetchall()
     #log(channels)
     items = []
     for p in programmes:
         log(p)
         channel , title , sub_title , start , stop , date , description , episode, categories = p
+        job = c.execute("SELECT * FROM jobs WHERE channelid=? AND start=? AND stop=?",(channelid,start,stop)).fetchone()
+        if job:
+            recording = "[COLOR red]RECORD[/COLOR]"
+        else:
+            recording = ""
         starttime = xml2local(start)
         endtime = xml2local(stop)
-        context_items = []
         if sub_title:
             title = "%s - %s" % (title,sub_title)
         etitle = HTMLParser.HTMLParser().unescape(title)
         if description:
             description = HTMLParser.HTMLParser().unescape(description)
-        label = "[COLOR grey]%s %02d:%02d[/COLOR] [CR]%s" % (day(starttime),starttime.hour,starttime.minute,etitle)
+        label = "[COLOR grey]%s %02d:%02d[/COLOR] %s[CR]%s" % (day(starttime),starttime.hour,starttime.minute,recording,etitle)
+        context_items = []
+        if recording:
+            context_items.append(("Cancel Record" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job,job=job[0]))))
+        else:
+            context_items.append(("Record Once" , 'XBMC.RunPlugin(%s)' %
+            (plugin.url_for(record_once,channelid=channelid,channelname=channelname.encode("utf8"),title=title.encode("utf8"),start=start,stop=stop))))
+        context_items.append(("Play Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel,channelname=channelname.encode("utf8")))))
+        context_items.append(("Play Channel External" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external,channelname=channelname.encode("utf8")))))
         items.append({
             'label': label,
             'path': plugin.url_for(broadcast,channelid=channelid,channelname=channelname.encode("utf8"),title=title.encode("utf8"),start=start,stop=stop),
@@ -682,7 +711,7 @@ def group(channelgroup):
         streams = c.execute("SELECT * FROM streams ORDER BY name").fetchall()
         channels = c.execute("SELECT * FROM streams ORDER BY name").fetchall()
     else:
-        streams = c.execute("SELECT * FROM streams ORDER BY name WHERE groups=?",(channelgroup,)).fetchall()
+        streams = c.execute("SELECT * FROM streams WHERE groups=? ORDER BY name",(channelgroup,)).fetchall()
     #log(channels)
     items = []
     for c in streams:
@@ -994,11 +1023,16 @@ def xmltv():
 
     mode = plugin.get_setting('external.xmltv')
     if mode == "0":
-        return
-    if mode == "1":
+        epgPathType = xbmcaddon.Addon('pvr.iptvsimple').getSetting('epgPathType')
+        if epgPathType == "0":
+            path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('epgPath')
+        else:
+            path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('epgUrl')
+    elif mode == "1":
         path = plugin.get_setting('external.xmltv.file')
     else:
         path = plugin.get_setting('external.xmltv.url')
+    log((mode,epgPathType,path))
     tmp = os.path.join(profilePath,'xmltv.tmp')
     xml = os.path.join(profilePath,'xmltv.xml')
     xbmcvfs.copy(path,tmp)
@@ -1085,13 +1119,19 @@ def xmltv():
             conn.execute("INSERT OR IGNORE INTO programmes(channelid , title , sub_title , start , stop , date , description , episode, categories ) VALUES(?,?,?,?,?,?,?,?,?)",
             [channel , title , sub_title , start , stop , date , description , episode, categories])
 
-    m3uUrl = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uUrl')
-    if plugin.get_setting('external.m3u') == "1":
-        m3uUrl = plugin.get_setting('external.m3u.file')
-    elif plugin.get_setting('external.m3u') == "2":
-        m3uUrl = plugin.get_setting('external.m3u.url')
+    mode = plugin.get_setting('external.m3u')
+    if mode == "0":
+        m3uPathType = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uPathType')
+        if m3uPathType == "0":
+            path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uPath')
+        else:
+            path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uUrl')
+    elif mode == "1":
+        path = plugin.get_setting('external.m3u.file')
+    else:
+        path = plugin.get_setting('external.m3u.url')
     m3uFile = 'special://profile/addon_data/plugin.video.iptv.recorder/channels.m3u'
-    xbmcvfs.copy(m3uUrl,m3uFile)
+    xbmcvfs.copy(path,m3uFile)
     f = xbmcvfs.File(m3uFile)
     data = f.read()
 
