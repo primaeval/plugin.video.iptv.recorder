@@ -201,42 +201,6 @@ def rules():
     return items
 
 
-@plugin.route('/delete_channel_always_search_job/<job>')
-def delete_channel_always_search_job(job):
-    if not (xbmcgui.Dialog().yesno("IPTV Recorder","Cancel Recording Rule?")):
-        return
-    jobs = plugin.get_storage("channel_always_search_jobs")
-    del jobs[job]
-    refresh()
-
-
-@plugin.route('/delete_channel_always_search_plot_job/<job>')
-def delete_channel_always_search_plot_job(job):
-    if not (xbmcgui.Dialog().yesno("IPTV Recorder","Cancel Recording Rule?")):
-        return
-    jobs = plugin.get_storage("channel_always_search_plot_jobs")
-    del jobs[job]
-    refresh()
-
-
-@plugin.route('/delete_channel_always_job/<job>')
-def delete_channel_always_job(job):
-    if not (xbmcgui.Dialog().yesno("IPTV Recorder","Cancel Recording Rule?")):
-        return
-    jobs = plugin.get_storage("channel_always_jobs")
-    del jobs[job]
-    refresh()
-
-
-@plugin.route('/delete_channel_daily_job/<job>')
-def delete_channel_daily_job(job):
-    if not (xbmcgui.Dialog().yesno("IPTV Recorder","Cancel Recording Rule?")):
-        return
-    jobs = plugin.get_storage("channel_daily_jobs")
-    del jobs[job]
-    refresh()
-
-
 @plugin.route('/delete_all_rules')
 def delete_all_rules(ask=True):
     if ask and not (xbmcgui.Dialog().yesno("IPTV Recorder","Delete All Rules?")):
