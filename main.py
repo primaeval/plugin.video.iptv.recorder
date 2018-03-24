@@ -881,6 +881,182 @@ def recordings():
             })
     return items
 
+def xml2utc(xml):
+    match = re.search(r'([0-9]{4})([0-9]{2})([0-9]{2})([0-9]{2})([0-9]{2})([0-9]{2}) ([+-])([0-9]{2})([0-9]{2})',xml)
+    if match:
+        year = int(match.group(1))
+        month = int(match.group(2))
+        day = int(match.group(3))
+        hour = int(match.group(4))
+        minute = int(match.group(5))
+        second = int(match.group(6))
+        sign = match.group(7)
+        hours = int(match.group(8))
+        minutes = int(match.group(9))
+        dt = datetime(year,month,day,hour,minute,second)
+        td = timedelta(hours=hours,minutes=minutes)
+        if sign == '+':
+            dt = dt - td
+        else:
+            dt = dt + td
+        return dt
+    return ''
+
+
+
+class FileWrapper(object):
+    def __init__(self, filename):
+        self.vfsfile = xbmcvfs.File(filename)
+        self.size = self.vfsfile.size()
+        self.bytesRead = 0
+
+    def close(self):
+        self.vfsfile.close()
+
+    def read(self, byteCount):
+        self.bytesRead += byteCount
+        return self.vfsfile.read(byteCount)
+
+    def tell(self):
+        return self.bytesRead
+
+
+@plugin.route('/xmltv')
+def xmltv():
+    profilePath = xbmc.translatePath(plugin.addon.getAddonInfo('profile'))
+    xbmcvfs.mkdirs(profilePath)
+
+    mode = plugin.get_setting('external.xmltv')
+    if mode == "0":
+        return
+    if mode == "1":
+        path = plugin.get_setting('external.xmltv.file')
+    else:
+        path = plugin.get_setting('external.xmltv.url')
+    tmp = os.path.join(profilePath,'xmltv.tmp')
+    xml = os.path.join(profilePath,'xmltv.xml')
+    xbmcvfs.copy(path,tmp)
+
+    f = xbmcvfs.File(tmp,"rb")
+    magic = f.read(3)
+    f.close()
+    if magic == "\x1f\x8b\x08":
+        import gzip
+        g = gzip.open(tmp)
+        data = g.read()
+        f = xbmcvfs.File(xml,"wb")
+        f.write(data)
+        f.close()
+    else:
+        xbmcvfs.copy(tmp,xml)
+
+    #dialog = xbmcgui.Dialog()
+
+    databasePath = os.path.join(profilePath, 'xmltv.db')
+    conn = sqlite3.connect(databasePath, detect_types=sqlite3.PARSE_DECLTYPES)
+    conn.execute('PRAGMA foreign_keys = ON')
+    conn.row_factory = sqlite3.Row
+    conn.execute('DROP TABLE IF EXISTS programmes')
+    conn.execute('DROP TABLE IF EXISTS channels')
+    conn.execute('DROP TABLE IF EXISTS streams')
+    conn.execute('CREATE TABLE IF NOT EXISTS channels(id TEXT, name TEXT, icon TEXT, PRIMARY KEY (id))')
+    conn.execute('CREATE TABLE IF NOT EXISTS programmes(channel TEXT, title TEXT, sub_title TEXT, start TEXT, stop TEXT, date TEXT, description TEXT, episode TEXT, categories TEXT, PRIMARY KEY(channel, start))')
+    #TODO check primary key
+    conn.execute('CREATE TABLE IF NOT EXISTS streams(name TEXT, tvg_name TEXT, tvg_id TEXT, tvg_logo TEXT, groups TEXT, url TEXT, PRIMARY KEY(name))')
+    #c = conn.cursor()
+    #c.execute('SELECT id FROM channels')
+    #old_channel_ids = [row["id"] for row in c]
+
+    data = xbmcvfs.File(xml,'rb').read()
+
+    match = re.findall('<channel(.*?)</channel>',data,flags=(re.I|re.DOTALL))
+    if match:
+        for m in match:
+            id = re.search('id="(.*?)"',m)
+            if id:
+                id = id.group(1)
+            name = re.search('<display-name.*?>(.*?)</display-name',m)
+            if name:
+                name = name.group(1)
+            icon = re.search('<icon.*?src="(.*?)"',m)
+            if icon:
+                icon = icon.group(1)
+            conn.execute("INSERT OR IGNORE INTO channels(id, name, icon) VALUES(?, ?, ?)", [id, name, icon])
+
+    match = re.findall('<programme(.*?)</programme>',data,flags=(re.I|re.DOTALL))
+    if match:
+        for m in match:
+            channel = re.search('channel="(.*?)"',m)
+            if channel:
+                channel = channel.group(1)
+            start = re.search('start="(.*?)"',m)
+            if start:
+                start = start.group(1)
+            stop = re.search('stop="(.*?)"',m)
+            if stop:
+                stop = stop.group(1)
+
+            title = re.search('<title.*?>(.*?)</title',m)
+            if title:
+                title = title.group(1)
+            sub_title = re.search('<sub-title.*?>(.*?)</sub-title',m)
+            if sub_title:
+                sub_title = sub_title.group(1)
+            description = re.search('<desc.*?>(.*?)</desc',m)
+            if description:
+                description = description.group(1)
+            date = re.search('<date.*?>(.*?)</date',m)
+            if date:
+                date = date.group(1)
+
+            #TODO other systems
+            episode = re.search('<episode-num system="xmltv_ns">(.*?)<',m)
+            if episode:
+                episode = episode.group(1)
+
+            cats = re.findall('<category.*?>(.*?)</category>',m,flags=(re.I|re.DOTALL))
+            if cats:
+                categories = ','.join(cats)
+            else:
+                categories = ''
+
+            conn.execute("INSERT OR IGNORE INTO programmes(channel , title , sub_title , start , stop , date , description , episode, categories ) VALUES(?,?,?,?,?,?,?,?,?)",
+            [channel , title , sub_title , start , stop , date , description , episode, categories])
+
+    m3uUrl = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uUrl')
+    if plugin.get_setting('external.m3u') == "1":
+        m3uUrl = plugin.get_setting('external.m3u.file')
+    elif plugin.get_setting('external.m3u') == "2":
+        m3uUrl = plugin.get_setting('external.m3u.url')
+    m3uFile = 'special://profile/addon_data/plugin.video.iptv.recorder/channels.m3u'
+    xbmcvfs.copy(m3uUrl,m3uFile)
+    f = xbmcvfs.File(m3uFile)
+    data = f.read()
+
+    channels = re.findall('#EXTINF:(.*?)\n(.*?)\n',data,flags=(re.I|re.DOTALL))
+    for channel in channels:
+        tvg_name = re.search('tvg-name="(.*?)"',channel[0])
+        if tvg_name:
+            tvg_name = tvg_name.group(1)
+        tvg_id = re.search('tvg-id="(.*?)"',channel[0])
+        if tvg_id:
+            tvg_id = tvg_id.group(1)
+        tvg_logo = re.search('tvg-logo="(.*?)"',channel[0])
+        if tvg_logo:
+            tvg_logo = tvg_logo.group(1)
+        name = channel[0].rsplit(',',1)[-1]
+        url = channel[1]
+        groups = re.search('group-title="(.*?)"',channel[0])
+        if groups:
+            groups = groups.group(1)
+
+        conn.execute("INSERT OR IGNORE INTO streams(name,tvg_name,tvg_id,tvg_logo,groups,url ) VALUES(?,?,?,?,?,?)",
+        [name,tvg_name,tvg_id,tvg_logo,groups,url])
+
+    conn.commit()
+    conn.close()
+    return
+
 @plugin.route('/')
 def index():
     items = []
@@ -956,6 +1132,14 @@ def index():
         {
             'label': "Start",
             'path': plugin.url_for('start'),
+            'thumbnail':get_icon_path('settings'),
+            'context_menu': context_items,
+        })
+
+        items.append(
+        {
+            'label': "xmltv",
+            'path': plugin.url_for('xmltv'),
             'thumbnail':get_icon_path('settings'),
             'context_menu': context_items,
         })

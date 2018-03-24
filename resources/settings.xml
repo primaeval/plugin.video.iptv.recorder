@@ -24,6 +24,11 @@
     <setting id="external.m3u" label="External m3u" type="enum" default="None" values="None|File|Url" />
     <setting id="external.m3u.file" label="External m3u File" type="file" default=""/>
     <setting id="external.m3u.url" label="External m3u Url" type="text" default=""/>
+    
+    <setting type="sep"/>
+    <setting id="external.xmltv" label="External xmltv" type="enum" default="None" values="None|File|Url" />
+    <setting id="external.xmltv.file" label="External xmltv File" type="file" default=""/>
+    <setting id="external.xmltv.url" label="External xmltv Url" type="text" default=""/>    
 </category>
 
 <category label="Debug">
