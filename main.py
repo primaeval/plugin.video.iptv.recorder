@@ -16,6 +16,7 @@ import subprocess
 from datetime import datetime,timedelta
 #TODO strptime bug fix
 import uuid
+import HTMLParser
 
 from struct import *
 from collections import namedtuple
@@ -97,6 +98,9 @@ def play_external(path):
     cmd.append(xbmc.translatePath(path))
     subprocess.Popen(cmd)
 
+def xml2local(xml):
+    #TODO combine
+    return utc2local(xml2utc(xml))
 
 def utc2local (utc):
     epoch = time.mktime(utc.timetuple())
@@ -317,10 +321,11 @@ def ffmpeg_location():
 
 
 
-@plugin.route('/record_once/<channelname>/<title>/<starttime>/<endtime>')
-def record_once(channelname,title,starttime,endtime):
+@plugin.route('/record_once/<channelname>/<channelid>/<title>/<start>/<stop>')
+def record_once(channelname,channelid,title,start,stop):
     #TODO check for ffmpeg process already recording if job is re-added
 
+    '''
     channel_urls = plugin.get_storage("channel_urls")
     if not len(channel_urls.keys()):
         m3u()
@@ -328,9 +333,20 @@ def record_once(channelname,title,starttime,endtime):
         xbmcgui.Dialog().notification("IPTV Recorder","No m3u Channels found!")
 
     url = channel_urls.get(channelname)
+    '''
+    if channelid:
+        conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+        c = conn.cursor()
+        channel = c.execute("SELECT * FROM streams WHERE tvg_id=?",(channelid,)).fetchone()
+        conn.commit()
+        conn.close()
+        name,tvg_name,tvg_id,tvg_logo,groups,url = channel
+        log(channel)
+
     if not url:
         xbmc.log("No url for %s" % channelname,xbmc.LOGERROR)
         return
+
     url_headers = url.split('|',1)
     url = url_headers[0]
     headers = {}
@@ -342,13 +358,24 @@ def record_once(channelname,title,starttime,endtime):
                 k,v = h.split('=',1)
                 headers[k] = v
 
-    local_starttime = str2dt(starttime)
-    local_endtime = str2dt(endtime)
-    label = "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,local_starttime,local_endtime)
+    local_starttime = xml2local(start) #str2dt(starttime)
+    local_endtime = xml2local(stop) #str2dt(endtime)
+    etitle = HTMLParser.HTMLParser().unescape(title)
+    label = "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,etitle,local_starttime,local_endtime)
 
+    '''
     jobs = plugin.get_storage("jobs")
-    job_description = json.dumps((channelname,title,starttime,endtime))
+    job_description = json.dumps((channelname,title,start,stop))
     if job_description in jobs.values():
+        return
+    '''
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+    c = conn.cursor()
+    job = c.execute("SELECT * FROM jobs WHERE channelid=? AND start=? AND stop=?",(channelid,start,stop)).fetchone()
+    conn.commit()
+    conn.close()
+    if job:
+        log("FOUND")
         return
 
     before = int(plugin.get_setting('minutes.before') or "0")
@@ -433,7 +460,13 @@ def record_once(channelname,title,starttime,endtime):
             #log(cmd)
             xbmc.executebuiltin(cmd)
 
-    jobs[job] = job_description
+    #jobs[job] = job_description
+
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+    conn.execute("INSERT OR REPLACE INTO jobs(uuid,channelid,channelname,title,start,stop) VALUES(?,?,?,?,?,?)",
+    [job,channelid,channelname,title,start,stop])
+    conn.commit()
+    conn.close()
     refresh()
 
 def refresh():
@@ -442,7 +475,7 @@ def refresh():
     if containerAddonName == AddonName:
         xbmc.executebuiltin('Container.Refresh')
 
-@plugin.route('/record_once/<channelid>/<channelname>/<title>/<starttime>/<endtime>')
+@plugin.route('/record_daily/<channelid>/<channelname>/<title>/<starttime>/<endtime>')
 def record_daily(channelid,channelname,title,starttime,endtime):
     jobs = plugin.get_storage("channel_daily_jobs")
     job_description = json.dumps((channelid,channelname,title,starttime,endtime))
@@ -481,37 +514,39 @@ def record_always_search_plot(channelid,channelname):
     jobs[job] = job_description
     service()
 
-@plugin.route('/broadcast/<channelid>/<channelname>/<title>/<starttime>/<endtime>')
-def broadcast(channelid,channelname,title,starttime,endtime):
+@plugin.route('/broadcast/<channelid>/<channelname>/<title>/<start>/<stop>')
+def broadcast(channelid,channelname,title,start,stop):
+    label = HTMLParser.HTMLParser().unescape(title)
     #log((channelname,title,starttime,endtime))
     items = []
     #TODO format dates
     items.append({
-        'label': "Record Once - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime),
-        'path': plugin.url_for(record_once,channelname=channelname,title=title,starttime=starttime,endtime=endtime),
+        'label': "Record Once - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,label,xml2local(start),xml2local(stop)),
+        'path': plugin.url_for(record_once,channelid=channelid,channelname=channelname,title=title,start=start,stop=stop),
         'thumbnail':get_icon_path('recordings'),
     })
+    return items
     items.append({
-        'label': "Record Always - %s - %s" % (channelname,title),
+        'label': "Record Always - %s - %s" % (channelname,label),
         'path': plugin.url_for(record_always,channelid=channelid,channelname=channelname,title=title),
         'thumbnail':get_icon_path('recordings'),
     })
     items.append({
-        'label': "Record Daily - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,str2dt(starttime).time(),str2dt(endtime).time()),
+        'label': "Record Daily - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,label,str2dt(starttime).time(),str2dt(endtime).time()),
         'path': plugin.url_for(record_daily,channelid=channelid,channelname=channelname,title=title,starttime=starttime,endtime=endtime),
         'thumbnail':get_icon_path('recordings'),
     })
     if False:
         items.append({
-            'label': "Watch Once - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime),
+            'label': "Watch Once - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,label,starttime,endtime),
             'path': plugin.url_for(record_once,channelname=channelname,title=title,starttime=starttime,endtime=endtime)
         })
         items.append({
-            'label': "Watch Daily - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,title,starttime,endtime),
+            'label': "Watch Daily - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,label,starttime,endtime),
             'path': plugin.url_for(record_daily,channelname=channelname,title=title,starttime=starttime,endtime=endtime)
         })
         items.append({
-            'label': "Watch Always - %s - %s" % (channelname,title),
+            'label': "Watch Always - %s - %s" % (channelname,label),
             'path': plugin.url_for(record_always,channelname=channelname,title=title)
         })
     return items
@@ -555,25 +590,28 @@ def channel(channelname,channelid):
     channel = c.execute("SELECT * FROM streams WHERE tvg_id=?",(channelid,)).fetchone()
     name,tvg_name,tvg_id,tvg_logo,groups,url = channel
     log(channel)
-    programmes = c.execute("SELECT * FROM programmes WHERE channel=?",(channelid,)).fetchall()
+    programmes = c.execute("SELECT * FROM programmes WHERE channelid=?",(channelid,)).fetchall()
     #log(channels)
     items = []
     for p in programmes:
         log(p)
         channel , title , sub_title , start , stop , date , description , episode, categories = p
-        starttime = start
-        endtime = stop
+        starttime = xml2local(start)
+        endtime = xml2local(stop)
         context_items = []
         if sub_title:
             title = "%s - %s" % (title,sub_title)
-        label = "%s %s" % (starttime,title)
+        etitle = HTMLParser.HTMLParser().unescape(title)
+        if description:
+            description = HTMLParser.HTMLParser().unescape(description)
+        label = "[COLOR grey]%s %02d:%02d[/COLOR] [CR]%s" % (day(starttime),starttime.hour,starttime.minute,etitle)
         items.append({
             'label': label,
-            'path': plugin.url_for(broadcast,channelid=channelid,channelname=channelname.encode("utf8"),title=title.encode("utf8"),starttime=starttime,endtime=endtime),
+            'path': plugin.url_for(broadcast,channelid=channelid,channelname=channelname.encode("utf8"),title=title.encode("utf8"),start=start,stop=stop),
             'thumbnail': tvg_logo,
             'context_menu': context_items,
             'info_type': 'Video',
-            'info':{"title": channelname, "plot":description,"genre":categories}
+            'info':{"title": etitle, "plot":description,"genre":categories}
         })
     return items
     items = []
@@ -660,14 +698,22 @@ def group(channelgroup):
     '''
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
     c = conn.cursor()
+    '''
     if channelgroup == "All Channels":
         channels = c.execute("SELECT * FROM streams ORDER BY name").fetchall()
     else:
         channels = c.execute("SELECT * FROM streams ORDER BY name WHERE groups=?",(channelgroup,)).fetchall()
+    '''
+    if channelgroup == "All Channels":
+        streams = c.execute("SELECT * FROM streams ORDER BY name").fetchall()
+        channels = c.execute("SELECT * FROM streams ORDER BY name").fetchall()
+    else:
+        streams = c.execute("SELECT * FROM streams ORDER BY name WHERE groups=?",(channelgroup,)).fetchall()
     #log(channels)
     items = []
-    for c in channels:
+    for c in streams:
         name,tvg_name,tvg_id,tvg_logo,groups,url = c
+        #id,name,logo = c
         #log(c)
         #label = c.get('label')
         #channelname = c.get('channel')
@@ -1004,9 +1050,10 @@ def xmltv():
     conn.execute('DROP TABLE IF EXISTS channels')
     conn.execute('DROP TABLE IF EXISTS streams')
     conn.execute('CREATE TABLE IF NOT EXISTS channels(id TEXT, name TEXT, icon TEXT, PRIMARY KEY (id))')
-    conn.execute('CREATE TABLE IF NOT EXISTS programmes(channel TEXT, title TEXT, sub_title TEXT, start TEXT, stop TEXT, date TEXT, description TEXT, episode TEXT, categories TEXT, PRIMARY KEY(channel, start))')
+    conn.execute('CREATE TABLE IF NOT EXISTS programmes(channelid TEXT, title TEXT, sub_title TEXT, start TEXT, stop TEXT, date TEXT, description TEXT, episode TEXT, categories TEXT, PRIMARY KEY(channelid, start))')
     #TODO check primary key
     conn.execute('CREATE TABLE IF NOT EXISTS streams(name TEXT, tvg_name TEXT, tvg_id TEXT, tvg_logo TEXT, groups TEXT, url TEXT, PRIMARY KEY(name))')
+    conn.execute('CREATE TABLE IF NOT EXISTS jobs(uuid TEXT, channelid TEXT, channelname TEXT, title TEXT, start TEXT, stop TEXT, PRIMARY KEY (uuid))')
 
     data = xbmcvfs.File(xml,'rb').read()
 
@@ -1061,7 +1108,7 @@ def xmltv():
             else:
                 categories = ''
 
-            conn.execute("INSERT OR IGNORE INTO programmes(channel , title , sub_title , start , stop , date , description , episode, categories ) VALUES(?,?,?,?,?,?,?,?,?)",
+            conn.execute("INSERT OR IGNORE INTO programmes(channelid , title , sub_title , start , stop , date , description , episode, categories ) VALUES(?,?,?,?,?,?,?,?,?)",
             [channel , title , sub_title , start , stop , date , description , episode, categories])
 
     m3uUrl = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uUrl')
