@@ -261,8 +261,13 @@ def delete_channel_daily_job(job):
 def delete_all_jobs(ask=True):
     if ask and not (xbmcgui.Dialog().yesno("IPTV Recorder","Delete All Jobs?")):
         return
-    jobs = plugin.get_storage("jobs")
-    jobs.clear()
+
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+    conn.execute("DELETE FROM jobs")
+    conn.execute("DELETE FROM jobs")
+    conn.commit()
+    conn.close()
+
     refresh()
 
 @plugin.route('/delete_job/<job>')
@@ -968,7 +973,10 @@ def delete_all_recordings():
 
 @plugin.route('/recordings')
 def recordings():
-    channel_thumbnails = plugin.get_storage("channel_thumbnails")
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+    c = conn.cursor()
+    streams = c.execute("SELECT name,tvg_logo FROM streams").fetchall()
+    thumbnails = {x[0]:x[1] for x in streams}
 
     dir = plugin.get_setting('recordings')
     dirs, files = xbmcvfs.listdir(dir)
@@ -979,7 +987,7 @@ def recordings():
             path = os.path.join(xbmc.translatePath(dir),file)
             label = urllib.unquote_plus(file)[0:-3]
             channelname = label.split(' - ',1)[0] #TODO meta info
-            thumbnail = channel_thumbnails.get(channelname)
+            thumbnail = thumbnails.get(channelname)
             #TODO save some info from broadcast
             context_items = []
             context_items.append(("Delete Recording" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_recording,label=label,path=path))))
@@ -1016,24 +1024,6 @@ def xml2utc(xml):
             dt = dt + td
         return dt
     return ''
-
-
-
-class FileWrapper(object):
-    def __init__(self, filename):
-        self.vfsfile = xbmcvfs.File(filename)
-        self.size = self.vfsfile.size()
-        self.bytesRead = 0
-
-    def close(self):
-        self.vfsfile.close()
-
-    def read(self, byteCount):
-        self.bytesRead += byteCount
-        return self.vfsfile.read(byteCount)
-
-    def tell(self):
-        return self.bytesRead
 
 
 @plugin.route('/xmltv')
