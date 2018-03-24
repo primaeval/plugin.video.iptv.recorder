@@ -325,15 +325,6 @@ def ffmpeg_location():
 def record_once(channelname,channelid,title,start,stop):
     #TODO check for ffmpeg process already recording if job is re-added
 
-    '''
-    channel_urls = plugin.get_storage("channel_urls")
-    if not len(channel_urls.keys()):
-        m3u()
-    if not len(channel_urls.keys()):
-        xbmcgui.Dialog().notification("IPTV Recorder","No m3u Channels found!")
-
-    url = channel_urls.get(channelname)
-    '''
     if channelid:
         conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
         c = conn.cursor()
@@ -358,29 +349,21 @@ def record_once(channelname,channelid,title,start,stop):
                 k,v = h.split('=',1)
                 headers[k] = v
 
-    local_starttime = xml2local(start) #str2dt(starttime)
-    local_endtime = xml2local(stop) #str2dt(endtime)
+    local_starttime = xml2local(start)
+    local_endtime = xml2local(stop)
     etitle = HTMLParser.HTMLParser().unescape(title)
     label = "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,etitle,local_starttime,local_endtime)
 
-    '''
-    jobs = plugin.get_storage("jobs")
-    job_description = json.dumps((channelname,title,start,stop))
-    if job_description in jobs.values():
-        return
-    '''
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
     c = conn.cursor()
     job = c.execute("SELECT * FROM jobs WHERE channelid=? AND start=? AND stop=?",(channelid,start,stop)).fetchone()
     conn.commit()
     conn.close()
     if job:
-        log("FOUND")
         return
 
     before = int(plugin.get_setting('minutes.before') or "0")
     after = int(plugin.get_setting('minutes.after') or "0")
-    #log((before,after))
     local_starttime = local_starttime - timedelta(minutes=before)
     local_endtime = local_endtime + timedelta(minutes=after)
 
@@ -390,18 +373,16 @@ def record_once(channelname,channelid,title,start,stop):
         immediate = True
     else:
         immediate = False
-    #log((immediate,now,local_starttime,local_endtime))
 
     length = local_endtime - local_starttime
     seconds = total_seconds(length)
-    #log((local_starttime,local_endtime,length))
 
     filename = urllib.quote_plus(label.encode("utf8"))+'.ts'
     path = os.path.join(xbmc.translatePath(plugin.get_setting('recordings')),filename)
     ffmpeg = ffmpeg_location()
     if not ffmpeg:
         return
-    #ffmpeg = "notepad"
+
     cmd = [ffmpeg]
     for h in headers:
         cmd.append("-headers")
@@ -410,8 +391,6 @@ def record_once(channelname,channelid,title,start,stop):
     cmd.append(url)
     probe_cmd = cmd
     cmd = probe_cmd + ["-y","-t",str(seconds),"-c","copy",path]
-    #probe_cmd = [ffmpeg,"-i",url]
-    #log(cmd)
 
     directory = "special://profile/addon_data/plugin.video.iptv.recorder/jobs/"
     xbmcvfs.mkdirs(directory)
@@ -432,7 +411,6 @@ def record_once(channelname,channelid,title,start,stop):
     f.close()
 
     if windows() and plugin.get_setting('task.scheduler') == 'true':
-
         if immediate:
             cmd = 'RunScript(%s)' % (pyjob)
             xbmc.executebuiltin(cmd)
@@ -440,7 +418,6 @@ def record_once(channelname,channelid,title,start,stop):
             st = "%02d:%02d" % (local_starttime.hour,local_starttime.minute)
             sd = "%02d/%02d/%04d" % (local_starttime.day,local_starttime.month,local_starttime.year)
             cmd = ["schtasks","/create","/f","/tn",job,"/sc","once","/st",st,"/sd",sd,"/tr","%s %s" % (xbmc.translatePath(plugin.get_setting('python')),xbmc.translatePath(pyjob))]
-            #log(cmd)
             subprocess.Popen(cmd,shell=True)
     else:
         now = datetime.now()
@@ -452,21 +429,18 @@ def record_once(channelname,channelid,title,start,stop):
                 cmd = 'RunScript(%s)' % (pyjob)
                 xbmc.executebuiltin(cmd)
             else:
-                #pass
                 xbmcvfs.delete(pyjob)
-                return #TODO
+                return
         else:
             cmd = 'AlarmClock(%s,RunScript(%s),%d,True)' % (job,pyjob,minutes)
-            #log(cmd)
             xbmc.executebuiltin(cmd)
-
-    #jobs[job] = job_description
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
     conn.execute("INSERT OR REPLACE INTO jobs(uuid,channelid,channelname,title,start,stop) VALUES(?,?,?,?,?,?)",
     [job,channelid,channelname,title,start,stop])
     conn.commit()
     conn.close()
+
     refresh()
 
 def refresh():
