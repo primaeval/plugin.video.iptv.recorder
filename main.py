@@ -533,6 +533,7 @@ def day(timestamp):
 
 @plugin.route('/channel/<channelname>/<channelid>')
 def channel(channelname,channelid):
+    '''
     channel_thumbnails = plugin.get_storage("channel_thumbnails")
     thumbnail = channel_thumbnails.get(channelname)
     jobs = plugin.get_storage("jobs")
@@ -548,6 +549,33 @@ def channel(channelname,channelid):
     broadcasts = result.get('broadcasts')
     if not broadcasts:
         return
+    '''
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+    c = conn.cursor()
+    channel = c.execute("SELECT * FROM streams WHERE tvg_id=?",(channelid,)).fetchone()
+    name,tvg_name,tvg_id,tvg_logo,groups,url = channel
+    log(channel)
+    programmes = c.execute("SELECT * FROM programmes WHERE channel=?",(channelid,)).fetchall()
+    #log(channels)
+    items = []
+    for p in programmes:
+        log(p)
+        channel , title , sub_title , start , stop , date , description , episode, categories = p
+        starttime = start
+        endtime = stop
+        context_items = []
+        if sub_title:
+            title = "%s - %s" % (title,sub_title)
+        label = "%s %s" % (starttime,title)
+        items.append({
+            'label': label,
+            'path': plugin.url_for(broadcast,channelid=channelid,channelname=channelname.encode("utf8"),title=title.encode("utf8"),starttime=starttime,endtime=endtime),
+            'thumbnail': tvg_logo,
+            'context_menu': context_items,
+            'info_type': 'Video',
+            'info':{"title": channelname, "plot":description,"genre":categories}
+        })
+    return items
     items = []
     for b in broadcasts:
         #log(b)
@@ -617,8 +645,9 @@ def favourite_channels():
         })
     return items
 
-@plugin.route('/group/<channelgroupid>')
-def group(channelgroupid):
+@plugin.route('/group/<channelgroup>')
+def group(channelgroup):
+    '''
     channel_urls = plugin.get_storage("channel_urls")
     favourite_channels = plugin.get_storage("favourite_channels")
     channel_thumbnails = plugin.get_storage("channel_thumbnails")
@@ -628,46 +657,63 @@ def group(channelgroupid):
     j = json.loads(content)
     #log(j)
     channels = j.get('result').get('channels')
+    '''
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+    c = conn.cursor()
+    if channelgroup == "All Channels":
+        channels = c.execute("SELECT * FROM streams ORDER BY name").fetchall()
+    else:
+        channels = c.execute("SELECT * FROM streams ORDER BY name WHERE groups=?",(channelgroup,)).fetchall()
+    #log(channels)
     items = []
     for c in channels:
+        name,tvg_name,tvg_id,tvg_logo,groups,url = c
         #log(c)
-        label = c.get('label')
-        channelname = c.get('channel')
-        channelid = str(c.get('channelid'))
-        thumbnail = c.get('thumbnail')
-        channel_thumbnails[channelname] = thumbnail
+        #label = c.get('label')
+        #channelname = c.get('channel')
+        #channelid = str(c.get('channelid'))
+        #thumbnail = c.get('thumbnail')
+        #channel_thumbnails[channelname] = thumbnail
         #log((name,cid))
         context_items = []
-        context_items.append(("Add Title Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search,channelid=channelid,channelname=channelname.encode("utf8")))))
-        context_items.append(("Add Plot Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search_plot,channelid=channelid,channelname=channelname.encode("utf8")))))
-        context_items.append(("PVR Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play,channelid=channelid))))
-        context_items.append(("External Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_name,channelname=channelname.encode("utf8")))))
-        if label not in favourite_channels:
-            context_items.append(("Add Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(add_favourite_channel,channelname=channelname,channelid=channelid,thumbnail=thumbnail))))
-        else:
-            context_items.append(("Remove Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_favourite_channel,channelname=channelname))))
+        #context_items.append(("Add Title Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search,channelid=channelid,channelname=channelname.encode("utf8")))))
+        #context_items.append(("Add Plot Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search_plot,channelid=channelid,channelname=channelname.encode("utf8")))))
+        #context_items.append(("PVR Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play,channelid=channelid))))
+        #context_items.append(("External Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_name,channelname=channelname.encode("utf8")))))
+        #if label not in favourite_channels:
+        #    context_items.append(("Add Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(add_favourite_channel,channelname=channelname,channelid=channelid,thumbnail=thumbnail))))
+        #else:
+        #    context_items.append(("Remove Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_favourite_channel,channelname=channelname))))
         items.append({
-            'label': channelname,
-            'path': plugin.url_for(channel,channelname=channelname,channelid=channelid),
+            'label': name,
+            'path': plugin.url_for(channel,channelname=name,channelid=tvg_id),
             'context_menu': context_items,
-            'thumbnail': thumbnail,
+            'thumbnail': tvg_logo,
         })
     return items
 
 @plugin.route('/groups')
 def groups():
+
+    '''
     rpc = '{"jsonrpc":"2.0","method":"PVR.GetChannelGroups","id":1,"params":{"channeltype":"tv"}}'
     r = requests.get('http://localhost:8080/jsonrpc?request='+urllib.quote_plus(rpc))
     content = r.content
     j = json.loads(content)
     #log(j)
     channelgroups = j.get('result').get('channelgroups')
+    '''
     items = []
-    for channelgroup in channelgroups:
-        #log(channelgroup)
+    #for channelgroup in channelgroups:
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+    c = conn.cursor()
+    channelgroups = c.execute("SELECT DISTINCT groups FROM streams ORDER BY groups").fetchall()
+    for channelgroup in [("All Channels",)] + channelgroups:
+        channelgroup = channelgroup[0]
+        log(channelgroup)
         items.append({
-            'label': channelgroup.get('label'),
-            'path': plugin.url_for(group,channelgroupid=str(channelgroup.get('channelgroupid')))
+            'label': channelgroup,
+            'path': plugin.url_for(group,channelgroup=channelgroup)
 
         })
     return items
@@ -950,8 +996,6 @@ def xmltv():
     else:
         xbmcvfs.copy(tmp,xml)
 
-    #dialog = xbmcgui.Dialog()
-
     databasePath = os.path.join(profilePath, 'xmltv.db')
     conn = sqlite3.connect(databasePath, detect_types=sqlite3.PARSE_DECLTYPES)
     conn.execute('PRAGMA foreign_keys = ON')
@@ -963,9 +1007,6 @@ def xmltv():
     conn.execute('CREATE TABLE IF NOT EXISTS programmes(channel TEXT, title TEXT, sub_title TEXT, start TEXT, stop TEXT, date TEXT, description TEXT, episode TEXT, categories TEXT, PRIMARY KEY(channel, start))')
     #TODO check primary key
     conn.execute('CREATE TABLE IF NOT EXISTS streams(name TEXT, tvg_name TEXT, tvg_id TEXT, tvg_logo TEXT, groups TEXT, url TEXT, PRIMARY KEY(name))')
-    #c = conn.cursor()
-    #c.execute('SELECT id FROM channels')
-    #old_channel_ids = [row["id"] for row in c]
 
     data = xbmcvfs.File(xml,'rb').read()
 
