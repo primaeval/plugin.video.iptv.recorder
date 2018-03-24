@@ -715,36 +715,6 @@ def groups():
     return items
 
 
-@plugin.route('/m3u')
-def m3u():
-    return
-    m3uUrl = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uUrl')
-    #log(m3uUrl)
-    if plugin.get_setting('external.m3u') == "1":
-        m3uUrl = plugin.get_setting('external.m3u.file')
-    elif plugin.get_setting('external.m3u') == "2":
-        m3uUrl = plugin.get_setting('external.m3u.url')
-    m3uFile = 'special://profile/addon_data/plugin.video.iptv.recorder/channels.m3u'
-    xbmcvfs.copy(m3uUrl,m3uFile)
-    f = xbmcvfs.File(m3uFile)
-    data = f.read()
-    #log(data)
-    channel_urls = plugin.get_storage("channel_urls")
-    channel_urls.clear()
-    channels = re.findall('#EXTINF:(.*?)\n(.*?)\n',data,flags=(re.I|re.DOTALL))
-    for channel in channels:
-        #log(channel)
-        match = re.search('tvg-name="(.*?)"',channel[0])
-        if match:
-            name = match.group(1)
-        else:
-            name = channel[0].rsplit(',',1)[-1]
-        url = channel[1]
-        #log((name,url))
-        channel_urls[name] = url
-    #channel_urls.sync()
-
-
 @plugin.route('/service_start')
 def service_start():
     threading.Thread(target=service).start()
