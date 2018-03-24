@@ -781,7 +781,7 @@ def service():
                 record_once(jchannelid,jchannelname,title,start,stop)
 
         elif type == "PLOT":
-            programmes = c.execute("SELECT * FROM programmes WHERE channelid=? AND description LIKE ?",(jchannelid,jdescription)).fetchall()
+            programmes = c.execute("SELECT * FROM programmes WHERE channelid=? AND description LIKE ?",(jchannelid,"%"+jdescription+"%")).fetchall()
             for p in programmes:
                 channel , title , sub_title , start , stop , date , description , episode, categories = p
                 record_once(jchannelid,jchannelname,title,start,stop)
