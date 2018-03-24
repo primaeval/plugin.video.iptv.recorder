@@ -277,8 +277,8 @@ def delete_job(job,kill=True,ask=True):
     xbmcvfs.delete(pyjob)
     xbmcvfs.delete(pyjob+'.pid')
     del jobs[job]
-    if sys.argv[1] != '-1':
-        refresh()
+
+    refresh()
 
 def windows():
     if os.name == 'nt':
