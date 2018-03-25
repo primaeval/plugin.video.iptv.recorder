@@ -497,23 +497,24 @@ def record_always_search_plot(channelid,channelname):
 @plugin.route('/broadcast/<channelid>/<channelname>/<title>/<start>/<stop>')
 def broadcast(channelid,channelname,title,start,stop):
     label = HTMLParser.HTMLParser().unescape(title)
+    echannelname = HTMLParser.HTMLParser().unescape(channelname)
 
     items = []
 
     items.append({
-        'label': "Record Once - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,label,xml2local(start),xml2local(stop)),
+        'label': "Record Once - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (echannelname,label,xml2local(start),xml2local(stop)),
         'path': plugin.url_for(record_once,channelid=channelid,channelname=channelname,title=title,start=start,stop=stop),
         'thumbnail':get_icon_path('recordings'),
     })
 
     items.append({
-        'label': "Record Always - %s - %s" % (channelname,label),
+        'label': "Record Always - %s - %s" % (echannelname,label),
         'path': plugin.url_for(record_always,channelid=channelid,channelname=channelname,title=title),
         'thumbnail':get_icon_path('recordings'),
     })
     #TODO does this handle summer time?
     items.append({
-        'label': "Record Daily - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,label,xml2local(start).time(),xml2local(stop).time()),
+        'label': "Record Daily - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (echannelname,label,xml2local(start).time(),xml2local(stop).time()),
         'path': plugin.url_for(record_daily,channelid=channelid,channelname=channelname,title=title,start=start,stop=stop),
         'thumbnail':get_icon_path('recordings'),
     })
@@ -608,7 +609,7 @@ def search_title(title):
         etitle = HTMLParser.HTMLParser().unescape(stitle)
         if description:
             description = HTMLParser.HTMLParser().unescape(description)
-        label = "[COLOR grey]%02d:%02d %s - %s[/COLOR]  %s[CR]%s" % (starttime.hour,starttime.minute,day(starttime),channelname,recording,etitle)
+        label = "[COLOR grey]%02d:%02d %s - %s[/COLOR]  %s[CR]%s" % (starttime.hour,starttime.minute,day(starttime),HTMLParser.HTMLParser().unescape(channelname),recording,etitle)
         context_items = []
         if recording:
             context_items.append(("Cancel Record" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job,job=job[0]))))
@@ -703,7 +704,7 @@ def search_plot(plot):
         etitle = HTMLParser.HTMLParser().unescape(stitle)
         if description:
             description = HTMLParser.HTMLParser().unescape(description)
-        label = "[COLOR grey]%02d:%02d %s - %s[/COLOR]  %s[CR]%s" % (starttime.hour,starttime.minute,day(starttime),channelname,recording,etitle)
+        label = "[COLOR grey]%02d:%02d %s - %s[/COLOR]  %s[CR]%s" % (starttime.hour,starttime.minute,day(starttime),HTMLParser.HTMLParser().unescape(channelname),recording,etitle)
         context_items = []
         if recording:
             context_items.append(("Cancel Record" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job,job=job[0]))))
@@ -816,7 +817,7 @@ def favourite_channels():
         context_items.append(("Play Channel External" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external,channelname=channelname.encode("utf8")))))
         context_items.append(("Remove Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_favourite_channel,channelname=channelname))))
         items.append({
-            'label': channelname,
+            'label': HTMLParser.HTMLParser().unescape(channelname),
             'path': plugin.url_for(channel,channelname=channelname,channelid=channelid),
             'context_menu': context_items,
             'thumbnail': thumbnail,
@@ -853,7 +854,7 @@ def epg():
         else:
             context_items.append(("Remove Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_favourite_channel,channelname=channelname))))
         items.append({
-            'label': name,
+            'label': HTMLParser.HTMLParser().unescape(name),
             'path': plugin.url_for(channel,channelname=name,channelid=channelid),
             'context_menu': context_items,
             'thumbnail': icon,
@@ -891,7 +892,7 @@ def group(channelgroup):
         else:
             context_items.append(("Remove Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_favourite_channel,channelname=channelname))))
         items.append({
-            'label': name,
+            'label': HTMLParser.HTMLParser().unescape(name),
             'path': plugin.url_for(channel,channelname=name,channelid=channelid),
             'context_menu': context_items,
             'thumbnail': tvg_logo,
