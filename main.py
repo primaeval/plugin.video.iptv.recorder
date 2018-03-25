@@ -189,7 +189,7 @@ def rules():
         #label = "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,etitle,xml2local(start),xml2local(stop))
         label = "TODO"
         if type == "ALWAYS":
-            label = "%s - %s" % (channelname,etitle)
+            label = "%s - %s" % (echannelname,etitle)
         elif type == "DAILY":
             label =  "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (echannelname,etitle,xml2local(start).time(),xml2local(stop).time())
         elif type == "SEARCH":
@@ -323,7 +323,7 @@ def ffmpeg_location():
 
 
 @plugin.route('/record_once/<channelid>/<channelname>/<title>/<start>/<stop>')
-def record_once(channelid,channelname,title,start,stop):
+def record_once(channelid,channelname,title,start,stop,refresh=True):
     #TODO check for ffmpeg process already recording if job is re-added
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
     c = conn.cursor()
@@ -435,7 +435,8 @@ def record_once(channelid,channelname,title,start,stop):
     conn.commit()
     conn.close()
 
-    refresh()
+    if refresh:
+        refresh()
 
 
 def refresh():
@@ -950,7 +951,7 @@ def service_thread():
             programmes = c.execute("SELECT * FROM programmes WHERE channelid=? AND title=?",(jchannelid,jtitle)).fetchall()
             for p in programmes:
                 channel , title , sub_title , start , stop , date , description , episode, categories = p
-                record_once(jchannelid,jchannelname,title,start,stop)
+                record_once(jchannelid,jchannelname,title,start,stop,refresh=False)
 
         elif type == "DAILY":
             tjstart = xml2local(jstart).time()
@@ -961,20 +962,20 @@ def service_thread():
                 tstart = xml2local(start).time()
                 tstop = xml2local(stop).time()
                 if tjstart == tstart and tjstop == tstop:
-                    record_once(jchannelid,jchannelname,title,start,stop)
+                    record_once(jchannelid,jchannelname,title,start,stop,refresh=False)
 
         elif type == "SEARCH":
             programmes = c.execute("SELECT * FROM programmes WHERE channelid=? AND title LIKE ?",(jchannelid,jtitle)).fetchall()
             for p in programmes:
                 channel , title , sub_title , start , stop , date , description , episode, categories = p
-                record_once(jchannelid,jchannelname,title,start,stop)
+                record_once(jchannelid,jchannelname,title,start,stop,refresh=False)
 
         elif type == "PLOT":
             programmes = c.execute("SELECT * FROM programmes WHERE channelid=? AND description LIKE ?",(jchannelid,"%"+jdescription+"%")).fetchall()
             for p in programmes:
                 channel , title , sub_title , start , stop , date , description , episode, categories = p
-                record_once(jchannelid,jchannelname,title,start,stop)
-
+                record_once(jchannelid,jchannelname,title,start,stop,refresh=False)
+    refresh()
 
 @plugin.route('/delete_recording/<label>/<path>')
 def delete_recording(label,path):
