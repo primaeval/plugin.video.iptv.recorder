@@ -305,9 +305,9 @@ def ffmpeg_location():
     if ffmpeg:
         try:
             st = os.stat(ffmpeg)
-            if not (st.st_mode | stat.S_IEXEC):
+            if not (st.st_mode | stat.S_IXUSR):
                 try:
-                    os.chmod(ffmpeg, st.st_mode | stat.S_IEXEC)
+                    os.chmod(ffmpeg, st.st_mode | stat.S_IXUSR)
                 except:
                     pass
         except:
