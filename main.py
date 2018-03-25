@@ -540,6 +540,8 @@ def channel(channelname,channelid):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
     c = conn.cursor()
     channel = c.execute("SELECT * FROM streams WHERE tvg_id=?",(channelid,)).fetchone()
+    if not channel:
+        return
     name,tvg_name,tvg_id,tvg_logo,groups,url = channel
     programmes = c.execute("SELECT * FROM programmes WHERE channelid=?",(channelid,)).fetchall()
     #jobs = c.execute("SELECT * FROM jobs WHERE channelid=?",(channelid,)).fetchall()
@@ -570,9 +572,13 @@ def channel(channelname,channelid):
             (plugin.url_for(record_once,channelid=channelid,channelname=channelname.encode("utf8"),title=title.encode("utf8"),start=start,stop=stop))))
         context_items.append(("Play Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel,channelname=channelname.encode("utf8")))))
         context_items.append(("Play Channel External" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external,channelname=channelname.encode("utf8")))))
+        if url:
+            path = plugin.url_for(broadcast,channelid=channelid,channelname=channelname.encode("utf8"),title=title.encode("utf8"),start=start,stop=stop)
+        else:
+            path = ""
         items.append({
             'label': label,
-            'path': plugin.url_for(broadcast,channelid=channelid,channelname=channelname.encode("utf8"),title=title.encode("utf8"),start=start,stop=stop),
+            'path': path,
             'thumbnail': tvg_logo,
             'context_menu': context_items,
             'info_type': 'Video',
@@ -621,6 +627,43 @@ def favourite_channels():
             'path': plugin.url_for(channel,channelname=channelname,channelid=channelid),
             'context_menu': context_items,
             'thumbnail': thumbnail,
+        })
+    return items
+
+@plugin.route('/epg')
+def epg():
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+    c = conn.cursor()
+
+
+    streams = c.execute("SELECT * FROM streams ORDER BY name").fetchall()
+    channels = c.execute("SELECT * FROM channels ORDER BY name").fetchall()
+    favourites = c.execute("SELECT channelname FROM favourites").fetchall()
+    favourites = [x[0] for x in favourites]
+
+    items = []
+    for c in channels:
+        #name,tvg_name,tvg_id,tvg_logo,groups,url = c
+        log(c)
+        id, name, icon = c
+        channelname = name
+        channelid = id
+        thumbnail = icon  or get_icon_path('tv')
+
+        context_items = []
+        context_items.append(("Add Title Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search,channelid=channelid,channelname=channelname.encode("utf8")))))
+        context_items.append(("Add Plot Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search_plot,channelid=channelid,channelname=channelname.encode("utf8")))))
+        context_items.append(("Play Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel,channelname=channelname.encode("utf8")))))
+        context_items.append(("Play Channel External" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external,channelname=channelname.encode("utf8")))))
+        if channelname not in favourites:
+            context_items.append(("Add Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(add_favourite_channel,channelname=channelname,channelid=channelid,thumbnail=thumbnail))))
+        else:
+            context_items.append(("Remove Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_favourite_channel,channelname=channelname))))
+        items.append({
+            'label': name,
+            'path': plugin.url_for(channel,channelname=name,channelid=channelid),
+            'context_menu': context_items,
+            'thumbnail': icon,
         })
     return items
 
@@ -815,6 +858,8 @@ def xml2utc(xml):
 
 @plugin.route('/xmltv')
 def xmltv():
+    xbmcgui.Dialog().notification("IPTV Recorder","loading data",sound=False)
+
     profilePath = xbmc.translatePath(plugin.addon.getAddonInfo('profile'))
     xbmcvfs.mkdirs(profilePath)
 
@@ -959,6 +1004,8 @@ def xmltv():
 
     conn.commit()
     conn.close()
+
+    xbmcgui.Dialog().notification("IPTV Recorder","finished loading data",sound=False)
     return
 
 
@@ -1013,6 +1060,14 @@ def index():
         'label': "Recordings Folder",
         'path': plugin.get_setting('recordings'),
         'thumbnail':get_icon_path('recordings'),
+        'context_menu': context_items,
+    })
+
+    items.append(
+    {
+        'label': "Full EPG",
+        'path': plugin.url_for('epg'),
+        'thumbnail':get_icon_path('favourites'),
         'context_menu': context_items,
     })
 
