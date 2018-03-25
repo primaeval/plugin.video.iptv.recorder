@@ -536,6 +536,150 @@ def day(timestamp):
             return timestamp.strftime("%A")
 
 
+@plugin.route('/search_title_dialog')
+def search_title_dialog():
+    searches = plugin.get_storage('search_title')
+    d = xbmcgui.Dialog()
+    select = ["New"] + sorted(searches.keys())
+    which = d.select("Search Title",select)
+    #log(which)
+    if which == -1:
+        return
+    if which == 0:
+        what = d.input("Search")
+    else:
+        what = d.input("Search",select[which])
+    if not what:
+        return
+    searches[what] = ''
+    return search_title(what)
+
+
+@plugin.route('/search_plot_dialog')
+def search_plot_dialog():
+    searches = plugin.get_storage('search_plot')
+    d = xbmcgui.Dialog()
+    select = ["New"] + sorted(searches.keys())
+    which = d.select("Search Plot",select)
+    #log(which)
+    if which == -1:
+        return
+    if which == 0:
+        what = d.input("Search")
+    else:
+        what = d.input("Search",select[which])
+    if not what:
+        return
+    searches[what] = ''
+    return search_plot(what)
+
+
+@plugin.route('/search_title/<title>')
+def search_title(title):
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+    c = conn.cursor()
+
+    programmes = c.execute("SELECT * FROM programmes WHERE title LIKE ?",("%"+title+"%",)).fetchall()
+
+    items = []
+    for p in programmes:
+        log(p)
+        channelid , title , sub_title , start , stop , date , description , episode, categories = p
+        channel = c.execute("SELECT * FROM streams WHERE tvg_id=?",(channelid,)).fetchone()
+        if not channel:
+            continue
+        channelname,tvg_name,tvg_id,tvg_logo,groups,url = channel
+        job = c.execute("SELECT * FROM jobs WHERE channelid=? AND start=? AND stop=?",(channelid,start,stop)).fetchone()
+        if job:
+            recording = "[COLOR red]RECORD[/COLOR]"
+        else:
+            recording = ""
+        starttime = xml2local(start)
+        endtime = xml2local(stop)
+        if sub_title:
+            stitle = "%s - %s" % (title,sub_title)
+        else:
+            stitle = title
+        etitle = HTMLParser.HTMLParser().unescape(stitle)
+        if description:
+            description = HTMLParser.HTMLParser().unescape(description)
+        label = "[COLOR grey]%02d:%02d %s[/COLOR] %s[CR]%s" % (starttime.hour,starttime.minute,day(starttime),recording,etitle)
+        context_items = []
+        if recording:
+            context_items.append(("Cancel Record" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job,job=job[0]))))
+        else:
+            context_items.append(("Record Once" , 'XBMC.RunPlugin(%s)' %
+            (plugin.url_for(record_once,channelid=channelid,channelname=channelname.encode("utf8"),title=title.encode("utf8"),start=start,stop=stop))))
+        context_items.append(("Play Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel,channelname=channelname.encode("utf8")))))
+        context_items.append(("Play Channel External" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external,channelname=channelname.encode("utf8")))))
+        if url:
+            path = plugin.url_for(broadcast,channelid=channelid,channelname=channelname.encode("utf8"),title=title.encode("utf8"),start=start,stop=stop)
+        else:
+            path = ""
+        items.append({
+            'label': label,
+            'path': path,
+            'thumbnail': tvg_logo,
+            'context_menu': context_items,
+            'info_type': 'Video',
+            'info':{"title": etitle, "plot":description,"genre":categories}
+        })
+    return items
+
+
+@plugin.route('/search_plot/<description>')
+def search_plot(description):
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+    c = conn.cursor()
+
+    programmes = c.execute("SELECT * FROM programmes WHERE description LIKE ?",("%"+description+"%",)).fetchall()
+
+    items = []
+    for p in programmes:
+        log(p)
+        channelid , title , sub_title , start , stop , date , description , episode, categories = p
+        channel = c.execute("SELECT * FROM streams WHERE tvg_id=?",(channelid,)).fetchone()
+        if not channel:
+            continue
+        channelname,tvg_name,tvg_id,tvg_logo,groups,url = channel
+        job = c.execute("SELECT * FROM jobs WHERE channelid=? AND start=? AND stop=?",(channelid,start,stop)).fetchone()
+        if job:
+            recording = "[COLOR red]RECORD[/COLOR]"
+        else:
+            recording = ""
+        starttime = xml2local(start)
+        endtime = xml2local(stop)
+        if sub_title:
+            stitle = "%s - %s" % (title,sub_title)
+        else:
+            stitle = title
+        etitle = HTMLParser.HTMLParser().unescape(stitle)
+        if description:
+            description = HTMLParser.HTMLParser().unescape(description)
+        label = "[COLOR grey]%02d:%02d %s[/COLOR] %s[CR]%s" % (starttime.hour,starttime.minute,day(starttime),recording,etitle)
+        context_items = []
+        if recording:
+            context_items.append(("Cancel Record" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job,job=job[0]))))
+        else:
+            context_items.append(("Record Once" , 'XBMC.RunPlugin(%s)' %
+            (plugin.url_for(record_once,channelid=channelid,channelname=channelname.encode("utf8"),title=title.encode("utf8"),start=start,stop=stop))))
+        context_items.append(("Play Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel,channelname=channelname.encode("utf8")))))
+        context_items.append(("Play Channel External" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external,channelname=channelname.encode("utf8")))))
+        if url:
+            path = plugin.url_for(broadcast,channelid=channelid,channelname=channelname.encode("utf8"),title=title.encode("utf8"),start=start,stop=stop)
+        else:
+            path = ""
+        items.append({
+            'label': label,
+            'path': path,
+            'thumbnail': tvg_logo,
+            'context_menu': context_items,
+            'info_type': 'Video',
+            'info':{"title": etitle, "plot":description,"genre":categories}
+        })
+    return items
+
+
 @plugin.route('/channel/<channelname>/<channelid>')
 def channel(channelname,channelid):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
@@ -849,10 +993,11 @@ def xml2utc(xml):
         minutes = int(match.group(9))
         dt = datetime(year,month,day,hour,minute,second)
         td = timedelta(hours=hours,minutes=minutes)
-        if sign == '+':
-            dt = dt - td
-        else:
-            dt = dt + td
+        if plugin.get_setting('xmltv.add.timezone') == "true":
+            if sign == '+':
+                dt = dt - td
+            else:
+                dt = dt + td
         return dt
     return ''
 
@@ -1069,6 +1214,22 @@ def index():
         'label': "Full EPG",
         'path': plugin.url_for('epg'),
         'thumbnail':get_icon_path('favourites'),
+        'context_menu': context_items,
+    })
+
+    items.append(
+    {
+        'label': "Search Title",
+        'path': plugin.url_for('search_title_dialog'),
+        'thumbnail':get_icon_path('search'),
+        'context_menu': context_items,
+    })
+
+    items.append(
+    {
+        'label': "Search Plot",
+        'path': plugin.url_for('search_plot_dialog'),
+        'thumbnail':get_icon_path('search'),
         'context_menu': context_items,
     })
 
