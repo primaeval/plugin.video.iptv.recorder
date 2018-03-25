@@ -761,9 +761,10 @@ def channel(channelname,channelid):
         else:
             stitle = title
         etitle = HTMLParser.HTMLParser().unescape(stitle)
+        echannelname = HTMLParser.HTMLParser().unescape(channelname)
         if description:
             description = HTMLParser.HTMLParser().unescape(description)
-        label = "[COLOR grey]%02d:%02d %s[/COLOR] %s[CR]%s" % (starttime.hour,starttime.minute,day(starttime),recording,etitle)
+        label = "[COLOR grey]%02d:%02d %s - %s[/COLOR] %s[CR]%s" % (starttime.hour,starttime.minute,day(starttime),echannelname,recording,etitle)
         context_items = []
         if recording:
             context_items.append(("Cancel Record" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job,job=job[0]))))
