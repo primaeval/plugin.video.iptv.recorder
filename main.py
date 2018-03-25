@@ -846,22 +846,22 @@ def epg():
     items = []
     for c in channels:
         id, name, icon = c
-        channelname = name
+        channelname = name.encode("utf8")
         channelid = id
         thumbnail = icon  or get_icon_path('tv')
 
         context_items = []
-        context_items.append(("Add Title Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search,channelid=channelid,channelname=channelname.encode("utf8")))))
-        context_items.append(("Add Plot Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search_plot,channelid=channelid,channelname=channelname.encode("utf8")))))
-        context_items.append(("Play Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel,channelname=channelname.encode("utf8")))))
-        context_items.append(("Play Channel External" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external,channelname=channelname.encode("utf8")))))
+        context_items.append(("Add Title Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search,channelid=channelid,channelname=channelname))))
+        context_items.append(("Add Plot Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search_plot,channelid=channelid,channelname=channelname))))
+        context_items.append(("Play Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel,channelname=channelname))))
+        context_items.append(("Play Channel External" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external,channelname=channelname))))
         if channelname not in favourites:
             context_items.append(("Add Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(add_favourite_channel,channelname=channelname,channelid=channelid,thumbnail=thumbnail))))
         else:
             context_items.append(("Remove Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_favourite_channel,channelname=channelname))))
         items.append({
-            'label': HTMLParser.HTMLParser().unescape(name),
-            'path': plugin.url_for(channel,channelname=name,channelid=channelid),
+            'label': HTMLParser.HTMLParser().unescape(channelname),
+            'path': plugin.url_for(channel,channelname=channelname,channelid=channelid),
             'context_menu': context_items,
             'thumbnail': icon,
         })
@@ -1151,18 +1151,18 @@ def xmltv():
                 id = id.group(1)
             name = re.search('<display-name.*?>(.*?)</display-name',m)
             if name:
-                name = name.group(1)
+                name = name.group(1).decode('utf8')
             icon = re.search('<icon.*?src="(.*?)"',m)
             if icon:
                 icon = icon.group(1)
-            conn.execute("INSERT OR IGNORE INTO channels(id, name, icon) VALUES(?, ?, ?)", [id, name, icon])
+            conn.execute("INSERT OR IGNORE INTO channels(id, name, icon) VALUES (?, ?, ?)", [id, name, icon])
 
     match = re.findall('<programme(.*?)</programme>',data,flags=(re.I|re.DOTALL))
     if match:
         for m in match:
             channel = re.search('channel="(.*?)"',m)
             if channel:
-                channel = channel.group(1)
+                channel = channel.group(1).decode('utf8')
             start = re.search('start="(.*?)"',m)
             if start:
                 start = start.group(1)
@@ -1172,13 +1172,13 @@ def xmltv():
 
             title = re.search('<title.*?>(.*?)</title',m)
             if title:
-                title = title.group(1)
+                title = title.group(1).decode('utf8')
             sub_title = re.search('<sub-title.*?>(.*?)</sub-title',m)
             if sub_title:
-                sub_title = sub_title.group(1)
+                sub_title = sub_title.group(1).decode('utf8')
             description = re.search('<desc.*?>(.*?)</desc',m)
             if description:
-                description = description.group(1)
+                description = description.group(1).decode('utf8')
             date = re.search('<date.*?>(.*?)</date',m)
             if date:
                 date = date.group(1)
@@ -1186,16 +1186,16 @@ def xmltv():
             #TODO other systems
             episode = re.search('<episode-num system="xmltv_ns">(.*?)<',m)
             if episode:
-                episode = episode.group(1)
+                episode = episode.group(1).decode('utf8')
 
             cats = re.findall('<category.*?>(.*?)</category>',m,flags=(re.I|re.DOTALL))
             if cats:
-                categories = ','.join(cats)
+                categories = (','.join(cats)).decode('utf8')
             else:
                 categories = ''
 
-            conn.execute("INSERT OR IGNORE INTO programmes(channelid , title , sub_title , start , stop , date , description , episode, categories ) VALUES(?,?,?,?,?,?,?,?,?)",
-            [channel , title , sub_title , start , stop , date , description , episode, categories])
+            conn.execute("INSERT OR IGNORE INTO programmes(channelid, title, sub_title, start, stop, date, description, episode, categories) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [channel, title, sub_title, start, stop, date, description, episode, categories])
 
     mode = plugin.get_setting('external.m3u')
     if mode == "0":
@@ -1213,7 +1213,7 @@ def xmltv():
     f = xbmcvfs.File(m3uFile)
     data = f.read()
 
-    channels = re.findall('#EXTINF:(.*?)\n(.*?)\n',data,flags=(re.I|re.DOTALL))
+    channels = re.findall('#EXTINF:(.*?)(?:\r\n|\r|\n)(.*?)(?:\r\n|\r|\n|$)', data, flags=(re.I | re.DOTALL))
     for channel in channels:
         name = channel[0].rsplit(',',1)[-1]
         tvg_name = re.search('tvg-name="(.*?)"',channel[0])
@@ -1233,15 +1233,14 @@ def xmltv():
         if groups:
             groups = groups.group(1)
 
-        conn.execute("INSERT OR IGNORE INTO streams(name,tvg_name,tvg_id,tvg_logo,groups,url ) VALUES(?,?,?,?,?,?)",
-        [name.strip(),tvg_name,tvg_id,tvg_logo,groups,url.strip()])
+        conn.execute("INSERT OR IGNORE INTO streams(name, tvg_name, tvg_id, tvg_logo, groups, url) VALUES (?, ?, ?, ?, ?, ?)",
+        [name.strip(), tvg_name, tvg_id, tvg_logo, groups, url.strip()])
 
     conn.commit()
     conn.close()
 
     xbmcgui.Dialog().notification("IPTV Recorder","finished loading data",sound=False)
     return
-
 
 @plugin.route('/')
 def index():
