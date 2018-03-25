@@ -17,6 +17,7 @@ from datetime import datetime,timedelta
 #TODO strptime bug fix
 import uuid
 import HTMLParser
+import calendar
 
 from struct import *
 from collections import namedtuple
@@ -125,10 +126,10 @@ def xml2local(xml):
     return utc2local(xml2utc(xml))
 
 
-def utc2local (utc):
-    epoch = time.mktime(utc.timetuple())
-    offset = datetime.fromtimestamp (epoch) - datetime.utcfromtimestamp (epoch)
-    return utc + offset
+def utc2local(utc):
+    timestamp = calendar.timegm(utc.timetuple())
+    local = datetime.fromtimestamp(timestamp)
+    return local.replace(microsecond=utc.microsecond)
 
 
 def str2dt(string_date):
