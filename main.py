@@ -836,12 +836,33 @@ def favourite_channels():
 @plugin.route('/epg')
 def epg():
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
-    c = conn.cursor()
+    cursor = conn.cursor()
 
-    streams = c.execute("SELECT * FROM streams ORDER BY name").fetchall()
-    channels = c.execute("SELECT * FROM channels ORDER BY name").fetchall()
-    favourites = c.execute("SELECT channelname FROM favourites").fetchall()
+    streams = cursor.execute("SELECT * FROM streams ORDER BY name").fetchall()
+    channels = cursor.execute("SELECT * FROM channels ORDER BY name").fetchall()
+    favourites = cursor.execute("SELECT channelname FROM favourites").fetchall()
     favourites = [x[0] for x in favourites]
+
+    offset = cursor.execute("SELECT start FROM programmes LIMIT 1").fetchone()
+    mins = 0
+    if offset:
+        timezone = offset[0].split()[1]
+        if timezone.startswith('+') or timezone.startswith('-'):
+            sign = timezone[0]
+            hour = timezone[1:2]
+            min = timezone[3:4]
+            mins = int(hour)*60 + int(min)
+            if sign == "-":
+                mins = - mins
+            utc_now = datetime.utcnow()
+            now = utc_now.strftime("%Y%m%d%H%M%S")
+            now = "%s %s" % (now,timezone)
+        else:
+            pass
+            #TODO
+    else:
+        #TODO
+        now = datetime.now().strftime("%Y%m%d%H%M%S")
 
     items = []
     for c in channels:
@@ -849,6 +870,17 @@ def epg():
         channelname = name.encode("utf8")
         channelid = id
         thumbnail = icon  or get_icon_path('tv')
+
+        now_title = cursor.execute("SELECT title FROM programmes WHERE channelid=? AND start<? AND stop>? LIMIT 1",(channelid,now,now)).fetchone()
+        if now_title:
+            now_title = HTMLParser.HTMLParser().unescape(now_title[0])
+        else:
+            now_title = ""
+        next_title = cursor.execute("SELECT title FROM programmes WHERE channelid=? AND start>? LIMIT 1",(channelid,now)).fetchone()
+        if next_title:
+            next_title =  HTMLParser.HTMLParser().unescape(next_title[0])
+        else:
+            next_title = ""
 
         context_items = []
         context_items.append(("Add Title Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search,channelid=channelid,channelname=channelname))))
@@ -860,7 +892,7 @@ def epg():
         else:
             context_items.append(("Remove Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_favourite_channel,channelname=channelname))))
         items.append({
-            'label': HTMLParser.HTMLParser().unescape(channelname),
+            'label': HTMLParser.HTMLParser().unescape("%s - [COLOR grey]%s - [I]%s[/I][/COLOR]" % (channelname,now_title,next_title)),
             'path': plugin.url_for(channel,channelname=channelname,channelid=channelid),
             'context_menu': context_items,
             'thumbnail': icon,
@@ -882,6 +914,7 @@ def group(channelgroup):
     favourites = [x[0] for x in favourites]
 
     items = []
+
     offset = cursor.execute("SELECT start FROM programmes LIMIT 1").fetchone()
     mins = 0
     if offset:
@@ -909,13 +942,12 @@ def group(channelgroup):
         channelid = tvg_id
         thumbnail = tvg_logo
 
-
-        now_title = cursor.execute("SELECT title FROM programmes WHERE channelid=? AND start<? AND stop>?",(channelid,now,now)).fetchone()
+        now_title = cursor.execute("SELECT title FROM programmes WHERE channelid=? AND start<? AND stop>? LIMIT 1",(channelid,now,now)).fetchone()
         if now_title:
             now_title = now_title[0]
         else:
             now_title = ""
-        next_title = cursor.execute("SELECT title FROM programmes WHERE channelid=? AND start>?",(channelid,now)).fetchone()
+        next_title = cursor.execute("SELECT title FROM programmes WHERE channelid=? AND start>? LIMIT 1",(channelid,now)).fetchone()
         if next_title:
             next_title = next_title[0]
         else:
