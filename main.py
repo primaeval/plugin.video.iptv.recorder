@@ -749,6 +749,7 @@ def channel(channelname,channelid):
     #jobs = c.execute("SELECT * FROM jobs WHERE channelid=?",(channelid,)).fetchall()
 
     items = []
+    now = datetime.now()
     for p in programmes:
         channel , title , sub_title , start , stop , date , description , episode, categories = p
         job = c.execute("SELECT * FROM jobs WHERE channelid=? AND start=? AND stop=?",(channelid,start,stop)).fetchone()
@@ -766,7 +767,10 @@ def channel(channelname,channelid):
         echannelname = HTMLParser.HTMLParser().unescape(channelname)
         if description:
             description = HTMLParser.HTMLParser().unescape(description)
-        label = "[COLOR grey]%02d:%02d %s - %s[/COLOR] %s[CR]%s" % (starttime.hour,starttime.minute,day(starttime),echannelname,recording,etitle)
+        if endtime < now:
+            label = "[COLOR grey]%02d:%02d %s - %s[/COLOR] %s[CR][COLOR black]%s[/COLOR]" % (starttime.hour,starttime.minute,day(starttime),echannelname,recording,etitle)
+        else:
+            label = "[COLOR grey]%02d:%02d %s - %s[/COLOR] %s[CR]%s" % (starttime.hour,starttime.minute,day(starttime),echannelname,recording,etitle)
         context_items = []
         if recording:
             context_items.append(("Cancel Record" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job,job=job[0]))))
