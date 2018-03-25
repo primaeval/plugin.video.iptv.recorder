@@ -839,6 +839,7 @@ def favourite_channels():
 
 @plugin.route('/epg')
 def epg():
+    #TODO merge with group()
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
     cursor = conn.cursor()
 
@@ -858,12 +859,19 @@ def epg():
             mins = int(hour)*60 + int(min)
             if sign == "-":
                 mins = - mins
-            utc_now = datetime.utcnow()
-            now = utc_now.strftime("%Y%m%d%H%M%S")
+
+            timestamp = time.time()
+            time_now = datetime.fromtimestamp(timestamp)
+            time_utc = datetime.utcfromtimestamp(timestamp)
+            utc_offset = time_now - time_utc
+
+            now = time_now - utc_offset + timedelta(minutes=mins)
+
+            now = now.strftime("%Y%m%d%H%M%S")
             now = "%s %s" % (now,timezone)
         else:
-            pass
             #TODO
+            now = datetime.now().strftime("%Y%m%d%H%M%S")
     else:
         #TODO
         now = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -930,12 +938,19 @@ def group(channelgroup):
             mins = int(hour)*60 + int(min)
             if sign == "-":
                 mins = - mins
-            utc_now = datetime.utcnow()
-            now = utc_now.strftime("%Y%m%d%H%M%S")
+
+            timestamp = time.time()
+            time_now = datetime.fromtimestamp(timestamp)
+            time_utc = datetime.utcfromtimestamp(timestamp)
+            utc_offset = time_now - time_utc
+
+            now = time_now - utc_offset + timedelta(minutes=mins)
+
+            now = now.strftime("%Y%m%d%H%M%S")
             now = "%s %s" % (now,timezone)
         else:
-            pass
             #TODO
+            now = datetime.now().strftime("%Y%m%d%H%M%S")
     else:
         #TODO
         now = datetime.now().strftime("%Y%m%d%H%M%S")
