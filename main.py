@@ -1179,7 +1179,7 @@ def xmltv():
     f = xbmcvfs.File(m3uFile)
     data = f.read()
 
-    channels = re.findall('#EXTINF:(.*?)\n(.*?)\n',data,flags=(re.I|re.DOTALL))
+    channels = re.findall('#EXTINF:(.*?)(?:\r\n|\r|\n)(.*?)(?:\r\n|\r|\n|$)', data, flags=(re.I | re.DOTALL))
     for channel in channels:
         name = channel[0].rsplit(',',1)[-1]
         tvg_name = re.search('tvg-name="(.*?)"',channel[0])
