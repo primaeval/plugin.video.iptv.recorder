@@ -1194,7 +1194,7 @@ def xmltv():
             groups = groups.group(1)
 
         conn.execute("INSERT OR IGNORE INTO streams(name,tvg_name,tvg_id,tvg_logo,groups,url ) VALUES(?,?,?,?,?,?)",
-        [name,tvg_name,tvg_id,tvg_logo,groups,url])
+        [name.strip(),tvg_name,tvg_id,tvg_logo,groups,url.strip()])
 
     conn.commit()
     conn.close()
