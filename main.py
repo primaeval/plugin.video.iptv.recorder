@@ -13,11 +13,12 @@ import json
 import os,os.path
 import stat
 import subprocess
-from datetime import datetime,timedelta
+from datetime import datetime,timedelta,tzinfo
 #TODO strptime bug fix
 import uuid
 import HTMLParser
 import calendar
+import pytz
 
 from struct import *
 from collections import namedtuple
@@ -870,22 +871,55 @@ def epg():
 @plugin.route('/group/<channelgroup>')
 def group(channelgroup):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
-    c = conn.cursor()
+    cursor = conn.cursor()
 
     if channelgroup == "All Channels":
-        streams = c.execute("SELECT * FROM streams ORDER BY name").fetchall()
-        channels = c.execute("SELECT * FROM streams ORDER BY name").fetchall()
+        streams = cursor.execute("SELECT * FROM streams ORDER BY name").fetchall()
+        channels = cursor.execute("SELECT * FROM streams ORDER BY name").fetchall()
     else:
-        streams = c.execute("SELECT * FROM streams WHERE groups=? ORDER BY name",(channelgroup,)).fetchall()
-    favourites = c.execute("SELECT channelname FROM favourites").fetchall()
+        streams = cursor.execute("SELECT * FROM streams WHERE groups=? ORDER BY name",(channelgroup,)).fetchall()
+    favourites = cursor.execute("SELECT channelname FROM favourites").fetchall()
     favourites = [x[0] for x in favourites]
 
     items = []
+    offset = cursor.execute("SELECT start FROM programmes LIMIT 1").fetchone()
+    mins = 0
+    if offset:
+        timezone = offset[0].split()[1]
+        if timezone.startswith('+') or timezone.startswith('-'):
+            sign = timezone[0]
+            hour = timezone[1:2]
+            min = timezone[3:4]
+            mins = int(hour)*60 + int(min)
+            if sign == "-":
+                mins = - mins
+            utc_now = datetime.utcnow()
+            now = utc_now.strftime("%Y%m%d%H%M%S")
+            now = "%s %s" % (now,timezone)
+        else:
+            pass
+            #TODO
+    else:
+        #TODO
+        now = datetime.now().strftime("%Y%m%d%H%M%S")
+
     for c in streams:
         name,tvg_name,tvg_id,tvg_logo,groups,url = c
         channelname = name
         channelid = tvg_id
         thumbnail = tvg_logo
+
+
+        now_title = cursor.execute("SELECT title FROM programmes WHERE channelid=? AND start<? AND stop>?",(channelid,now,now)).fetchone()
+        if now_title:
+            now_title = now_title[0]
+        else:
+            now_title = ""
+        next_title = cursor.execute("SELECT title FROM programmes WHERE channelid=? AND start>?",(channelid,now)).fetchone()
+        if next_title:
+            next_title = next_title[0]
+        else:
+            next_title = ""
 
         context_items = []
         context_items.append(("Add Title Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search,channelid=channelid,channelname=channelname.encode("utf8")))))
@@ -897,7 +931,7 @@ def group(channelgroup):
         else:
             context_items.append(("Remove Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_favourite_channel,channelname=channelname))))
         items.append({
-            'label': HTMLParser.HTMLParser().unescape(name),
+            'label': HTMLParser.HTMLParser().unescape("%s - [COLOR grey]%s - [I]%s[/I][/COLOR]" % (name,now_title,next_title)),
             'path': plugin.url_for(channel,channelname=name,channelid=channelid),
             'context_menu': context_items,
             'thumbnail': tvg_logo,
