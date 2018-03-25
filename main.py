@@ -561,7 +561,7 @@ def channel(channelname,channelid):
         etitle = HTMLParser.HTMLParser().unescape(stitle)
         if description:
             description = HTMLParser.HTMLParser().unescape(description)
-        label = "[COLOR grey]%s %02d:%02d[/COLOR] %s[CR]%s" % (day(starttime),starttime.hour,starttime.minute,recording,etitle)
+        label = "[COLOR grey]%02d:%02d %s[/COLOR] %s[CR]%s" % (starttime.hour,starttime.minute,day(starttime),recording,etitle)
         context_items = []
         if recording:
             context_items.append(("Cancel Record" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job,job=job[0]))))
@@ -681,9 +681,9 @@ def groups():
     return items
 
 
-@plugin.route('/service_start')
-def service_start():
-    threading.Thread(target=service).start()
+@plugin.route('/service')
+def service():
+    threading.Thread(target=service_thread).start()
 
 @plugin.route('/full_service')
 def full_service():
@@ -696,8 +696,8 @@ def start():
         xmltv()
     service()
 
-@plugin.route('/service')
-def service():
+@plugin.route('/service_thread')
+def service_thread():
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
     c = conn.cursor()
     rules = c.execute("SELECT uid, channelid, channelname, title, start, stop, description, type FROM rules ORDER by channelname,title,start,stop").fetchall()

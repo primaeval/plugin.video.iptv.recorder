@@ -22,14 +22,15 @@ if __name__ == '__main__':
     #xbmc.startServer(xbmc.SERVER_WEBSERVER, False)
     #xbmc.log("SERVER MAIN",xbmc.LOGERROR)
     ADDON = xbmcaddon.Addon('plugin.video.iptv.recorder')
-    time.sleep(60*int(ADDON.getSetting('service.delay'))) #TODO wait for xmltv data to be loaded
-    xbmc.executebuiltin('XBMC.RunPlugin(plugin://plugin.video.iptv.recorder/start)')
+    #time.sleep(60*int(ADDON.getSetting('service.delay'))) #TODO wait for xmltv data to be loaded
+    #xbmc.executebuiltin('XBMC.RunPlugin(plugin://plugin.video.iptv.recorder/start)')
     #xbmc.log("SERVER after start",xbmc.LOGERROR)
     try:
         if ADDON.getSetting('service') == 'true':
             monitor = xbmc.Monitor()
             xbmc.log("[plugin.video.iptv.recorder] service started...", xbmc.LOGERROR)
             if ADDON.getSetting('service.startup') == 'true':
+                time.sleep(int(ADDON.getSetting('service.delay')))
                 Service()
                 ADDON.setSetting('last.update', str(time.time()))
             while not monitor.abortRequested():

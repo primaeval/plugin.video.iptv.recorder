@@ -9,10 +9,24 @@
     <setting id="ffmpeg" label="ffmpeg exe" type="file" default="ffmpeg"/>
 </category>
 
-<category label="Playback">
-    <setting id="external.player" label="External Player" type="file" default="ffplay"  />
-    <setting id="external.player.args" label="External Player Arguments" type="text" default="-fs"  />
+<category label="External Data">
+    <setting id="external.m3u" label="External m3u" type="enum" default="None" values="None|File|Url" />
+    <setting id="external.m3u.file" label="External m3u File" type="file" default=""/>
+    <setting id="external.m3u.url" label="External m3u Url" type="text" default=""/>
 
+    <setting type="sep"/>
+    <setting id="external.xmltv" label="External xmltv" type="enum" default="None" values="None|File|Url" />
+    <setting id="external.xmltv.file" label="External xmltv File" type="file" default=""/>
+    <setting id="external.xmltv.url" label="External xmltv Url" type="text" default=""/>
+</category>
+
+<category label="Service">
+    <setting id="service.delay" label="Startup Delay (seconds)" type="number" default="30"/>
+    <setting id="service" label="Background Service" type="bool" default="true" />
+    <setting id="service.startup" label="Update on Login" type="bool" default="true" visible="eq(-1,true)"/>
+    <setting id="service.type" label="Service Schedule Type" type="enum" default="Period" visible="eq(-2,true)" values="None|Period|Time" />
+    <setting id="service.interval" label="Interval (hours)" type="number" default="6"  visible="eq(-3,true)+eq(-1,1)" />
+    <setting id="service.time" type="time" label="Service Time" default="03:33" visible="eq(-4,true)+eq(-2,2)"/>
 </category>
 
 <category label="Windows">
@@ -20,28 +34,15 @@
     <setting id="python" label="python(w) exe" type="file" default="pythonw.exe"  />
 </category>
 
-<category label="External Data">
-    <setting id="external.m3u" label="External m3u" type="enum" default="None" values="None|File|Url" />
-    <setting id="external.m3u.file" label="External m3u File" type="file" default=""/>
-    <setting id="external.m3u.url" label="External m3u Url" type="text" default=""/>
-    
-    <setting type="sep"/>
-    <setting id="external.xmltv" label="External xmltv" type="enum" default="None" values="None|File|Url" />
-    <setting id="external.xmltv.file" label="External xmltv File" type="file" default=""/>
-    <setting id="external.xmltv.url" label="External xmltv Url" type="text" default=""/>    
+<category label="Playback">
+    <setting id="external.player" label="External Player" type="file" default="ffplay"  />
+    <setting id="external.player.args" label="External Player Arguments" type="text" default="-fs"  />
 </category>
 
 <category label="Debug">
     <setting id="debug" label="Debugging Menu Items" type="bool" default="false"  />
 </category>
 
-<category label="Service">
-    <setting id="service.delay" label="Startup Delay (minutes)" type="number" default="1"/>
-    <setting id="service" label="Background Service" type="bool" default="false" />
-    <setting id="service.startup" label="Update on Login" type="bool" default="true" visible="eq(-1,true)"/>
-    <setting id="service.type" label="Service Schedule Type" type="enum" default="Time" visible="eq(-2,true)" values="None|Period|Time" />
-    <setting id="service.interval" label="Interval (hours)" type="number" default="6"  visible="eq(-3,true)+eq(-1,1)" />
-    <setting id="service.time" type="time" label="Service Time" default="03:33" visible="eq(-4,true)+eq(-2,2)"/>
-</category>
+
 
 </settings>
