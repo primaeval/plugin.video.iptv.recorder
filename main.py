@@ -735,8 +735,11 @@ def channel(channelname,channelid):
     c = conn.cursor()
     channel = c.execute("SELECT * FROM streams WHERE tvg_id=?",(channelid,)).fetchone()
     if not channel:
-        return
-    name,tvg_name,tvg_id,tvg_logo,groups,url = channel
+        channel = c.execute("SELECT * FROM channels WHERE id=?",(channelid,)).fetchone()
+        tvg_id, name, tvg_logo = channel
+        url = ""
+    else:
+        name,tvg_name,tvg_id,tvg_logo,groups,url = channel
     programmes = c.execute("SELECT * FROM programmes WHERE channelid=?",(channelid,)).fetchall()
     #jobs = c.execute("SELECT * FROM jobs WHERE channelid=?",(channelid,)).fetchall()
 
@@ -769,7 +772,7 @@ def channel(channelname,channelid):
         if url:
             path = plugin.url_for(broadcast,channelid=channelid,channelname=channelname.encode("utf8"),title=title.encode("utf8"),start=start,stop=stop)
         else:
-            path = ""
+            path = plugin.url_for('channel',channelname=channelname,channelid=channelid)
         items.append({
             'label': label,
             'path': path,
@@ -829,7 +832,6 @@ def epg():
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
     c = conn.cursor()
 
-
     streams = c.execute("SELECT * FROM streams ORDER BY name").fetchall()
     channels = c.execute("SELECT * FROM channels ORDER BY name").fetchall()
     favourites = c.execute("SELECT channelname FROM favourites").fetchall()
@@ -837,8 +839,6 @@ def epg():
 
     items = []
     for c in channels:
-        #name,tvg_name,tvg_id,tvg_logo,groups,url = c
-        log(c)
         id, name, icon = c
         channelname = name
         channelid = id
