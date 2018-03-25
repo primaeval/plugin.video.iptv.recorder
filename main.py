@@ -154,10 +154,11 @@ def jobs():
     items = []
     for uuid, channelid, channelname, title, start, stop in jobs:
         etitle = HTMLParser.HTMLParser().unescape(title)
+        echannelname = HTMLParser.HTMLParser().unescape(channelname)
         context_items = []
         context_items.append(("Delete Job" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job,job=uuid))))
         context_items.append(("Delete All Jobs" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_all_jobs))))
-        label = "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,etitle,xml2local(start),xml2local(stop))
+        label = "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (echannelname,etitle,xml2local(start),xml2local(stop))
         items.append({
             'label': label,
             'path': plugin.url_for(delete_job,job=uuid),
@@ -179,6 +180,8 @@ def rules():
             edescription = HTMLParser.HTMLParser().unescape(description)
         else:
             etitle = HTMLParser.HTMLParser().unescape(title)
+        try: echannelname = HTMLParser.HTMLParser().unescape(channelname)
+        except: pass
 
         context_items = []
         context_items.append(("Delete Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_rule,uid=uid))))
@@ -188,11 +191,11 @@ def rules():
         if type == "ALWAYS":
             label = "%s - %s" % (channelname,etitle)
         elif type == "DAILY":
-            label =  "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname,etitle,xml2local(start).time(),xml2local(stop).time())
+            label =  "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (echannelname,etitle,xml2local(start).time(),xml2local(stop).time())
         elif type == "SEARCH":
-            label = "%s - %s" % (channelname,etitle)
+            label = "%s - %s" % (echannelname,etitle)
         elif type == "PLOT":
-            label = "%s - (%s)" % (channelname,edescription)
+            label = "%s - (%s)" % (echannelname,edescription)
         items.append({
             'label': label,
             'path': plugin.url_for(delete_rule,uid=uid),
