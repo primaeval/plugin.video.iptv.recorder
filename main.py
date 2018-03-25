@@ -536,42 +536,48 @@ def day(timestamp):
             return timestamp.strftime("%A")
 
 
+@plugin.route('/delete_search_title/<title>')
+def delete_search_title(title):
+    searches = plugin.get_storage('search_title')
+    if title in searches:
+        del searches[title]
+    refresh()
+
+
 @plugin.route('/search_title_dialog')
 def search_title_dialog():
     searches = plugin.get_storage('search_title')
+
+    items = []
+    items.append({
+        "label": "New",
+        "path": plugin.url_for('search_title_input',title='title'),
+        "thumbnail": get_icon_path('search'),
+    })
+
+    for search in searches:
+        context_items = []
+        context_items.append(("Delete Search" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_search_title,title=search))))
+        items.append({
+            "label": search,
+            "path": plugin.url_for('search_title',title=search),
+            "thumbnail": get_icon_path('search'),
+            'context_menu': context_items,
+            })
+    return items
+
+
+@plugin.route('/search_title_input/<title>')
+def search_title_input(title):
+    searches = plugin.get_storage('search_title')
+    if title == "title":
+        title = ""
     d = xbmcgui.Dialog()
-    select = ["New"] + sorted(searches.keys())
-    which = d.select("Search Title",select)
-    #log(which)
-    if which == -1:
-        return
-    if which == 0:
-        what = d.input("Search")
-    else:
-        what = d.input("Search",select[which])
+    what = d.input("Search Title",title)
     if not what:
         return
     searches[what] = ''
     return search_title(what)
-
-
-@plugin.route('/search_plot_dialog')
-def search_plot_dialog():
-    searches = plugin.get_storage('search_plot')
-    d = xbmcgui.Dialog()
-    select = ["New"] + sorted(searches.keys())
-    which = d.select("Search Plot",select)
-    #log(which)
-    if which == -1:
-        return
-    if which == 0:
-        what = d.input("Search")
-    else:
-        what = d.input("Search",select[which])
-    if not what:
-        return
-    searches[what] = ''
-    return search_plot(what)
 
 
 @plugin.route('/search_title/<title>')
@@ -583,7 +589,6 @@ def search_title(title):
 
     items = []
     for p in programmes:
-        log(p)
         channelid , title , sub_title , start , stop , date , description , episode, categories = p
         channel = c.execute("SELECT * FROM streams WHERE tvg_id=?",(channelid,)).fetchone()
         if not channel:
@@ -603,7 +608,7 @@ def search_title(title):
         etitle = HTMLParser.HTMLParser().unescape(stitle)
         if description:
             description = HTMLParser.HTMLParser().unescape(description)
-        label = "[COLOR grey]%02d:%02d %s[/COLOR] %s[CR]%s" % (starttime.hour,starttime.minute,day(starttime),recording,etitle)
+        label = "[COLOR grey]%02d:%02d %s - %s[/COLOR]  %s[CR]%s" % (starttime.hour,starttime.minute,day(starttime),channelname,recording,etitle)
         context_items = []
         if recording:
             context_items.append(("Cancel Record" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job,job=job[0]))))
@@ -626,17 +631,59 @@ def search_title(title):
         })
     return items
 
+@plugin.route('/delete_search_plot/<plot>')
+def delete_search_plot(plot):
+    searches = plugin.get_storage('search_plot')
+    if plot in searches:
+        del searches[plot]
+    refresh()
 
-@plugin.route('/search_plot/<description>')
-def search_plot(description):
+
+@plugin.route('/search_plot_dialog')
+def search_plot_dialog():
+    searches = plugin.get_storage('search_plot')
+
+    items = []
+    items.append({
+        "label": "New",
+        "path": plugin.url_for('search_plot_input',plot='plot'),
+        "thumbnail": get_icon_path('search'),
+    })
+
+    for search in searches:
+        context_items = []
+        context_items.append(("Delete Search" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_search_plot,plot=search))))
+        items.append({
+            "label": search,
+            "path": plugin.url_for('search_plot',plot=search),
+            "thumbnail": get_icon_path('search'),
+            'context_menu': context_items,
+            })
+    return items
+
+
+@plugin.route('/search_plot_input/<plot>')
+def search_plot_input(plot):
+    searches = plugin.get_storage('search_plot')
+    if plot == "plot":
+        plot = ""
+    d = xbmcgui.Dialog()
+    what = d.input("Search Plot",plot)
+    if not what:
+        return
+    searches[what] = ''
+    return search_plot(what)
+
+
+@plugin.route('/search_plot/<plot>')
+def search_plot(plot):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
     c = conn.cursor()
 
-    programmes = c.execute("SELECT * FROM programmes WHERE description LIKE ?",("%"+description+"%",)).fetchall()
+    programmes = c.execute("SELECT * FROM programmes WHERE description LIKE ?",("%"+plot+"%",)).fetchall()
 
     items = []
     for p in programmes:
-        log(p)
         channelid , title , sub_title , start , stop , date , description , episode, categories = p
         channel = c.execute("SELECT * FROM streams WHERE tvg_id=?",(channelid,)).fetchone()
         if not channel:
@@ -656,7 +703,7 @@ def search_plot(description):
         etitle = HTMLParser.HTMLParser().unescape(stitle)
         if description:
             description = HTMLParser.HTMLParser().unescape(description)
-        label = "[COLOR grey]%02d:%02d %s[/COLOR] %s[CR]%s" % (starttime.hour,starttime.minute,day(starttime),recording,etitle)
+        label = "[COLOR grey]%02d:%02d %s - %s[/COLOR]  %s[CR]%s" % (starttime.hour,starttime.minute,day(starttime),channelname,recording,etitle)
         context_items = []
         if recording:
             context_items.append(("Cancel Record" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job,job=job[0]))))
@@ -678,6 +725,7 @@ def search_plot(description):
             'info':{"title": etitle, "plot":description,"genre":categories}
         })
     return items
+
 
 
 @plugin.route('/channel/<channelname>/<channelid>')
