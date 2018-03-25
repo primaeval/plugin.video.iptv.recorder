@@ -671,6 +671,8 @@ def groups():
     channelgroups = c.execute("SELECT DISTINCT groups FROM streams ORDER BY groups").fetchall()
     for channelgroup in [("All Channels",)] + channelgroups:
         channelgroup = channelgroup[0]
+        if not channelgroup:
+            continue
         items.append({
             'label': channelgroup,
             'path': plugin.url_for(group,channelgroup=channelgroup)
@@ -934,16 +936,19 @@ def xmltv():
 
     channels = re.findall('#EXTINF:(.*?)\n(.*?)\n',data,flags=(re.I|re.DOTALL))
     for channel in channels:
+        name = channel[0].rsplit(',',1)[-1]
         tvg_name = re.search('tvg-name="(.*?)"',channel[0])
         if tvg_name:
             tvg_name = tvg_name.group(1)
         tvg_id = re.search('tvg-id="(.*?)"',channel[0])
         if tvg_id:
             tvg_id = tvg_id.group(1)
+        else:
+            tvg_id = name
         tvg_logo = re.search('tvg-logo="(.*?)"',channel[0])
         if tvg_logo:
             tvg_logo = tvg_logo.group(1)
-        name = channel[0].rsplit(',',1)[-1]
+
         url = channel[1]
         groups = re.search('group-title="(.*?)"',channel[0])
         if groups:
