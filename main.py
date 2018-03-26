@@ -968,28 +968,27 @@ def add_favourite_channel(channelname, channelid, thumbnail):
 
 @plugin.route('/favourite_channels')
 def favourite_channels():
-    return group(show_favourites=True)
+    return group(section="FAVOURITES")
 
 
 @plugin.route('/epg')
 def epg():
-    return group(epg=True)
+    return group(section="EPG")
 
 
 @plugin.route('/group/<channelgroup>')
-#TODO combine epg/favourites as enum
-def group(channelgroup=None,epg=False,show_favourites=False):
+def group(channelgroup=None,section=None):
 
     show_now_next = False
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
-    if epg:
+    if section == "EPG":
         channels = cursor.execute("SELECT * FROM channels ORDER BY name").fetchall()
         collection = channels
         show_now_next = plugin.get_setting('show.now.next.all') == "true"
-    elif show_favourites:
+    elif section == "FAVOURITES":
         favourite_channels = cursor.execute("SELECT * FROM favourites").fetchall()
         collection = favourite_channels
         show_now_next = plugin.get_setting('show.now.next.favourites') == "true"
