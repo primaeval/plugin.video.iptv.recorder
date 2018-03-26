@@ -467,9 +467,15 @@ def record_daily(channelid, channelname, title, start, stop):
     start = timestamp2datetime(float(start))
     stop = timestamp2datetime(float(stop))
 
-    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
-    conn.execute("INSERT OR REPLACE INTO rules(channelid, channelname, title, start, stop, type) VALUES(?, ?, ?, ?, ?, ?)",
-    [channelid, channelname, title, start, stop, "DAILY"])
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
+    #TODO problem with PRIMARY KEYS, UNIQUE and TIMESTAMP
+    rule = cursor.execute('SELECT * FROM rules WHERE channelid=? AND channelname=? AND title=? AND start=? AND stop =? AND type=?', (channelid, channelname, title, start, stop, "DAILY")).fetchone()
+
+    if not rule:
+        conn.execute("INSERT OR REPLACE INTO rules(channelid, channelname, title, start, stop, type) VALUES(?, ?, ?, ?, ?, ?)",
+        [channelid, channelname, title, start, stop, "DAILY"])
     conn.commit()
     conn.close()
 
@@ -517,10 +523,9 @@ def record_always_search_plot(channelid, channelname):
     service()
 
 
-#@plugin.route('/broadcast/<channelid>/<channelname>/<title>/<start>/<stop>')
-#def broadcast(channelid, channelname, title, start, stop):
 @plugin.route('/broadcast/<programmeid>')
 def broadcast(programmeid):
+
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
@@ -554,10 +559,9 @@ def broadcast(programmeid):
         'path': plugin.url_for(record_always, channelid=echannelid, channelname=echannelname, title=etitle),
         'thumbnail': thumbnail or get_icon_path('recordings'),
     })
-    #TODO does this handle summer time?
+
     start_ts = datetime2timestamp(start)
     stop_ts = datetime2timestamp(stop)
-
     items.append({
         'label': "Record Daily - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname, title, utc2local(start).time(), utc2local(stop).time()),
         'path': plugin.url_for(record_daily, channelid=echannelid, channelname=echannelname, title=etitle, start=start_ts, stop=stop_ts),
@@ -566,13 +570,16 @@ def broadcast(programmeid):
 
     return items
 
+
 def datetime2timestamp(dt):
     epoch=datetime.fromtimestamp(0.0)
     td = dt - epoch
     return (td.microseconds + (td.seconds + td.days * 86400) * 10**6) / 10**6
 
+
 def timestamp2datetime(ts):
     return datetime.fromtimestamp(ts)
+
 
 def time2str(t):
     return "%02d:%02d" % (t.hour,t.minute)
@@ -1190,6 +1197,7 @@ def xmltv():
     conn.execute('DROP TABLE IF EXISTS streams')
     conn.execute('CREATE TABLE IF NOT EXISTS channels(uid INTEGER PRIMARY KEY ASC, id TEXT, name TEXT, icon TEXT)')
     conn.execute('CREATE TABLE IF NOT EXISTS programmes(uid INTEGER PRIMARY KEY ASC, channelid TEXT, title TEXT, sub_title TEXT, start TIMESTAMP, stop TIMESTAMP, date TEXT, description TEXT, episode TEXT, categories TEXT)')
+    #TODO unique fails with timestamps: UNIQUE(channelid, channelname, start, stop, description, type)
     conn.execute('CREATE TABLE IF NOT EXISTS rules(uid INTEGER PRIMARY KEY ASC, channelid TEXT, channelname TEXT, title TEXT, sub_title TEXT, start TIMESTAMP, stop TIMESTAMP, date TEXT, description TEXT, episode TEXT, categories TEXT, type TEXT)')
     #TODO check primary key
     conn.execute('CREATE TABLE IF NOT EXISTS streams(uid INTEGER PRIMARY KEY ASC, name TEXT, tvg_name TEXT, tvg_id TEXT, tvg_logo TEXT, groups TEXT, url TEXT)')
