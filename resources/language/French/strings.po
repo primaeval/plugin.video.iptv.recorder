@@ -1,0 +1,168 @@
+#
+msgid ""
+msgstr ""
+"Language: fr\n"
+
+msgctxt "#30000"
+msgid "Supprimer tous les enregistrements?"
+msgstr ""
+
+msgctxt "#30001"
+msgid "Lire la chaîne"
+msgstr ""
+
+msgctxt "#30002"
+msgid "Supprimer la plannification"
+msgstr ""
+
+msgctxt "#30003"
+msgid "Chargement des données terminé"
+msgstr ""
+
+msgctxt "#30004"
+msgid "Enregister une fois"
+msgstr ""
+
+msgctxt "#30005"
+msgid "Lire la châine sur un lecteur externe"
+msgstr ""
+
+msgctxt "#30006"
+msgid "Lecteur externe"
+msgstr ""
+
+msgctxt "#30007"
+msgid "Rechercher par titre (% est joker)?"
+msgstr ""
+
+msgctxt "#30008"
+msgid "Supprimer toutes les plannifications"
+msgstr ""
+
+msgctxt "#30009"
+msgid "Recherche par description"
+msgstr ""
+
+msgctxt "#30010"
+msgid "Ajouter la chaîne aux favoris"
+msgstr ""
+
+msgctxt "#30011"
+msgid "Supprimer toutes les règles"
+msgstr ""
+
+msgctxt "#30012"
+msgid "Règles d'enregistrement"
+msgstr ""
+
+msgctxt "#30013"
+msgid "Chaînes favorites"
+msgstr ""
+
+msgctxt "#30014"
+msgid "Supprimer tous les enregistrements"
+msgstr ""
+
+msgctxt "#30015"
+msgid "EPG Complet"
+msgstr ""
+
+msgctxt "#30016"
+msgid "Recherche par titre"
+msgstr ""
+
+msgctxt "#30017"
+msgid "xmltv"
+msgstr ""
+
+msgctxt "#30018"
+msgid "Supprimer la recherche"
+msgstr ""
+
+msgctxt "#30019"
+msgid "Annuler l'enregistrement?"
+msgstr ""
+
+msgctxt "#30020"
+msgid "Annuler l'enregistrement?"
+msgstr ""
+
+msgctxt "#30021"
+msgid "Nouveau"
+msgstr ""
+
+msgctxt "#30022"
+msgid "Retirer la chaîne des favoris"
+msgstr ""
+
+msgctxt "#30023"
+msgid "Enregistrer la programmation"
+msgstr ""
+
+msgctxt "#30024"
+msgid "Rechercher par description (% est joker)?"
+msgstr ""
+
+msgctxt "#30025"
+msgid "Ajouter une règle de recherche par titre"
+msgstr ""
+
+msgctxt "#30026"
+msgid "Ajouter une règle de recherche par description"
+msgstr ""
+
+msgctxt "#30027"
+msgid "Supprimer toutes les règles?"
+msgstr ""
+
+msgctxt "#30028"
+msgid "Dossier d'enregistrement"
+msgstr ""
+
+msgctxt "#30029"
+msgid "ffmpeg exe non trouvé!"
+msgstr ""
+
+msgctxt "#30030"
+msgid "Demain"
+msgstr ""
+
+msgctxt "#30031"
+msgid "Aujourdhui"
+msgstr ""
+
+msgctxt "#30032"
+msgid "Supprimer la règle"
+msgstr ""
+
+msgctxt "#30033"
+msgid "Groupes de chaînes"
+msgstr ""
+
+msgctxt "#30034"
+msgid "Chargement des données..."
+msgstr ""
+
+msgctxt "#30035"
+msgid "Annuler l'enregistrement"
+msgstr ""
+
+msgctxt "#30036"
+msgid "Service"
+msgstr ""
+
+msgctxt "#30037"
+msgid "Supprimer l'enregistrement"
+msgstr ""
+
+msgctxt "#30038"
+msgid "Hier"
+msgstr ""
+
+msgctxt "#30039"
+msgid "Supprimer toutes les programmations?"
+msgstr ""
+
+msgctxt "#30040"
+msgid "Enregistrements"
+msgstr ""
