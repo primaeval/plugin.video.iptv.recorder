@@ -86,6 +86,7 @@ def play(channelid):
 def play_channel(channelname):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
     c = conn.cursor()
+
     channel = c.execute("SELECT * FROM streams WHERE name=?", (channelname, )).fetchone()
     if not channel:
         return
@@ -98,6 +99,7 @@ def play_channel(channelname):
 def play_channel_external(channelname):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
     c = conn.cursor()
+
     channel = c.execute("SELECT * FROM streams WHERE name=?", (channelname, )).fetchone()
     if not channel:
         return
@@ -105,20 +107,26 @@ def play_channel_external(channelname):
 
     if url:
         cmd = [plugin.get_setting('external.player')]
+
         args = plugin.get_setting('external.player.args')
         if args:
             cmd.append(args)
+
         cmd.append(url)
+
         subprocess.Popen(cmd)
 
 
 @plugin.route('/play_external/<path>')
 def play_external(path):
     cmd = [plugin.get_setting('external.player')]
+
     args = plugin.get_setting('external.player.args')
     if args:
         cmd.append(args)
+
     cmd.append(xbmc.translatePath(path))
+
     subprocess.Popen(cmd)
 
 
@@ -148,61 +156,65 @@ def total_seconds(td):
 
 @plugin.route('/jobs')
 def jobs():
-    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
+
     jobs = cursor.execute("SELECT * FROM jobs ORDER by channelname, start").fetchall()
 
     items = []
+
     for uuid, channelid, channelname, title, start, stop in jobs:
-        etitle = HTMLParser.HTMLParser().unescape(title)
-        echannelname = HTMLParser.HTMLParser().unescape(channelname)
+
         context_items = []
+
         context_items.append(("Delete Job" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job, job=uuid))))
         context_items.append(("Delete All Jobs" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_all_jobs))))
-        label = "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (echannelname, etitle, xml2local(start), xml2local(stop))
+
+        label = "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname, title, utc2local(start), utc2local(stop))
+
         items.append({
             'label': label,
             'path': plugin.url_for(delete_job, job=uuid),
             'context_menu': context_items,
             'thumbnail':get_icon_path('recordings'),
         })
+
     return items
 
 
 @plugin.route('/rules')
 def rules():
-    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
-    rules = cursor.execute("SELECT uid, channelid, channelname, title, start, stop, description, type FROM rules ORDER by channelname, title, start, stop").fetchall()
+
+    rules = cursor.execute('SELECT uid, channelid, channelname, title, start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", description, type FROM rules ORDER by channelname, title, start, stop').fetchall()
 
     items = []
+
     for uid, channelid, channelname, title, start, stop, description, type  in rules:
-        if type == "PLOT":
-            edescription = HTMLParser.HTMLParser().unescape(description)
-        else:
-            etitle = HTMLParser.HTMLParser().unescape(title)
-        try: echannelname = HTMLParser.HTMLParser().unescape(channelname)
-        except: pass
+        log((uid, channelid, channelname, title, start, stop, description, type))
 
         context_items = []
         context_items.append(("Delete Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_rule, uid=uid))))
         context_items.append(("Delete All Rules" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_all_rules))))
-        #label = "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname, etitle, xml2local(start), xml2local(stop))
+
         label = "TODO"
         if type == "ALWAYS":
-            label = "%s - %s" % (echannelname, etitle)
+            label = "%s - %s" % (channelname, title)
         elif type == "DAILY":
-            label =  "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (echannelname, etitle, xml2local(start).time(), xml2local(stop).time())
+            label =  "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname, title, utc2local(start).time(), utc2local(stop).time())
         elif type == "SEARCH":
-            label = "%s - %s" % (echannelname, etitle)
+            label = "%s - %s" % (channelname, title)
         elif type == "PLOT":
-            label = "%s - (%s)" % (echannelname, edescription)
+            label = "%s - (%s)" % (channelname, description)
+
         items.append({
             'label': label,
             'path': plugin.url_for(delete_rule, uid=uid),
             'context_menu': context_items,
             'thumbnail':get_icon_path('recordings'),
         })
+
     return items
 
 
@@ -211,7 +223,8 @@ def delete_all_rules(ask=True):
     if ask and not (xbmcgui.Dialog().yesno("IPTV Recorder", "Delete All Rules?")):
         return
 
-    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
     conn.execute("DELETE FROM rules")
     conn.commit()
     conn.close()
@@ -220,8 +233,9 @@ def delete_all_rules(ask=True):
 
 
 @plugin.route('/delete_rule/<uid>')
-def delete_rule(uid, kill=True, ask=True):
-    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+def delete_rule(uid, ask=True):
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
 
     if ask and not (xbmcgui.Dialog().yesno("IPTV Recorder", "Cancel Record?")):
         return
@@ -238,7 +252,8 @@ def delete_all_jobs(ask=True):
     if ask and not (xbmcgui.Dialog().yesno("IPTV Recorder", "Delete All Jobs?")):
         return
 
-    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
     conn.execute("DELETE FROM jobs")
     conn.commit()
     conn.close()
@@ -248,7 +263,7 @@ def delete_all_jobs(ask=True):
 
 @plugin.route('/delete_job/<job>')
 def delete_job(job, kill=True, ask=True):
-    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
     job_details = cursor.execute("SELECT * FROM jobs WHERE uuid=?", (job, )).fetchone()
@@ -476,6 +491,7 @@ def record_daily(channelid, channelname, title, start, stop):
     if not rule:
         conn.execute("INSERT OR REPLACE INTO rules(channelid, channelname, title, start, stop, type) VALUES(?, ?, ?, ?, ?, ?)",
         [channelid, channelname, title, start, stop, "DAILY"])
+
     conn.commit()
     conn.close()
 
@@ -484,9 +500,15 @@ def record_daily(channelid, channelname, title, start, stop):
 
 @plugin.route('/record_always/<channelid>/<channelname>/<title>')
 def record_always(channelid, channelname, title):
-    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
-    conn.execute("INSERT OR REPLACE INTO rules(channelid, channelname, title, type) VALUES(?, ?, ?, ?)",
-    [channelid, channelname, title, "ALWAYS"])
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
+    rule = cursor.execute('SELECT * FROM rules WHERE channelid=? AND channelname=? AND title=? AND type=?', (channelid, channelname, title, "ALWAYS")).fetchone()
+
+    if not rule:
+        conn.execute("INSERT OR REPLACE INTO rules(channelid, channelname, title, type) VALUES(?, ?, ?, ?)",
+        [channelid, channelname, title, "ALWAYS"])
+
     conn.commit()
     conn.close()
 
@@ -499,9 +521,15 @@ def record_always_search(channelid, channelname):
     if not title:
         return
 
-    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
-    conn.execute("INSERT OR REPLACE INTO rules(channelid, channelname, title, type) VALUES(?, ?, ?, ?)",
-    [channelid, channelname, title, "SEARCH"])
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
+    rule = cursor.execute('SELECT * FROM rules WHERE channelid=? AND channelname=? AND title=? AND type=?', (channelid, channelname, title, "SEARCH")).fetchone()
+
+    if not rule:
+        conn.execute("INSERT OR REPLACE INTO rules(channelid, channelname, title, type) VALUES(?, ?, ?, ?)",
+        [channelid, channelname, title, "SEARCH"])
+
     conn.commit()
     conn.close()
 
@@ -510,13 +538,19 @@ def record_always_search(channelid, channelname):
 
 @plugin.route('/record_always_search_plot/<channelid>/<channelname>')
 def record_always_search_plot(channelid, channelname):
-    title = xbmcgui.Dialog().input("IPTV Recorder: Plot Search (% is wildcard)?")
-    if not title:
+    description = xbmcgui.Dialog().input("IPTV Recorder: Plot Search (% is wildcard)?")
+    if not description:
         return
 
-    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
-    conn.execute("INSERT OR REPLACE INTO rules(channelid, channelname, description, type) VALUES(?, ?, ?, ?)",
-    [channelid, channelname, title, "PLOT"])
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
+    rule = cursor.execute('SELECT * FROM rules WHERE channelid=? AND channelname=? AND description=? AND type=?', (channelid, channelname, title, "PLOT")).fetchone()
+
+    if not rule:
+        conn.execute("INSERT OR REPLACE INTO rules(channelid, channelname, description, type) VALUES(?, ?, ?, ?)",
+        [channelid, channelname, description, "PLOT"])
+
     conn.commit()
     conn.close()
 
