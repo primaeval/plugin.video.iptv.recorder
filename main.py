@@ -839,89 +839,24 @@ def favourite_channels():
 
 @plugin.route('/epg')
 def epg():
-    #TODO merge with group()
-    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
-    cursor = conn.cursor()
-
-    streams = cursor.execute("SELECT * FROM streams ORDER BY name").fetchall()
-    channels = cursor.execute("SELECT * FROM channels ORDER BY name").fetchall()
-    favourites = cursor.execute("SELECT channelname FROM favourites").fetchall()
-    favourites = [x[0] for x in favourites]
-
-    offset = cursor.execute("SELECT start FROM programmes LIMIT 1").fetchone()
-    mins = 0
-    if offset:
-        timezone = offset[0].split()[1]
-        if timezone.startswith('+') or timezone.startswith('-'):
-            sign = timezone[0]
-            hour = timezone[1:2]
-            min = timezone[3:4]
-            mins = int(hour)*60 + int(min)
-            if sign == "-":
-                mins = - mins
-
-            timestamp = time.time()
-            time_now = datetime.fromtimestamp(timestamp)
-            time_utc = datetime.utcfromtimestamp(timestamp)
-            utc_offset = time_now - time_utc
-
-            now = time_now - utc_offset + timedelta(minutes=mins)
-
-            now = now.strftime("%Y%m%d%H%M%S")
-            now = "%s %s" % (now, timezone)
-        else:
-            #TODO
-            now = datetime.now().strftime("%Y%m%d%H%M%S")
-    else:
-        #TODO
-        now = datetime.now().strftime("%Y%m%d%H%M%S")
-
-    items = []
-    for c in channels:
-        id, name, icon = c
-        channelname = name.encode("utf8")
-        channelid = id
-        thumbnail = icon  or get_icon_path('tv')
-
-        now_title = cursor.execute("SELECT title FROM programmes WHERE channelid=? AND start<? AND stop>? LIMIT 1", (channelid, now, now)).fetchone()
-        if now_title:
-            now_title = HTMLParser.HTMLParser().unescape(now_title[0])
-        else:
-            now_title = ""
-        next_title = cursor.execute("SELECT title FROM programmes WHERE channelid=? AND start>? LIMIT 1", (channelid, now)).fetchone()
-        if next_title:
-            next_title =  HTMLParser.HTMLParser().unescape(next_title[0])
-        else:
-            next_title = ""
-
-        context_items = []
-        context_items.append(("Add Title Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search, channelid=channelid, channelname=channelname))))
-        context_items.append(("Add Plot Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search_plot, channelid=channelid, channelname=channelname))))
-        context_items.append(("Play Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=channelname))))
-        context_items.append(("Play Channel External" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external, channelname=channelname))))
-        if channelname not in favourites:
-            context_items.append(("Add Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(add_favourite_channel, channelname=channelname, channelid=channelid, thumbnail=thumbnail))))
-        else:
-            context_items.append(("Remove Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_favourite_channel, channelname=channelname))))
-        items.append({
-            'label': HTMLParser.HTMLParser().unescape("%s - [COLOR grey]%s - [I]%s[/I][/COLOR]" % (channelname, now_title, next_title)),
-            'path': plugin.url_for(channel, channelname=channelname, channelid=channelid),
-            'context_menu': context_items,
-            'thumbnail': icon,
-        })
-    return items
+    return group(epg=True)
 
 
 @plugin.route('/group/<channelgroup>')
-def group(channelgroup):
+def group(channelgroup=None,epg=False):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
-    if channelgroup == "All Channels":
-        streams = cursor.execute("SELECT * FROM streams ORDER BY name").fetchall()
-        channels = cursor.execute("SELECT * FROM streams ORDER BY name").fetchall()
+    if epg:
+        channels = cursor.execute("SELECT * FROM channels ORDER BY name").fetchall()
+        collection = channels
     else:
-        streams = cursor.execute("SELECT * FROM streams WHERE groups=? ORDER BY name", (channelgroup, )).fetchall()
+        if channelgroup == "All Channels":
+            streams = cursor.execute("SELECT * FROM streams ORDER BY name").fetchall()
+            channels = cursor.execute("SELECT * FROM channels ORDER BY name").fetchall()
+        else:
+            streams = cursor.execute("SELECT * FROM channels WHERE groups=? ORDER BY name", (channelgroup, )).fetchall()
+        collection = streams
 
     favourites = cursor.execute("SELECT channelname FROM favourites").fetchall()
     favourites = [x[0] for x in favourites]
@@ -930,11 +865,17 @@ def group(channelgroup):
 
     now = datetime.utcnow()
 
-    for stream in streams:
-        name, tvg_name, tvg_id, tvg_logo, groups, url = stream
-        channelname = name
-        channelid = tvg_id
-        thumbnail = tvg_logo
+    for stream_channel in collection:
+        if epg:
+            id, name, icon = stream_channel
+            channelname = name
+            channelid = id
+            thumbnail = icon or get_icon_path('tv')
+        else:
+            name, tvg_name, tvg_id, tvg_logo, groups, url = stream_channel
+            channelname = name
+            channelid = tvg_id
+            thumbnail = tvg_logo or get_icon_path('tv')
 
         description = ""
 
@@ -1150,7 +1091,7 @@ def xmltv():
         path = plugin.get_setting('external.xmltv.file')
     else:
         path = plugin.get_setting('external.xmltv.url')
-    #log((mode, epgPathType, path))
+
     tmp = os.path.join(profilePath, 'xmltv.tmp')
     xml = os.path.join(profilePath, 'xmltv.xml')
     xbmcvfs.copy(path, tmp)
