@@ -224,7 +224,9 @@ def delete_all_rules(ask=True):
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
+
     conn.execute("DELETE FROM rules")
+
     conn.commit()
     conn.close()
 
@@ -240,6 +242,7 @@ def delete_rule(uid, ask=True):
         return
 
     conn.execute("DELETE FROM rules WHERE uid=?", (uid, ))
+
     conn.commit()
     conn.close()
 
@@ -253,7 +256,9 @@ def delete_all_jobs(ask=True):
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
+
     conn.execute("DELETE FROM jobs")
+
     conn.commit()
     conn.close()
 
@@ -963,34 +968,7 @@ def add_favourite_channel(channelname, channelid, thumbnail):
 
 @plugin.route('/favourite_channels')
 def favourite_channels():
-    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
-    c = conn.cursor()
-
-    favourite_channels = c.execute("SELECT * FROM favourites").fetchall()
-
-    items = []
-
-    for channelname, channelid, thumbnail in favourite_channels:
-
-        echannelname = channelname.encode("utf8")
-        echannelid = channelid.encode("utf8")
-
-        context_items = []
-
-        context_items.append(("Add Title Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search, channelid=echannelid, channelname=echannelname))))
-        context_items.append(("Add Plot Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search_plot, channelid=echannelid, channelname=echannelname))))
-        context_items.append(("Play Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=echannelname))))
-        context_items.append(("Play Channel External" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external, channelname=echannelname))))
-        context_items.append(("Remove Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_favourite_channel, channelname=echannelname))))
-
-        items.append({
-            'label':channelname,
-            'path': plugin.url_for(channel, channelname=echannelname, channelid=echannelid),
-            'context_menu': context_items,
-            'thumbnail': thumbnail,
-        })
-
-    return items
+    return group(show_favourites=True)
 
 
 @plugin.route('/epg')
@@ -999,19 +977,30 @@ def epg():
 
 
 @plugin.route('/group/<channelgroup>')
-def group(channelgroup=None,epg=False):
+#TODO combine epg/favourites as enum
+def group(channelgroup=None,epg=False,show_favourites=False):
+
+    show_now_next = False
+
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
     if epg:
         channels = cursor.execute("SELECT * FROM channels ORDER BY name").fetchall()
         collection = channels
+        show_now_next = plugin.get_setting('show.now.next.all') == "true"
+    elif show_favourites:
+        favourite_channels = cursor.execute("SELECT * FROM favourites").fetchall()
+        collection = favourite_channels
+        show_now_next = plugin.get_setting('show.now.next.favourites') == "true"
     else:
         if channelgroup == "All Channels":
             streams = cursor.execute("SELECT * FROM streams ORDER BY name").fetchall()
             channels = cursor.execute("SELECT * FROM channels ORDER BY name").fetchall()
+            show_now_next = plugin.get_setting('show.now.next.all') == "true"
         else:
             streams = cursor.execute("SELECT * FROM streams WHERE groups=? ORDER BY name", (channelgroup, )).fetchall()
+            show_now_next = plugin.get_setting('show.now.next.lists') == "true"
         collection = streams
 
     favourites = cursor.execute("SELECT channelname FROM favourites").fetchall()
@@ -1028,6 +1017,8 @@ def group(channelgroup=None,epg=False):
             channelname = name
             channelid = id
             thumbnail = icon or get_icon_path('tv')
+        elif show_favourites:
+            channelname, channelid, thumbnail = stream_channel
         else:
             uid, name, tvg_name, tvg_id, tvg_logo, groups, url = stream_channel
             channelname = name
@@ -1036,24 +1027,29 @@ def group(channelgroup=None,epg=False):
 
         description = ""
 
-        now_title = cursor.execute('SELECT title, start AS "start [TIMESTAMP]", description FROM programmes WHERE channelid=? AND start<? AND stop>? LIMIT 1', (channelid, now, now)).fetchone()
-        if now_title:
-            title = now_title[0]
-            local_start = utc2local(now_title[1])
-            description = now_title[2]
-            now_title = "%02d:%02d %s " % (local_start.hour, local_start.minute, title)
-        else:
-            now_title = ""
+        if show_now_next:
 
-        next_title = cursor.execute('SELECT title, start AS "start [TIMESTAMP]" FROM programmes WHERE channelid=? AND start>? LIMIT 1', (channelid, now)).fetchone()
-        if next_title:
-            title = next_title[0]
-            local_start = utc2local(next_title[1])
-            next_title =  "[I]%02d:%02d %s[/I]" % (local_start.hour, local_start.minute, title)
-        else:
-            next_title = ""
+            now_title = cursor.execute('SELECT title, start AS "start [TIMESTAMP]", description FROM programmes WHERE channelid=? AND start<? AND stop>? LIMIT 1', (channelid, now, now)).fetchone()
+            if now_title:
+                title = now_title[0]
+                local_start = utc2local(now_title[1])
+                description = now_title[2]
+                now_title = "%02d:%02d %s " % (local_start.hour, local_start.minute, title)
+            else:
+                now_title = ""
 
-        label = "%s[CR][COLOR grey]%s%s[/COLOR]" % (channelname, now_title, next_title)
+            next_title = cursor.execute('SELECT title, start AS "start [TIMESTAMP]" FROM programmes WHERE channelid=? AND start>? LIMIT 1', (channelid, now)).fetchone()
+            if next_title:
+                title = next_title[0]
+                local_start = utc2local(next_title[1])
+                next_title =  "[I]%02d:%02d %s[/I]" % (local_start.hour, local_start.minute, title)
+            else:
+                next_title = ""
+
+            label = "%s[CR][COLOR grey]%s%s[/COLOR]" % (channelname, now_title, next_title)
+
+        else:
+            label = channelname
 
         context_items = []
 
@@ -1084,18 +1080,24 @@ def group(channelgroup=None,epg=False):
 @plugin.route('/groups')
 def groups():
     items = []
+
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
+
     channelgroups = cursor.execute("SELECT DISTINCT groups FROM streams ORDER BY groups").fetchall()
+
     for channelgroup in [("All Channels", )] + channelgroups:
         channelgroup = channelgroup[0]
+
         if not channelgroup:
             continue
+
         items.append({
             'label': channelgroup,
             'path': plugin.url_for(group, channelgroup=channelgroup.encode("utf8"))
 
         })
+
     return items
 
 
@@ -1122,7 +1124,7 @@ def service_thread():
     rules = cursor.execute('SELECT uid, channelid, channelname, title, start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", description, type FROM rules ORDER by channelname, title, start, stop').fetchall()
 
     for uid, jchannelid, jchannelname, jtitle, jstart, jstop, jdescription, type  in rules:
-        log((uid, jchannelid, jchannelname, jtitle, jstart, jstop, jdescription, type))
+
         if type == "ALWAYS":
             #TODO scrub [] from title
 
@@ -1163,6 +1165,7 @@ def service_thread():
 
     refresh()
 
+
 @plugin.route('/delete_recording/<label>/<path>')
 def delete_recording(label, path):
     if not (xbmcgui.Dialog().yesno("IPTV Recorder", "[COLOR red]Delete Recording?[/COLOR]", label)):
@@ -1175,13 +1178,17 @@ def delete_recording(label, path):
 def delete_all_recordings():
     if not (xbmcgui.Dialog().yesno("IPTV Recorder", "[COLOR red]Delete All Recordings?[/COLOR]")):
         return
+
     dir = plugin.get_setting('recordings')
     dirs, files = xbmcvfs.listdir(dir)
+
     items = []
+
     for file in sorted(files):
         if file.endswith('.ts'):
             path = os.path.join(xbmc.translatePath(dir), file)
             xbmcvfs.delete(path)
+
     refresh()
 
 
@@ -1189,24 +1196,32 @@ def delete_all_recordings():
 def recordings():
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
     c = conn.cursor()
+
     streams = c.execute("SELECT name, tvg_logo FROM streams").fetchall()
     thumbnails = {x[0]:x[1] for x in streams}
 
     dir = plugin.get_setting('recordings')
     dirs, files = xbmcvfs.listdir(dir)
+
     items = []
+
     #TODO sort options
     for file in sorted(files):
+
         if file.endswith('.ts'):
             path = os.path.join(xbmc.translatePath(dir), file)
+
             label = urllib.unquote_plus(file)[0:-3]
             channelname = label.split(' - ', 1)[0] #TODO meta info
             thumbnail = thumbnails.get(channelname)
             #TODO save some info from broadcast
+
             context_items = []
+
             context_items.append(("Delete Recording" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_recording, label=label, path=path))))
             context_items.append(("Delete All Recordings" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_all_recordings))))
             context_items.append(("External Player" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_external, path=path))))
+
             items.append({
                 'label': label,
                 'path': path,
@@ -1216,6 +1231,7 @@ def recordings():
                 'info_type': 'Video',
                 'info':{"title": label}
             })
+
     return items
 
 

@@ -1,5 +1,11 @@
 <settings>
 
+<category label="Display">
+    <setting id="show.now.next.all" label="Show Now/Next in All Channels / Full EPG" type="bool" default="false" />
+    <setting id="show.now.next.lists" label="Show Now/Next in Channel Lists" type="bool" default="false" />
+    <setting id="show.now.next.favourites" label="Show Now/Next in Favourites" type="bool" default="true" />
+</category>
+
 <category label="Recording">
     <setting id="minutes.before" label="Minutes Before" type="number" default="1"  />
     <setting id="minutes.after" label="Minutes After" type="number" default="1"  />
