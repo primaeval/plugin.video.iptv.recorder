@@ -16,7 +16,7 @@ import subprocess
 from datetime import datetime,timedelta,tzinfo
 #TODO strptime bug fix
 import uuid
-import HTMLParser
+from HTMLParser import HTMLParser
 import calendar
 import pytz
 
@@ -914,7 +914,7 @@ def epg():
 
 @plugin.route('/group/<channelgroup>')
 def group(channelgroup):
-    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')),detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
     if channelgroup == "All Channels":
@@ -922,70 +922,58 @@ def group(channelgroup):
         channels = cursor.execute("SELECT * FROM streams ORDER BY name").fetchall()
     else:
         streams = cursor.execute("SELECT * FROM streams WHERE groups=? ORDER BY name",(channelgroup,)).fetchall()
+
     favourites = cursor.execute("SELECT channelname FROM favourites").fetchall()
     favourites = [x[0] for x in favourites]
 
     items = []
 
-    offset = cursor.execute("SELECT start FROM programmes LIMIT 1").fetchone()
-    mins = 0
-    if offset:
-        timezone = offset[0].split()[1]
-        if timezone.startswith('+') or timezone.startswith('-'):
-            sign = timezone[0]
-            hour = timezone[1:2]
-            min = timezone[3:4]
-            mins = int(hour)*60 + int(min)
-            if sign == "-":
-                mins = - mins
+    now = datetime.utcnow()
 
-            timestamp = time.time()
-            time_now = datetime.fromtimestamp(timestamp)
-            time_utc = datetime.utcfromtimestamp(timestamp)
-            utc_offset = time_now - time_utc
-
-            now = time_now - utc_offset + timedelta(minutes=mins)
-
-            now = now.strftime("%Y%m%d%H%M%S")
-            now = "%s %s" % (now,timezone)
-        else:
-            #TODO
-            now = datetime.now().strftime("%Y%m%d%H%M%S")
-    else:
-        #TODO
-        now = datetime.now().strftime("%Y%m%d%H%M%S")
-
-    for c in streams:
-        name,tvg_name,tvg_id,tvg_logo,groups,url = c
+    for stream in streams:
+        name,tvg_name,tvg_id,tvg_logo,groups,url = stream
         channelname = name
         channelid = tvg_id
         thumbnail = tvg_logo
 
-        now_title = cursor.execute("SELECT title FROM programmes WHERE channelid=? AND start<? AND stop>? LIMIT 1",(channelid,now,now)).fetchone()
+        now_title = cursor.execute('SELECT title,start AS "start [TIMESTAMP]" FROM programmes WHERE channelid=? AND start<? AND stop>? LIMIT 1',(channelid,now,now)).fetchone()
         if now_title:
-            now_title = now_title[0]
+            title = now_title[0]
+            local_start = utc2local(now_title[1])
+            now_title = "%02d:%02d %s" % (local_start.hour,local_start.minute,title)
         else:
             now_title = ""
-        next_title = cursor.execute("SELECT title FROM programmes WHERE channelid=? AND start>? LIMIT 1",(channelid,now)).fetchone()
+
+        next_title = cursor.execute('SELECT title,start AS "start [TIMESTAMP]" FROM programmes WHERE channelid=? AND start>? LIMIT 1',(channelid,now)).fetchone()
         if next_title:
-            next_title = next_title[0]
+            title = next_title[0]
+            local_start = utc2local(next_title[1])
+            next_title =  " | [I]%02d:%02d %s[/I]" % (local_start.hour,local_start.minute,title)
         else:
             next_title = ""
 
+        label = "%s[CR][COLOR grey]%s%s[/COLOR]" % (channelname,now_title,next_title)
+
         context_items = []
-        context_items.append(("Add Title Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search,channelid=channelid,channelname=channelname.encode("utf8")))))
-        context_items.append(("Add Plot Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search_plot,channelid=channelid,channelname=channelname.encode("utf8")))))
-        context_items.append(("Play Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel,channelname=channelname.encode("utf8")))))
-        context_items.append(("Play Channel External" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external,channelname=channelname.encode("utf8")))))
+
+        channelname = channelname.encode("utf8")
+        channelid =channelid.encode("utf8")
+
+        context_items.append(("Add Title Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search,channelid=channelid,channelname=channelname))))
+        context_items.append(("Add Plot Search Rule" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search_plot,channelid=channelid,channelname=channelname))))
+        context_items.append(("Play Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel,channelname=channelname))))
+        context_items.append(("Play Channel External" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external,channelname=channelname))))
+
         if channelname not in favourites:
             context_items.append(("Add Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(add_favourite_channel,channelname=channelname,channelid=channelid,thumbnail=thumbnail))))
         else:
             context_items.append(("Remove Favourite Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_favourite_channel,channelname=channelname))))
+
         items.append({
-            'label': HTMLParser.HTMLParser().unescape("%s - [COLOR grey]%s - [I]%s[/I][/COLOR]" % (name,now_title,next_title)),
-            'path': plugin.url_for(channel,channelname=name,channelid=channelid),
+            'label': label,
+            'path': plugin.url_for(channel,channelname=channelname,channelid=channelid),
             'context_menu': context_items,
-            'thumbnail': tvg_logo,
+            'thumbnail': thumbnail,
         })
     return items
 
@@ -1002,7 +990,7 @@ def groups():
             continue
         items.append({
             'label': channelgroup,
-            'path': plugin.url_for(group,channelgroup=channelgroup)
+            'path': plugin.url_for(group,channelgroup=channelgroup.encode("utf8"))
 
         })
     return items
@@ -1132,11 +1120,10 @@ def xml2utc(xml):
         minutes = int(match.group(9))
         dt = datetime(year,month,day,hour,minute,second)
         td = timedelta(hours=hours,minutes=minutes)
-        if plugin.get_setting('xmltv.add.timezone') == "true":
-            if sign == '+':
-                dt = dt - td
-            else:
-                dt = dt + td
+        if sign == '+':
+            dt = dt - td
+        else:
+            dt = dt + td
         return dt
     return ''
 
@@ -1185,27 +1172,32 @@ def xmltv():
     conn.execute('DROP TABLE IF EXISTS channels')
     conn.execute('DROP TABLE IF EXISTS streams')
     conn.execute('CREATE TABLE IF NOT EXISTS channels(id TEXT, name TEXT, icon TEXT, PRIMARY KEY (id))')
-    conn.execute('CREATE TABLE IF NOT EXISTS programmes(channelid TEXT, title TEXT, sub_title TEXT, start TEXT, stop TEXT, date TEXT, description TEXT, episode TEXT, categories TEXT, PRIMARY KEY(channelid, start))')
-    conn.execute('CREATE TABLE IF NOT EXISTS rules(uid INTEGER PRIMARY KEY ASC, channelid TEXT, channelname TEXT, title TEXT, sub_title TEXT, start TEXT, stop TEXT, date TEXT, description TEXT, episode TEXT, categories TEXT, type TEXT)')
+    conn.execute('CREATE TABLE IF NOT EXISTS programmes(channelid TEXT, title TEXT, sub_title TEXT, start TIMESTAMP, stop TIMESTAMP, date TEXT, description TEXT, episode TEXT, categories TEXT, PRIMARY KEY(channelid, start))')
+    conn.execute('CREATE TABLE IF NOT EXISTS rules(uid INTEGER PRIMARY KEY ASC, channelid TEXT, channelname TEXT, title TEXT, sub_title TEXT, start TIMESTAMP, stop TIMESTAMP, date TEXT, description TEXT, episode TEXT, categories TEXT, type TEXT)')
     #TODO check primary key
     conn.execute('CREATE TABLE IF NOT EXISTS streams(name TEXT, tvg_name TEXT, tvg_id TEXT, tvg_logo TEXT, groups TEXT, url TEXT, PRIMARY KEY(name))')
     conn.execute('CREATE TABLE IF NOT EXISTS favourites(channelname TEXT, channelid TEXT, logo TEXT, PRIMARY KEY(channelname))')
-    conn.execute('CREATE TABLE IF NOT EXISTS jobs(uuid TEXT, channelid TEXT, channelname TEXT, title TEXT, start TEXT, stop TEXT, PRIMARY KEY (uuid))')
+    conn.execute('CREATE TABLE IF NOT EXISTS jobs(uuid TEXT, channelid TEXT, channelname TEXT, title TEXT, start TIMESTAMP, stop TIMESTAMP, PRIMARY KEY (uuid))')
 
-    data = xbmcvfs.File(xml,'rb').read()
+    data = xbmcvfs.File(xml,'rb').read().decode("utf8")
+
+    htmlparser = HTMLParser()
 
     match = re.findall('<channel(.*?)</channel>',data,flags=(re.I|re.DOTALL))
     if match:
         for m in match:
             id = re.search('id="(.*?)"',m)
             if id:
-                id = id.group(1)
+                id = htmlparser.unescape(id.group(1))
+
             name = re.search('<display-name.*?>(.*?)</display-name',m)
             if name:
-                name = name.group(1).decode('utf8')
+                name = htmlparser.unescape(name.group(1))
+
             icon = re.search('<icon.*?src="(.*?)"',m)
             if icon:
                 icon = icon.group(1)
+
             conn.execute("INSERT OR IGNORE INTO channels(id, name, icon) VALUES (?, ?, ?)", [id, name, icon])
 
     match = re.findall('<programme(.*?)</programme>',data,flags=(re.I|re.DOTALL))
@@ -1213,23 +1205,30 @@ def xmltv():
         for m in match:
             channel = re.search('channel="(.*?)"',m)
             if channel:
-                channel = channel.group(1).decode('utf8')
+                channel = htmlparser.unescape(channel.group(1))
+
             start = re.search('start="(.*?)"',m)
             if start:
                 start = start.group(1)
+                start = xml2utc(start)
+
             stop = re.search('stop="(.*?)"',m)
             if stop:
                 stop = stop.group(1)
+                stop = xml2utc(stop)
 
             title = re.search('<title.*?>(.*?)</title',m)
             if title:
-                title = title.group(1).decode('utf8')
+                title = htmlparser.unescape(title.group(1))
+
             sub_title = re.search('<sub-title.*?>(.*?)</sub-title',m)
             if sub_title:
-                sub_title = sub_title.group(1).decode('utf8')
+                sub_title = htmlparser.unescape(sub_title.group(1))
+
             description = re.search('<desc.*?>(.*?)</desc',m)
             if description:
-                description = description.group(1).decode('utf8')
+                description = htmlparser.unescape(description.group(1))
+
             date = re.search('<date.*?>(.*?)</date',m)
             if date:
                 date = date.group(1)
@@ -1237,11 +1236,12 @@ def xmltv():
             #TODO other systems
             episode = re.search('<episode-num system="xmltv_ns">(.*?)<',m)
             if episode:
-                episode = episode.group(1).decode('utf8')
+                episode = htmlparser.unescape(episode.group(1))
 
             cats = re.findall('<category.*?>(.*?)</category>',m,flags=(re.I|re.DOTALL))
             if cats:
-                categories = (','.join(cats)).decode('utf8')
+                categories = htmlparser.unescape((','.join(cats)))
+
             else:
                 categories = ''
 
@@ -1262,24 +1262,28 @@ def xmltv():
     m3uFile = 'special://profile/addon_data/plugin.video.iptv.recorder/channels.m3u'
     xbmcvfs.copy(path,m3uFile)
     f = xbmcvfs.File(m3uFile)
-    data = f.read()
+    data = f.read().decode("utf8")
 
     channels = re.findall('#EXTINF:(.*?)(?:\r\n|\r|\n)(.*?)(?:\r\n|\r|\n|$)', data, flags=(re.I | re.DOTALL))
     for channel in channels:
+
         name = channel[0].rsplit(',',1)[-1]
         tvg_name = re.search('tvg-name="(.*?)"',channel[0])
         if tvg_name:
             tvg_name = tvg_name.group(1)
+
         tvg_id = re.search('tvg-id="(.*?)"',channel[0])
         if tvg_id:
             tvg_id = tvg_id.group(1)
         else:
             tvg_id = name
+
         tvg_logo = re.search('tvg-logo="(.*?)"',channel[0])
         if tvg_logo:
             tvg_logo = tvg_logo.group(1)
 
         url = channel[1]
+
         groups = re.search('group-title="(.*?)"',channel[0])
         if groups:
             groups = groups.group(1)

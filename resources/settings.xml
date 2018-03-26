@@ -10,9 +10,6 @@
 </category>
 
 <category label="Data">
-    <setting id="xmltv.add.timezone" label="xmltv Add Timezone to Date" type="bool" default="false" />
-    <setting type="sep"/>
-
     <setting id="external.xmltv" label="External xmltv" type="enum" default="IPTV Simple Client" values="IPTV Simple Client|File|Url" />
     <setting id="external.xmltv.file" label="External xmltv File" type="file" default=""/>
     <setting id="external.xmltv.url" label="External xmltv Url" type="text" default=""/>
