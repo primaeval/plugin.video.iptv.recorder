@@ -1011,12 +1011,12 @@ def group(channelgroup=None,section=None):
 
     for stream_channel in collection:
 
-        if epg:
+        if section == "EPG":
             uid, id, name, icon = stream_channel
             channelname = name
             channelid = id
             thumbnail = icon or get_icon_path('tv')
-        elif show_favourites:
+        elif section == "FAVOURITES":
             channelname, channelid, thumbnail = stream_channel
         else:
             uid, name, tvg_name, tvg_id, tvg_logo, groups, url = stream_channel
