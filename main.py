@@ -163,7 +163,7 @@ def jobs():
 
     items = []
 
-    for uuid, channelid, channelname, title, start, stop in jobs:
+    for uid, uuid, channelid, channelname, title, start, stop in jobs:
 
         context_items = []
 
