@@ -326,15 +326,24 @@ def ffmpeg_location():
 #@plugin.route('/record_once/<channelid>/<channelname>/<title>/<start>/<stop>')
 #def record_once(channelid, channelname, title, start, stop, refresh=True):
 @plugin.route('/record_once/<programmeid>')
-def record_once(programmeid, refresh=True):
+def record_once(programmeid, do_refresh=True):
     #TODO check for ffmpeg process already recording if job is re-added
-    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
-    c = conn.cursor()
 
-    if channelid:
-        channel = c.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
-        if channel:
-            name, tvg_name, tvg_id, tvg_logo, groups, url = channel
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
+    programme = cursor.execute('SELECT channelid, title, start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]" FROM programmes WHERE uid=? LIMIT 1', (programmeid, )).fetchone()
+    channelid, title, start, stop = programme
+
+    channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
+    if not channel:
+        channel = cursor.execute("SELECT * FROM channels WHERE id=?", (channelid, )).fetchone()
+        uid, tvg_id, name, tvg_logo = channel
+        url = ""
+    else:
+        uid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
+    thumbnail = tvg_logo
+    channelname = name
 
     if not url:
         xbmc.log("No url for %s" % channelname, xbmc.LOGERROR)
@@ -351,12 +360,12 @@ def record_once(programmeid, refresh=True):
                 k, v = h.split('=', 1)
                 headers[k] = v
 
-    local_starttime = xml2local(start)
-    local_endtime = xml2local(stop)
-    etitle = HTMLParser.HTMLParser().unescape(title)
-    label = "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname, etitle, local_starttime, local_endtime)
+    local_starttime = utc2local(start)
+    local_endtime = utc2local(stop)
 
-    job = c.execute("SELECT * FROM jobs WHERE channelid=? AND start=? AND stop=?", (channelid, start, stop)).fetchone()
+    label = "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname, title, local_starttime, local_endtime)
+
+    job = cursor.execute("SELECT * FROM jobs WHERE channelid=? AND start=? AND stop=?", (channelid, start, stop)).fetchone()
     if job:
         return
 
@@ -438,7 +447,7 @@ def record_once(programmeid, refresh=True):
     conn.commit()
     conn.close()
 
-    if refresh:
+    if do_refresh:
         refresh()
 
 
@@ -523,7 +532,7 @@ def broadcast(programmeid):
 
     #echannelid = channelid.encode("utf8")
     #echannelname = channelname.encode("utf8")
-    etitle = title.encode("utf8")
+    #etitle = title.encode("utf8")
 
     items = []
 
