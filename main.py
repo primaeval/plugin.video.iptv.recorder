@@ -323,10 +323,12 @@ def ffmpeg_location():
         xbmcgui.Dialog().notification("IPTV Recorder", "ffmpeg exe not found!")
 
 
-#@plugin.route('/record_once/<channelid>/<channelname>/<title>/<start>/<stop>')
-#def record_once(channelid, channelname, title, start, stop, refresh=True):
 @plugin.route('/record_once/<programmeid>')
 def record_once(programmeid, do_refresh=True):
+    threading.Thread(target=record_once_thread,args=[programmeid,do_refresh]).start()
+
+
+def record_once_thread(programmeid, do_refresh=True):
     #TODO check for ffmpeg process already recording if job is re-added
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
@@ -415,6 +417,7 @@ def record_once(programmeid, do_refresh=True):
     f.write("f.close()\n")
     #f.write("p.wait()\n")
     #f.write("os.unlink(%s)\n" % xbmc.translatePath(pyjob+'.pid'))
+    #TODO copy file somewhere else
     f.close()
 
     if windows() and plugin.get_setting('task.scheduler') == 'true':
