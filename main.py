@@ -1375,6 +1375,7 @@ def xmltv():
     mode = plugin.get_setting('external.m3u')
     if mode == "0":
         m3uPathType = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uPathType')
+
         if m3uPathType == "0":
             path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uPath')
         else:
@@ -1383,7 +1384,9 @@ def xmltv():
         path = plugin.get_setting('external.m3u.file')
     else:
         path = plugin.get_setting('external.m3u.url')
+
     m3uFile = 'special://profile/addon_data/plugin.video.iptv.recorder/channels.m3u'
+
     xbmcvfs.copy(path, m3uFile)
     f = xbmcvfs.File(m3uFile)
     data = f.read().decode("utf8")
