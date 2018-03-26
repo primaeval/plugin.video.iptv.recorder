@@ -936,11 +936,14 @@ def group(channelgroup):
         channelid = tvg_id
         thumbnail = tvg_logo
 
-        now_title = cursor.execute('SELECT title,start AS "start [TIMESTAMP]" FROM programmes WHERE channelid=? AND start<? AND stop>? LIMIT 1',(channelid,now,now)).fetchone()
+        description = ""
+
+        now_title = cursor.execute('SELECT title,start AS "start [TIMESTAMP]",description FROM programmes WHERE channelid=? AND start<? AND stop>? LIMIT 1',(channelid,now,now)).fetchone()
         if now_title:
             title = now_title[0]
             local_start = utc2local(now_title[1])
-            now_title = "%02d:%02d %s" % (local_start.hour,local_start.minute,title)
+            description = now_title[2]
+            now_title = "%02d:%02d %s " % (local_start.hour,local_start.minute,title)
         else:
             now_title = ""
 
@@ -948,7 +951,7 @@ def group(channelgroup):
         if next_title:
             title = next_title[0]
             local_start = utc2local(next_title[1])
-            next_title =  " | [I]%02d:%02d %s[/I]" % (local_start.hour,local_start.minute,title)
+            next_title =  "[I]%02d:%02d %s[/I]" % (local_start.hour,local_start.minute,title)
         else:
             next_title = ""
 
@@ -974,6 +977,7 @@ def group(channelgroup):
             'path': plugin.url_for(channel,channelname=channelname,channelid=channelid),
             'context_menu': context_items,
             'thumbnail': thumbnail,
+            'info':{"plot":description}
         })
     return items
 
