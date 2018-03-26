@@ -951,7 +951,7 @@ def channel(channelid):
     return items
 
 def focus(i):
-    xbmc.sleep(500)
+    xbmc.sleep(1000)
     #TODO deal with hidden ..
     total_list_items = int(xbmc.getInfoLabel('Container(id).NumItems'))
     win = xbmcgui.Window(xbmcgui.getCurrentWindowId())
