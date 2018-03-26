@@ -53,4 +53,44 @@ else:
     #setattr(__builtin__, '_', get_string)
 
 #GENERATED
-__strings['delete job'] = 30000
+__strings['delete all recordings?'] = 30000
+__strings['play channel'] = 30001
+__strings['delete job'] = 30002
+__strings['finished loading data'] = 30003
+__strings['record once'] = 30004
+__strings['play channel external'] = 30005
+__strings['external player'] = 30006
+__strings['title search (% is wildcard)?'] = 30007
+__strings['delete all jobs'] = 30008
+__strings['search plot'] = 30009
+__strings['add favourite channel'] = 30010
+__strings['delete all rules'] = 30011
+__strings['recording rules'] = 30012
+__strings['favourite channels'] = 30013
+__strings['delete all recordings'] = 30014
+__strings['full epg'] = 30015
+__strings['search title'] = 30016
+__strings['xmltv'] = 30017
+__strings['delete search'] = 30018
+__strings['cancel record?'] = 30019
+__strings['delete recording?'] = 30020
+__strings['new'] = 30021
+__strings['remove favourite channel'] = 30022
+__strings['recording jobs'] = 30023
+__strings['plot search (% is wildcard)?'] = 30024
+__strings['add title search rule'] = 30025
+__strings['add plot search rule'] = 30026
+__strings['delete all rules?'] = 30027
+__strings['recordings folder'] = 30028
+__strings['ffmpeg exe not found!'] = 30029
+__strings['tomorrow'] = 30030
+__strings['today'] = 30031
+__strings['delete rule'] = 30032
+__strings['channel groups'] = 30033
+__strings['loading data...'] = 30034
+__strings['cancel record'] = 30035
+__strings['service'] = 30036
+__strings['delete recording'] = 30037
+__strings['yesterday'] = 30038
+__strings['delete all jobs?'] = 30039
+__strings['recordings'] = 30040

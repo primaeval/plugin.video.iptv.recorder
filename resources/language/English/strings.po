@@ -3,5 +3,165 @@ msgid ""
 msgstr ""
 
 msgctxt "#30000"
+msgid "Delete All Recordings?"
+msgstr ""
+
+msgctxt "#30001"
+msgid "Play Channel"
+msgstr ""
+
+msgctxt "#30002"
 msgid "Delete Job"
+msgstr ""
+
+msgctxt "#30003"
+msgid "Finished loading data"
+msgstr ""
+
+msgctxt "#30004"
+msgid "Record Once"
+msgstr ""
+
+msgctxt "#30005"
+msgid "Play Channel External"
+msgstr ""
+
+msgctxt "#30006"
+msgid "External Player"
+msgstr ""
+
+msgctxt "#30007"
+msgid "Title Search (% is wildcard)?"
+msgstr ""
+
+msgctxt "#30008"
+msgid "Delete All Jobs"
+msgstr ""
+
+msgctxt "#30009"
+msgid "Search Plot"
+msgstr ""
+
+msgctxt "#30010"
+msgid "Add Favourite Channel"
+msgstr ""
+
+msgctxt "#30011"
+msgid "Delete All Rules"
+msgstr ""
+
+msgctxt "#30012"
+msgid "Recording Rules"
+msgstr ""
+
+msgctxt "#30013"
+msgid "Favourite Channels"
+msgstr ""
+
+msgctxt "#30014"
+msgid "Delete All Recordings"
+msgstr ""
+
+msgctxt "#30015"
+msgid "Full EPG"
+msgstr ""
+
+msgctxt "#30016"
+msgid "Search Title"
+msgstr ""
+
+msgctxt "#30017"
+msgid "xmltv"
+msgstr ""
+
+msgctxt "#30018"
+msgid "Delete Search"
+msgstr ""
+
+msgctxt "#30019"
+msgid "Cancel Record?"
+msgstr ""
+
+msgctxt "#30020"
+msgid "Delete Recording?"
+msgstr ""
+
+msgctxt "#30021"
+msgid "New"
+msgstr ""
+
+msgctxt "#30022"
+msgid "Remove Favourite Channel"
+msgstr ""
+
+msgctxt "#30023"
+msgid "Recording Jobs"
+msgstr ""
+
+msgctxt "#30024"
+msgid "Plot Search (% is wildcard)?"
+msgstr ""
+
+msgctxt "#30025"
+msgid "Add Title Search Rule"
+msgstr ""
+
+msgctxt "#30026"
+msgid "Add Plot Search Rule"
+msgstr ""
+
+msgctxt "#30027"
+msgid "Delete All Rules?"
+msgstr ""
+
+msgctxt "#30028"
+msgid "Recordings Folder"
+msgstr ""
+
+msgctxt "#30029"
+msgid "ffmpeg exe not found!"
+msgstr ""
+
+msgctxt "#30030"
+msgid "Tomorrow"
+msgstr ""
+
+msgctxt "#30031"
+msgid "Today"
+msgstr ""
+
+msgctxt "#30032"
+msgid "Delete Rule"
+msgstr ""
+
+msgctxt "#30033"
+msgid "Channel Groups"
+msgstr ""
+
+msgctxt "#30034"
+msgid "Loading data..."
+msgstr ""
+
+msgctxt "#30035"
+msgid "Cancel Record"
+msgstr ""
+
+msgctxt "#30036"
+msgid "Service"
+msgstr ""
+
+msgctxt "#30037"
+msgid "Delete Recording"
+msgstr ""
+
+msgctxt "#30038"
+msgid "Yesterday"
+msgstr ""
+
+msgctxt "#30039"
+msgid "Delete All Jobs?"
+msgstr ""
+
+msgctxt "#30040"
+msgid "Recordings"
 msgstr ""
