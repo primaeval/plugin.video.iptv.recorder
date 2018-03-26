@@ -887,7 +887,11 @@ def channel(channelid):
 
     now = datetime.now()
 
+    current = None
+
+    i = 0
     for p in programmes:
+        i += 1
         uid, channel , title , sub_title , start , stop , date , description , episode, categories = p
 
         job = cursor.execute("SELECT uuid FROM jobs WHERE channelid=? AND start=? AND stop=?", (channelid, start, stop)).fetchone()
@@ -903,6 +907,9 @@ def channel(channelid):
             stitle = "%s - %s" % (title, sub_title)
         else:
             stitle = title
+
+        if endtime > now and starttime < now:
+            current = i
 
         if endtime < now:
             label = "[COLOR grey]%02d:%02d %s - %s[/COLOR] %s[CR][COLOR black]%s[/COLOR]" % (starttime.hour, starttime.minute, day(starttime), channelname, recording, title)
@@ -938,7 +945,18 @@ def channel(channelid):
             'info_type': 'Video',
             'info':{"title": title, "plot":description, "genre":categories}
         })
+
+    threading.Thread(target=focus,args=[current]).start()
+
     return items
+
+def focus(i):
+    xbmc.sleep(500)
+    #TODO deal with hidden ..
+    total_list_items = int(xbmc.getInfoLabel('Container(id).NumItems'))
+    win = xbmcgui.Window(xbmcgui.getCurrentWindowId())
+    cid = win.getFocusId()
+    xbmc.executebuiltin('Control.Move(%s, %s)' % (cid, i))
 
 
 @plugin.route('/remove_favourite_channel/<channelname>')
@@ -1223,7 +1241,7 @@ def recordings():
                 'is_playable': True,
                 'context_menu': context_items,
                 'info_type': 'Video',
-                'info':{"title": label}
+                'info':{"title": label},
             })
 
     return items
@@ -1520,7 +1538,6 @@ def index():
         })
 
     return items
-
 
 if __name__ == '__main__':
     plugin.run()
