@@ -23,6 +23,8 @@ import pytz
 from struct import *
 from collections import namedtuple
 
+from language import get_string as _
+
 
 plugin = Plugin()
 big_list_view = False
@@ -167,7 +169,7 @@ def jobs():
 
         context_items = []
 
-        context_items.append(("Delete Job" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job, job=uuid))))
+        context_items.append((_("Delete Job") , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job, job=uuid))))
         context_items.append(("Delete All Jobs" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_all_jobs))))
 
         label = "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname, title, utc2local(start), utc2local(stop))
