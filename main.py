@@ -733,63 +733,78 @@ def search_plot(plot):
     return items
 
 
-
-@plugin.route('/channel/<channelname>/<channelid>')
-def channel(channelname, channelid):
+@plugin.route('/channel/<channelid>')
+def channel(channelid):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
-    c = conn.cursor()
-    channel = c.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
+    cursor = conn.cursor()
+
+    channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
     if not channel:
-        channel = c.execute("SELECT * FROM channels WHERE id=?", (channelid, )).fetchone()
+        channel = cursor.execute("SELECT * FROM channels WHERE id=?", (channelid, )).fetchone()
         tvg_id, name, tvg_logo = channel
         url = ""
     else:
         name, tvg_name, tvg_id, tvg_logo, groups, url = channel
-    programmes = c.execute("SELECT * FROM programmes WHERE channelid=?", (channelid, )).fetchall()
-    #jobs = c.execute("SELECT * FROM jobs WHERE channelid=?", (channelid, )).fetchall()
+    thumbnail = tvg_logo
+    channelname = name
+
+    programmes = cursor.execute(
+    'SELECT channel , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE channelid=?', (channelid, )).fetchall()
 
     items = []
+
     now = datetime.now()
+
     for p in programmes:
         channel , title , sub_title , start , stop , date , description , episode, categories = p
+
         job = c.execute("SELECT * FROM jobs WHERE channelid=? AND start=? AND stop=?", (channelid, start, stop)).fetchone()
         if job:
             recording = "[COLOR red]RECORD[/COLOR]"
         else:
             recording = ""
-        starttime = xml2local(start)
-        endtime = xml2local(stop)
+
+        starttime = utc2local(start)
+        endtime = utc2local(stop)
+
         if sub_title:
             stitle = "%s - %s" % (title, sub_title)
         else:
             stitle = title
-        etitle = HTMLParser.HTMLParser().unescape(stitle)
-        echannelname = HTMLParser.HTMLParser().unescape(channelname)
-        if description:
-            description = HTMLParser.HTMLParser().unescape(description)
+
         if endtime < now:
-            label = "[COLOR grey]%02d:%02d %s - %s[/COLOR] %s[CR][COLOR black]%s[/COLOR]" % (starttime.hour, starttime.minute, day(starttime), echannelname, recording, etitle)
+            label = "[COLOR grey]%02d:%02d %s - %s[/COLOR] %s[CR][COLOR black]%s[/COLOR]" % (starttime.hour, starttime.minute, day(starttime), channelname, recording, title)
         else:
-            label = "[COLOR grey]%02d:%02d %s - %s[/COLOR] %s[CR]%s" % (starttime.hour, starttime.minute, day(starttime), echannelname, recording, etitle)
+            label = "[COLOR grey]%02d:%02d %s - %s[/COLOR] %s[CR]%s" % (starttime.hour, starttime.minute, day(starttime), channelname, recording, title)
+
         context_items = []
+
+        echannelid = channelid.encode("utf8")
+        echannelname=channelname.encode("utf8")
+        title=title.encode("utf8")
+
         if recording:
-            context_items.append(("Cancel Record" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job, job=job[0]))))
+            uuid = job[0]
+            context_items.append(("Cancel Record" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job, job=uuid))))
         else:
             context_items.append(("Record Once" , 'XBMC.RunPlugin(%s)' %
-            (plugin.url_for(record_once, channelid=channelid, channelname=channelname.encode("utf8"), title=title.encode("utf8"), start=start, stop=stop))))
-        context_items.append(("Play Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=channelname.encode("utf8")))))
-        context_items.append(("Play Channel External" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external, channelname=channelname.encode("utf8")))))
+            (plugin.url_for(record_once, channelid=echannelid, channelname=echannelname, title=title, start=start, stop=stop))))
+
+        context_items.append(("Play Channel" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=echannelname))))
+        context_items.append(("Play Channel External" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external, channelname=echannelname))))
+
         if url:
-            path = plugin.url_for(broadcast, channelid=channelid, channelname=channelname.encode("utf8"), title=title.encode("utf8"), start=start, stop=stop)
+            path = plugin.url_for(broadcast, channelid=echannelid, channelname=echannelname, title=title, start=start, stop=stop)
         else:
-            path = plugin.url_for('channel', channelname=channelname, channelid=channelid)
+            path = plugin.url_for('channel', channelname=echannelname, channelid=echannelid)
+
         items.append({
             'label': label,
             'path': path,
-            'thumbnail': tvg_logo,
+            'thumbnail': thumbnail,
             'context_menu': context_items,
             'info_type': 'Video',
-            'info':{"title": etitle, "plot":description, "genre":categories}
+            'info':{"title": title, "plot":description, "genre":categories}
         })
     return items
 
@@ -855,7 +870,7 @@ def group(channelgroup=None,epg=False):
             streams = cursor.execute("SELECT * FROM streams ORDER BY name").fetchall()
             channels = cursor.execute("SELECT * FROM channels ORDER BY name").fetchall()
         else:
-            streams = cursor.execute("SELECT * FROM channels WHERE groups=? ORDER BY name", (channelgroup, )).fetchall()
+            streams = cursor.execute("SELECT * FROM streams WHERE groups=? ORDER BY name", (channelgroup, )).fetchall()
         collection = streams
 
     favourites = cursor.execute("SELECT channelname FROM favourites").fetchall()
@@ -866,6 +881,7 @@ def group(channelgroup=None,epg=False):
     now = datetime.utcnow()
 
     for stream_channel in collection:
+
         if epg:
             id, name, icon = stream_channel
             channelname = name
@@ -915,11 +931,12 @@ def group(channelgroup=None,epg=False):
 
         items.append({
             'label': label,
-            'path': plugin.url_for(channel, channelname=channelname, channelid=channelid),
+            'path': plugin.url_for(channel, channelid=channelid),
             'context_menu': context_items,
             'thumbnail': thumbnail,
             'info':{"plot":description}
         })
+
     return items
 
 
