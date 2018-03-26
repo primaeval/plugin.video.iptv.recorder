@@ -19,12 +19,7 @@ def Service():
 
 if __name__ == '__main__':
     #TODO enable Web Server, startServer does not enable it
-    #xbmc.startServer(xbmc.SERVER_WEBSERVER, False)
-    #xbmc.log("SERVER MAIN",xbmc.LOGERROR)
     ADDON = xbmcaddon.Addon('plugin.video.iptv.recorder')
-    #time.sleep(60*int(ADDON.getSetting('service.delay'))) #TODO wait for xmltv data to be loaded
-    #xbmc.executebuiltin('XBMC.RunPlugin(plugin://plugin.video.iptv.recorder/start)')
-    #xbmc.log("SERVER after start",xbmc.LOGERROR)
     try:
         if ADDON.getSetting('service') == 'true':
             monitor = xbmc.Monitor()

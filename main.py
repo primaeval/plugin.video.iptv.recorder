@@ -1107,13 +1107,8 @@ def service():
 @plugin.route('/full_service')
 def full_service():
     xmltv()
-    service()
+    service_thread()
 
-@plugin.route('/start')
-def start():
-    if not xbmcvfs.exists(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile'))):
-        xmltv()
-    service()
 
 @plugin.route('/service_thread')
 def service_thread():
@@ -1509,14 +1504,6 @@ def index():
         {
             'label': "Service",
             'path': plugin.url_for('service'),
-            'thumbnail':get_icon_path('settings'),
-            'context_menu': context_items,
-        })
-
-        items.append(
-        {
-            'label': "Start",
-            'path': plugin.url_for('start'),
             'thumbnail':get_icon_path('settings'),
             'context_menu': context_items,
         })
