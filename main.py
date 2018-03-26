@@ -952,13 +952,13 @@ def channel(channelid):
 
     return items
 
+
 def focus(i):
     xbmc.sleep(1000)
     #TODO deal with hidden ..
-    total_list_items = int(xbmc.getInfoLabel('Container(id).NumItems'))
     win = xbmcgui.Window(xbmcgui.getCurrentWindowId())
     cid = win.getFocusId()
-    xbmc.executebuiltin('Control.Move(%s, %s)' % (cid, i))
+    xbmc.executebuiltin('Control.SetFocus(%s, %s, absolute)' % (cid, i))
 
 
 @plugin.route('/remove_favourite_channel/<channelname>')
