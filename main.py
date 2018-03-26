@@ -149,8 +149,8 @@ def total_seconds(td):
 @plugin.route('/jobs')
 def jobs():
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
-    c = conn.cursor()
-    jobs = c.execute("SELECT * FROM jobs ORDER by channelname, start").fetchall()
+    cursor = conn.cursor()
+    jobs = cursor.execute("SELECT * FROM jobs ORDER by channelname, start").fetchall()
 
     items = []
     for uuid, channelid, channelname, title, start, stop in jobs:
@@ -172,8 +172,8 @@ def jobs():
 @plugin.route('/rules')
 def rules():
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
-    c = conn.cursor()
-    rules = c.execute("SELECT uid, channelid, channelname, title, start, stop, description, type FROM rules ORDER by channelname, title, start, stop").fetchall()
+    cursor = conn.cursor()
+    rules = cursor.execute("SELECT uid, channelid, channelname, title, start, stop, description, type FROM rules ORDER by channelname, title, start, stop").fetchall()
 
     items = []
     for uid, channelid, channelname, title, start, stop, description, type  in rules:
@@ -249,8 +249,9 @@ def delete_all_jobs(ask=True):
 @plugin.route('/delete_job/<job>')
 def delete_job(job, kill=True, ask=True):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
-    c = conn.cursor()
-    job_details = c.execute("SELECT * FROM jobs WHERE uuid=?", (job, )).fetchone()
+    cursor = conn.cursor()
+
+    job_details = cursor.execute("SELECT * FROM jobs WHERE uuid=?", (job, )).fetchone()
     if not job_details:
         return
 
@@ -463,6 +464,9 @@ def refresh():
 
 @plugin.route('/record_daily/<channelid>/<channelname>/<title>/<start>/<stop>')
 def record_daily(channelid, channelname, title, start, stop):
+    start = timestamp2datetime(float(start))
+    stop = timestamp2datetime(float(stop))
+
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
     conn.execute("INSERT OR REPLACE INTO rules(channelid, channelname, title, start, stop, type) VALUES(?, ?, ?, ?, ?, ?)",
     [channelid, channelname, title, start, stop, "DAILY"])
@@ -533,9 +537,9 @@ def broadcast(programmeid):
     thumbnail = tvg_logo
     channelname = name
 
-    #echannelid = channelid.encode("utf8")
-    #echannelname = channelname.encode("utf8")
-    #etitle = title.encode("utf8")
+    echannelid = channelid.encode("utf8")
+    echannelname = channelname.encode("utf8")
+    etitle = title.encode("utf8")
 
     items = []
 
@@ -547,17 +551,35 @@ def broadcast(programmeid):
 
     items.append({
         'label': "Record Always - %s - %s" % (channelname, title),
-        #'path': plugin.url_for(record_always, channelid=echannelid, channelname=echannelname, title=etitle),
+        'path': plugin.url_for(record_always, channelid=echannelid, channelname=echannelname, title=etitle),
         'thumbnail': thumbnail or get_icon_path('recordings'),
     })
     #TODO does this handle summer time?
+    start_ts = datetime2timestamp(start)
+    stop_ts = datetime2timestamp(stop)
+
     items.append({
-        'label': "Record Daily - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname, title, start.time(), stop.time()),
-        #'path': plugin.url_for(record_daily, channelid=echannelid, channelname=echannelname, title=etitle, start=start, stop=stop),
+        'label': "Record Daily - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname, title, utc2local(start).time(), utc2local(stop).time()),
+        'path': plugin.url_for(record_daily, channelid=echannelid, channelname=echannelname, title=etitle, start=start_ts, stop=stop_ts),
         'thumbnail': thumbnail or get_icon_path('recordings'),
     })
 
     return items
+
+def datetime2timestamp(dt):
+    epoch=datetime.fromtimestamp(0.0)
+    td = dt - epoch
+    return (td.microseconds + (td.seconds + td.days * 86400) * 10**6) / 10**6
+
+def timestamp2datetime(ts):
+    return datetime.fromtimestamp(ts)
+
+def time2str(t):
+    return "%02d:%02d" % (t.hour,t.minute)
+
+
+def str2time(s):
+    return datetime.time(hour=int(s[0:1],minute=int(s[3:4])))
 
 
 def day(timestamp):
