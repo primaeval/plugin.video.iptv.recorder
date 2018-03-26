@@ -1500,7 +1500,7 @@ def index():
     {
         'label': "Full EPG",
         'path': plugin.url_for('epg'),
-        'thumbnail':get_icon_path('favourites'),
+        'thumbnail':get_icon_path('folder'),
         'context_menu': context_items,
     })
 
