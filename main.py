@@ -90,7 +90,7 @@ def play_channel(channelname):
     channel = c.execute("SELECT * FROM streams WHERE name=?", (channelname, )).fetchone()
     if not channel:
         return
-    name, tvg_name, tvg_id, tvg_logo, groups, url = channel
+    uid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
 
     xbmc.Player().play(url)
 
@@ -103,7 +103,7 @@ def play_channel_external(channelname):
     channel = c.execute("SELECT * FROM streams WHERE name=?", (channelname, )).fetchone()
     if not channel:
         return
-    name, tvg_name, tvg_id, tvg_logo, groups, url = channel
+    uid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
 
     if url:
         cmd = [plugin.get_setting('external.player')]
