@@ -19,21 +19,10 @@ import uuid
 from HTMLParser import HTMLParser
 import calendar
 import pytz
-
 from struct import *
 from collections import namedtuple
-
 from language import get_string as _
-
-
-plugin = Plugin()
-big_list_view = True
-
-
-if plugin.get_setting("multiline") == "true":
-    CR = "[CR]"
-else:
-    CR = ""
+import locale
 
 
 def addon_id():
@@ -42,6 +31,31 @@ def addon_id():
 
 def log(v):
     xbmc.log(repr(v), xbmc.LOGERROR)
+
+
+plugin = Plugin()
+big_list_view = True
+
+
+map = {
+    "en": "English",
+    "fr": "French"
+}
+lang = xbmc.getLanguage(xbmc.ISO_639_1)
+lc = locale.getlocale(locale.LC_TIME)
+if lc[0] is None or lc[0][:2] != lang:
+    if map.has_key(lang) is False:
+        lang = "en"
+    try:
+        locale.setlocale(locale.LC_TIME, map[lang])
+    except Exception, ex:
+        log( "Unable to set locale to %s: %s" % (map[lang], str(ex)))
+
+
+if plugin.get_setting("multiline") == "true":
+    CR = "[CR]"
+else:
+    CR = ""
 
 
 def get_icon_path(icon_name):
