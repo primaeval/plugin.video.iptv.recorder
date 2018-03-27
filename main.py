@@ -958,7 +958,8 @@ def focus(i):
     #TODO deal with hidden ..
     win = xbmcgui.Window(xbmcgui.getCurrentWindowId())
     cid = win.getFocusId()
-    xbmc.executebuiltin('Control.SetFocus(%s, %s, absolute)' % (cid, i))
+    clist = win.getControl(cid)
+    clist.selectItem(i)
 
 
 @plugin.route('/remove_favourite_channel/<channelname>')
