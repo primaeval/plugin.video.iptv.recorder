@@ -966,7 +966,7 @@ def channel(channelid):
             'thumbnail': thumbnail,
             'context_menu': context_items,
             'info_type': 'Video',
-            'info':{"title": title, "plot":description, "genre":categories, "picturepath":thumbnail}
+            'info':{"title": title, "plot":description, "genre":categories}
         }
         listitem = ListItem().from_dict(**dictitem)
         #listitem._listitem.setArt({"icon": thumbnail, "landscape": thumbnail, "clearart": thumbnail, "clearlogo": thumbnail, "thumb": thumbnail, "poster": thumbnail, "banner": thumbnail, "fanart":thumbnail})
@@ -1033,8 +1033,11 @@ def group(channelgroup=None,section=None):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
+    logos = {}
     if section == "EPG":
         channels = cursor.execute("SELECT * FROM channels ORDER BY name").fetchall()
+        streams = cursor.execute("SELECT tvg_id, tvg_logo FROM streams").fetchall()
+        logos = {x[0]:x[1] for x in streams}
         collection = channels
         show_now_next = plugin.get_setting('show.now.next.all') == "true"
     elif section == "FAVOURITES":
@@ -1071,7 +1074,7 @@ def group(channelgroup=None,section=None):
             uid, id, name, icon = stream_channel
             channelname = name
             channelid = id
-            thumbnail = icon or get_icon_path('tv')
+            thumbnail = logos.get(channelid) or icon or get_icon_path('tv')
             logo = icon
         elif section == "FAVOURITES":
             channelname, channelid, thumbnail = stream_channel
