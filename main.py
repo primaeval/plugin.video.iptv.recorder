@@ -1072,13 +1072,16 @@ def group(channelgroup=None,section=None):
             channelname = name
             channelid = id
             thumbnail = icon or get_icon_path('tv')
+            logo = icon
         elif section == "FAVOURITES":
             channelname, channelid, thumbnail = stream_channel
+            logo = thumbnail
         else:
             uid, name, tvg_name, tvg_id, tvg_logo, groups, url = stream_channel
             channelname = name
             channelid = tvg_id
             thumbnail = tvg_logo or get_icon_path('tv')
+            logo = tvg_logo
 
         description = ""
 
@@ -1099,10 +1102,12 @@ def group(channelgroup=None,section=None):
             else:
                 next_title = ""
 
-            if plugin.get_setting('channel.name') == "true":
-                label = "%s %s %s%s" % (channelname, now_title, CR, next_title)
-            else:
+            if plugin.get_setting('channel.name') == "false" and logo:
                 label = "%s %s%s" % (now_title, CR, next_title)
+            else:
+                label = "%s %s %s%s" % (channelname, now_title, CR, next_title)
+
+
         else:
             label = channelname
 
