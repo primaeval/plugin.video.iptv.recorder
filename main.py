@@ -964,10 +964,16 @@ def channel(channelid):
         if endtime > now and starttime < now:
             current = i
 
-        if endtime < now:
-            label = "[COLOR grey]%02d:%02d %s[/COLOR] %s %s[COLOR orange]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, CR, stitle, recording)
+        if (plugin.get_setting('hide.channel.name') == "true") and thumbnail:
+            if endtime < now:
+                label = "[COLOR grey]%02d:%02d %s[/COLOR] %s[COLOR orange]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), CR, stitle, recording)
+            else:
+                label = "[COLOR grey]%02d:%02d %s[/COLOR] %s[COLOR yellow]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), CR, stitle, recording)
         else:
-            label = "[COLOR grey]%02d:%02d %s[/COLOR] %s %s[COLOR yellow]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, CR, stitle, recording)
+            if endtime < now:
+                label = "[COLOR grey]%02d:%02d %s[/COLOR] %s %s[COLOR orange]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, CR, stitle, recording)
+            else:
+                label = "[COLOR grey]%02d:%02d %s[/COLOR] %s %s[COLOR yellow]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, CR, stitle, recording)
 
         context_items = []
 
