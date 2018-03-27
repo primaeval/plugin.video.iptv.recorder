@@ -54,10 +54,6 @@ else:
 
 
 def get_icon_path(icon_name):
-    if plugin.get_setting('user.icons') == "true":
-        user_icon = "special://profile/addon_data/%s/icons/%s.png" % (addon_id(), icon_name)
-        if xbmcvfs.exists(user_icon):
-            return user_icon
     return "special://home/addons/%s/resources/img/%s.png" % (addon_id(), icon_name)
 
 
