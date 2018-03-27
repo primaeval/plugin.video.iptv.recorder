@@ -27,7 +27,7 @@ from language import get_string as _
 
 
 plugin = Plugin()
-big_list_view = False
+big_list_view = True
 
 
 
@@ -914,9 +914,9 @@ def channel(channelid):
             current = i
 
         if endtime < now:
-            label = "[COLOR grey]%02d:%02d %s - %s[/COLOR] %s[CR][COLOR black]%s[/COLOR]" % (starttime.hour, starttime.minute, day(starttime), channelname, recording, stitle)
+            label = "[COLOR grey]%02d:%02d %s - %s[/COLOR] %s[COLOR red]%s[/COLOR]" % (starttime.hour, starttime.minute, day(starttime), channelname, recording, stitle)
         else:
-            label = "[COLOR grey]%02d:%02d %s - %s[/COLOR] %s[CR]%s" % (starttime.hour, starttime.minute, day(starttime), channelname, recording, stitle)
+            label = "[COLOR grey]%02d:%02d %s - %s[/COLOR] %s[COLOR yellow]%s[/COLOR]" % (starttime.hour, starttime.minute, day(starttime), channelname, recording, stitle)
 
         context_items = []
 
@@ -1057,7 +1057,7 @@ def group(channelgroup=None,section=None):
                 title = now_title[0]
                 local_start = utc2local(now_title[1])
                 description = now_title[2]
-                now_title = "%02d:%02d %s " % (local_start.hour, local_start.minute, title)
+                now_title = "[COLOR yellow]%02d:%02d %s[/COLOR]" % (local_start.hour, local_start.minute, title)
             else:
                 now_title = ""
 
@@ -1065,11 +1065,11 @@ def group(channelgroup=None,section=None):
             if next_title:
                 title = next_title[0]
                 local_start = utc2local(next_title[1])
-                next_title =  "[I]%02d:%02d %s[/I]" % (local_start.hour, local_start.minute, title)
+                next_title =  "[COLOR blue]%02d:%02d %s[/COLOR]" % (local_start.hour, local_start.minute, title)
             else:
                 next_title = ""
 
-            label = "%s[CR][COLOR grey]%s%s[/COLOR]" % (channelname, now_title, next_title)
+            label = "%s %s %s" % (channelname, now_title, next_title)
 
         else:
             label = channelname
@@ -1117,7 +1117,8 @@ def groups():
 
         items.append({
             'label': channelgroup,
-            'path': plugin.url_for(group, channelgroup=channelgroup.encode("utf8"))
+            'path': plugin.url_for(group, channelgroup=channelgroup.encode("utf8")),
+            'thumbnail': get_icon_path('folder'),
         })
 
     return items
@@ -1546,3 +1547,10 @@ def index():
 
 if __name__ == '__main__':
     plugin.run()
+    containerAddonName = xbmc.getInfoLabel('Container.PluginName')
+    AddonName = xbmcaddon.Addon().getAddonInfo('id')
+    if containerAddonName == AddonName:
+        if big_list_view == True:
+            view_mode = int(plugin.get_setting('view.mode') or "0")
+            if view_mode:
+                plugin.set_view_mode(view_mode)
