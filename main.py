@@ -37,19 +37,14 @@ plugin = Plugin()
 big_list_view = True
 
 
-map = {
-    "en": "English",
-    "fr": "French"
-}
-lang = xbmc.getLanguage(xbmc.ISO_639_1)
-lc = locale.getlocale(locale.LC_TIME)
-if lc[0] is None or lc[0][:2] != lang:
-    if map.has_key(lang) is False:
-        lang = "en"
-    try:
-        locale.setlocale(locale.LC_TIME, map[lang])
-    except Exception, ex:
-        log( "Unable to set locale to %s: %s" % (map[lang], str(ex)))
+try:
+    if os.name == "posix":
+        lang = xbmc.getLanguage(xbmc.ISO_639_1)
+    else:
+        lang = xbmc.getLanguage(xbmc.ENGLISH_NAME)
+    locale.setlocale(locale.LC_TIME, lang)
+except Exception, ex:
+    log("Unable to set locale to %s: %s" % (lang, str(ex)))
 
 
 if plugin.get_setting("multiline") == "true":
@@ -627,13 +622,13 @@ def broadcast(programmeid):
     items = []
 
     items.append({
-        'label': "Record Once - %s - %s %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, utc2local(start), utc2local(stop)),
+        'label': _("Record Once") + " - %s - %s %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, utc2local(start), utc2local(stop)),
         'path': plugin.url_for(record_once, programmeid=programmeid),
         'thumbnail': thumbnail or get_icon_path('recordings'),
     })
 
     items.append({
-        'label': "Record Always - %s - %s" % (channelname, title),
+        'label': _("Record Always") + " - %s - %s" % (channelname, title),
         'path': plugin.url_for(record_always, channelid=echannelid, channelname=echannelname, title=etitle),
         'thumbnail': thumbnail or get_icon_path('recordings'),
     })
@@ -641,19 +636,19 @@ def broadcast(programmeid):
     start_ts = datetime2timestamp(start)
     stop_ts = datetime2timestamp(stop)
     items.append({
-        'label': "Record Daily - %s - %s %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, utc2local(start).time(), utc2local(stop).time()),
+        'label': _("Record Daily") + " - %s - %s %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, utc2local(start).time(), utc2local(stop).time()),
         'path': plugin.url_for(record_daily, channelid=echannelid, channelname=echannelname, title=etitle, start=start_ts, stop=stop_ts),
         'thumbnail': thumbnail or get_icon_path('recordings'),
     })
 
     items.append({
-        'label': "Play Channel - %s" % (channelname),
+        'label': _("Play Channel") + " - %s" % (channelname),
         'path': plugin.url_for(play_channel, channelname=echannelname),
         'thumbnail': thumbnail or get_icon_path('tv'),
     })
 
     items.append({
-        'label': "Play Channel External - %s" % (channelname),
+        'label': _("Play Channel External") + " - %s" % (channelname),
         'path': plugin.url_for(play_channel_external, channelname=echannelname),
         'thumbnail': thumbnail or get_icon_path('tv'),
     })
@@ -693,7 +688,7 @@ def day(timestamp):
         elif yesterday.date() == timestamp.date():
             return _('Yesterday')
         else:
-            return timestamp.strftime("%A")
+            return timestamp.strftime("%A").title()
 
 
 @plugin.route('/delete_search_title/<title>')
