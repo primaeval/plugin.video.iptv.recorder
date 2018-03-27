@@ -88,12 +88,6 @@ def delete(path):
     xbmcvfs.rmdir(path)
 
 
-@plugin.route('/play/<channelid>')
-def play(channelid):
-    rpc = '{"jsonrpc":"2.0", "method":"Player.Open", "id":305, "params":{"item":{"channelid":%s}}}' % channelid
-    r = requests.post('http://localhost:8080/jsonrpc', data=rpc)
-
-
 @plugin.route('/play_channel/<channelname>')
 def play_channel(channelname):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
