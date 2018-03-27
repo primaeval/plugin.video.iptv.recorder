@@ -1119,7 +1119,7 @@ def group(channelgroup=None,section=None):
             else:
                 next_title = ""
 
-            if plugin.get_setting('channel.name') == "false" and logo:
+            if (plugin.get_setting('hide.channel.name') == "true") and logo:
                 label = "%s %s%s" % (now_title, CR, next_title)
             else:
                 label = "%s %s %s%s" % (channelname, now_title, CR, next_title)
