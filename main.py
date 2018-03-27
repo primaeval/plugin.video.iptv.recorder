@@ -930,9 +930,9 @@ def channel(channelid):
             current = i
 
         if endtime < now:
-            label = "[COLOR grey]%02d:%02d %s - %s[/COLOR] [COLOR orange]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, stitle, recording)
+            label = "[COLOR grey]%02d:%02d %s[/COLOR] %s [COLOR orange]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, stitle, recording)
         else:
-            label = "[COLOR grey]%02d:%02d %s - %s[/COLOR] [COLOR yellow]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, stitle, recording)
+            label = "[COLOR grey]%02d:%02d %s[/COLOR] %s [COLOR yellow]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, stitle, recording)
 
         context_items = []
 
