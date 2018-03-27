@@ -165,3 +165,11 @@ msgstr "Supprimer toutes les programmations?"
 msgctxt "#30040"
 msgid "Recordings"
 msgstr "Enregistrements"
+
+msgctxt "#30041"
+msgid "Record Always"
+msgstr "Enregistrer tout le temps"
+
+msgctxt "#30042"
+msgid "Record Daily"
+msgstr "Enregistrer tous les jours"

@@ -94,3 +94,5 @@ __strings['delete recording'] = 30037
 __strings['yesterday'] = 30038
 __strings['delete all jobs?'] = 30039
 __strings['recordings'] = 30040
+__strings['record always'] = 30041
+__strings['record daily'] = 30042
