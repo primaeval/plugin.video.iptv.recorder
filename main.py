@@ -739,7 +739,7 @@ def search_title(title):
         else:
             stitle = title
 
-        label = "[COLOR grey]%02d:%02d %s - %s[/COLOR]  %s[CR]%s" % (starttime.hour, starttime.minute, day(starttime), channelname, recording, title)
+        label = "[COLOR grey]%02d:%02d %s[/COLOR] %s [COLOR yellow]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, stitle, recording)
 
         context_items = []
 
@@ -849,7 +849,7 @@ def search_plot(plot):
         else:
             stitle = title
 
-        label = "[COLOR grey]%02d:%02d %s - %s[/COLOR]  %s[CR]%s" % (starttime.hour, starttime.minute, day(starttime), channelname, recording, title)
+        label = "[COLOR grey]%02d:%02d %s[/COLOR] %s [COLOR yellow]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, stitle, recording)
 
         context_items = []
 
