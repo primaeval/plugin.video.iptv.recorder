@@ -1053,6 +1053,13 @@ def group(channelgroup=None,section=None):
 
     now = datetime.utcnow()
 
+    if show_now_next:
+        now_titles = cursor.execute('SELECT channelid, title, start AS "start [TIMESTAMP]", description FROM programmes WHERE start<? AND stop>?', (now, now)).fetchall()
+        now_titles = {x[0]:(x[1],x[2],x[3]) for x in now_titles}
+        #TODO limit to one per channelid
+        next_titles = cursor.execute('SELECT channelid, title, start AS "start [TIMESTAMP]" FROM programmes WHERE start>? ORDER BY start DESC', (now,)).fetchall()
+        next_titles = {x[0]:(x[1],x[2]) for x in next_titles}
+
     for stream_channel in collection:
 
         if section == "EPG":
@@ -1072,19 +1079,17 @@ def group(channelgroup=None,section=None):
 
         if show_now_next:
 
-            now_title = cursor.execute('SELECT title, start AS "start [TIMESTAMP]", description FROM programmes WHERE channelid=? AND start<? AND stop>? LIMIT 1', (channelid, now, now)).fetchone()
-            if now_title:
-                title = now_title[0]
-                local_start = utc2local(now_title[1])
-                description = now_title[2]
+            if channelid in now_titles:
+                title = now_titles[channelid][0]
+                local_start = utc2local(now_titles[channelid][1])
+                description = now_titles[channelid][2]
                 now_title = "[COLOR yellow]%02d:%02d %s[/COLOR]" % (local_start.hour, local_start.minute, title)
             else:
                 now_title = ""
 
-            next_title = cursor.execute('SELECT title, start AS "start [TIMESTAMP]" FROM programmes WHERE channelid=? AND start>? LIMIT 1', (channelid, now)).fetchone()
-            if next_title:
-                title = next_title[0]
-                local_start = utc2local(next_title[1])
+            if channelid in next_titles:
+                title = next_titles[channelid][0]
+                local_start = utc2local(next_titles[channelid][1])
                 next_title =  "[COLOR blue]%02d:%02d %s[/COLOR]" % (local_start.hour, local_start.minute, title)
             else:
                 next_title = ""
