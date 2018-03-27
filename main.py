@@ -1,4 +1,4 @@
-from xbmcswift2 import Plugin
+from xbmcswift2 import Plugin, ListItem
 import re
 import requests
 import xbmc, xbmcaddon, xbmcvfs, xbmcgui
@@ -939,14 +939,17 @@ def channel(channelid):
         else:
             path = plugin.url_for('channel', channelid=echannelid)
 
-        items.append({
+        dictitem = {
             'label': label,
             'path': path,
             'thumbnail': thumbnail,
             'context_menu': context_items,
             'info_type': 'Video',
-            'info':{"title": title, "plot":description, "genre":categories}
-        })
+            'info':{"title": title, "plot":description, "genre":categories, "picturepath":thumbnail}
+        }
+        listitem = ListItem().from_dict(**dictitem)
+        #listitem._listitem.setArt({"icon": thumbnail, "landscape": thumbnail, "clearart": thumbnail, "clearlogo": thumbnail, "thumb": thumbnail, "poster": thumbnail, "banner": thumbnail, "fanart":thumbnail})
+        items.append(listitem)
 
     threading.Thread(target=focus,args=[current]).start()
 
