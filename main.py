@@ -121,7 +121,8 @@ def play_channel_external(channelname):
 
         cmd.append(url)
 
-        subprocess.Popen(cmd)
+        #TODO shell?
+        subprocess.Popen(cmd,shell=windows())
 
 
 @plugin.route('/play_external/<path>')
@@ -134,7 +135,8 @@ def play_external(path):
 
     cmd.append(xbmc.translatePath(path))
 
-    subprocess.Popen(cmd)
+    #TODO shell?
+    subprocess.Popen(cmd,shell=windows())
 
 
 def xml2local(xml):
