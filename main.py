@@ -1099,8 +1099,10 @@ def group(channelgroup=None,section=None):
             else:
                 next_title = ""
 
-            label = "%s %s %s%s" % (channelname, now_title, CR, next_title)
-
+            if plugin.get_setting('channel.name') == "true":
+                label = "%s %s %s%s" % (channelname, now_title, CR, next_title)
+            else:
+                label = "%s %s%s" % (now_title, CR, next_title)
         else:
             label = channelname
 
