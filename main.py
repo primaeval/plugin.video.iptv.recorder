@@ -30,6 +30,11 @@ plugin = Plugin()
 big_list_view = True
 
 
+if plugin.get_setting("multiline") == "true":
+    CR = "[CR]"
+else:
+    CR = ""
+
 
 def addon_id():
     return xbmcaddon.Addon().getAddonInfo('id')
@@ -172,7 +177,7 @@ def jobs():
         context_items.append((_("Delete Job"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job, job=uuid))))
         context_items.append((_("Delete All Jobs"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_all_jobs))))
 
-        label = "%s [COLOR yellow]%s[/COLOR] [COLOR grey]%s - %s[/COLOR]" % (channelname, title, utc2local(start), utc2local(stop))
+        label = "%s [COLOR yellow]%s[/COLOR] %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, utc2local(start), utc2local(stop))
 
         items.append({
             'label': label,
@@ -203,7 +208,7 @@ def rules():
         if type == "ALWAYS":
             label = "%s [COLOR yellow]%s[/COLOR]" % (channelname, title)
         elif type == "DAILY":
-            label =  "%s [COLOR yellow]%s[/COLOR] [COLOR grey]%s - %s[/COLOR]" % (channelname, title, utc2local(start).time(), utc2local(stop).time())
+            label =  "%s [COLOR yellow]%s[/COLOR] %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, utc2local(start).time(), utc2local(stop).time())
         elif type == "SEARCH":
             label = "%s [COLOR yellow]%s[/COLOR]" % (channelname, title)
         elif type == "PLOT":
@@ -390,7 +395,7 @@ def record_once_thread(programmeid, do_refresh=True):
     local_starttime = utc2local(start)
     local_endtime = utc2local(stop)
 
-    label = "%s - %s [COLOR grey]%s - %s[/COLOR]" % (channelname, title, local_starttime, local_endtime)
+    label = "%s - %s %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, local_starttime, local_endtime)
 
     job = cursor.execute("SELECT * FROM jobs WHERE channelid=? AND start=? AND stop=?", (channelid, start, stop)).fetchone()
     if job:
@@ -606,7 +611,7 @@ def broadcast(programmeid):
     items = []
 
     items.append({
-        'label': "Record Once - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname, title,  utc2local(start), utc2local(stop)),
+        'label': "Record Once - %s - %s %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, utc2local(start), utc2local(stop)),
         'path': plugin.url_for(record_once, programmeid=programmeid),
         'thumbnail': thumbnail or get_icon_path('recordings'),
     })
@@ -620,7 +625,7 @@ def broadcast(programmeid):
     start_ts = datetime2timestamp(start)
     stop_ts = datetime2timestamp(stop)
     items.append({
-        'label': "Record Daily - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname, title, utc2local(start).time(), utc2local(stop).time()),
+        'label': "Record Daily - %s - %s %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, utc2local(start).time(), utc2local(stop).time()),
         'path': plugin.url_for(record_daily, channelid=echannelid, channelname=echannelname, title=etitle, start=start_ts, stop=stop_ts),
         'thumbnail': thumbnail or get_icon_path('recordings'),
     })
@@ -739,7 +744,7 @@ def search_title(title):
         else:
             stitle = title
 
-        label = "[COLOR grey]%02d:%02d %s[/COLOR] %s [COLOR yellow]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, stitle, recording)
+        label = "[COLOR grey]%02d:%02d %s[/COLOR] %s %s[COLOR yellow]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, CR, stitle, recording)
 
         context_items = []
 
@@ -849,7 +854,7 @@ def search_plot(plot):
         else:
             stitle = title
 
-        label = "[COLOR grey]%02d:%02d %s[/COLOR] %s [COLOR yellow]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, stitle, recording)
+        label = "[COLOR grey]%02d:%02d %s[/COLOR] %s %s[COLOR yellow]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, CR, stitle, recording)
 
         context_items = []
 
@@ -930,9 +935,9 @@ def channel(channelid):
             current = i
 
         if endtime < now:
-            label = "[COLOR grey]%02d:%02d %s[/COLOR] %s [COLOR orange]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, stitle, recording)
+            label = "[COLOR grey]%02d:%02d %s[/COLOR] %s %s[COLOR orange]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, CR, stitle, recording)
         else:
-            label = "[COLOR grey]%02d:%02d %s[/COLOR] %s [COLOR yellow]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, stitle, recording)
+            label = "[COLOR grey]%02d:%02d %s[/COLOR] %s %s[COLOR yellow]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, CR, stitle, recording)
 
         context_items = []
 
@@ -1094,7 +1099,7 @@ def group(channelgroup=None,section=None):
             else:
                 next_title = ""
 
-            label = "%s %s %s" % (channelname, now_title, next_title)
+            label = "%s %s %s%s" % (channelname, now_title, CR, next_title)
 
         else:
             label = channelname

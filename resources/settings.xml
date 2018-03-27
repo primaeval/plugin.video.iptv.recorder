@@ -2,6 +2,9 @@
 
 <category label="Display">
 
+    <setting id="multiline" label="Show Items on Two Lines" type="bool" default="false" />
+
+    <setting type="sep"/>
     <setting id="view.mode" label="Force View Mode id" type="number" default="" />
     <setting type="lsep" label="Wide List is 51 in Confluence, 55 in Estuary"/>
     <setting type="lsep" label="Look in your skin/xml/MyVideoNav.xml &lt;view&gt;&lt;/view&gt;"/>
