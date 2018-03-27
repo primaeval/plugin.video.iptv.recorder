@@ -606,7 +606,7 @@ def broadcast(programmeid):
     items = []
 
     items.append({
-        'label': "Record Once - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname, title, start, stop),
+        'label': "Record Once - %s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname, title,  utc2local(start), utc2local(stop)),
         'path': plugin.url_for(record_once, programmeid=programmeid),
         'thumbnail': thumbnail or get_icon_path('recordings'),
     })
