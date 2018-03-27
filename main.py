@@ -172,7 +172,7 @@ def jobs():
         context_items.append((_("Delete Job"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job, job=uuid))))
         context_items.append((_("Delete All Jobs"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_all_jobs))))
 
-        label = "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname, title, utc2local(start), utc2local(stop))
+        label = "%s [COLOR yellow]%s[/COLOR] [COLOR grey]%s - %s[/COLOR]" % (channelname, title, utc2local(start), utc2local(stop))
 
         items.append({
             'label': label,
@@ -201,13 +201,13 @@ def rules():
 
         label = "TODO"
         if type == "ALWAYS":
-            label = "%s - %s" % (channelname, title)
+            label = "%s [COLOR yellow]%s[/COLOR]" % (channelname, title)
         elif type == "DAILY":
-            label =  "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname, title, utc2local(start).time(), utc2local(stop).time())
+            label =  "%s [COLOR yellow]%s[/COLOR] [COLOR grey]%s - %s[/COLOR]" % (channelname, title, utc2local(start).time(), utc2local(stop).time())
         elif type == "SEARCH":
-            label = "%s - %s" % (channelname, title)
+            label = "%s [COLOR yellow]%s[/COLOR]" % (channelname, title)
         elif type == "PLOT":
-            label = "%s - (%s)" % (channelname, description)
+            label = "%s [COLOR yellow](%s)[/COLOR]" % (channelname, description)
 
         items.append({
             'label': label,
@@ -390,7 +390,7 @@ def record_once_thread(programmeid, do_refresh=True):
     local_starttime = utc2local(start)
     local_endtime = utc2local(stop)
 
-    label = "%s - %s[CR][COLOR grey]%s - %s[/COLOR]" % (channelname, title, local_starttime, local_endtime)
+    label = "%s - %s [COLOR grey]%s - %s[/COLOR]" % (channelname, title, local_starttime, local_endtime)
 
     job = cursor.execute("SELECT * FROM jobs WHERE channelid=? AND start=? AND stop=?", (channelid, start, stop)).fetchone()
     if job:
@@ -488,6 +488,10 @@ def refresh():
 
 @plugin.route('/record_daily/<channelid>/<channelname>/<title>/<start>/<stop>')
 def record_daily(channelid, channelname, title, start, stop):
+    channelid = channelid.decode("utf8")
+    channelname = channelname.decode("utf8")
+    title = title.decode("utf8")
+
     start = timestamp2datetime(float(start))
     stop = timestamp2datetime(float(stop))
 
@@ -509,6 +513,10 @@ def record_daily(channelid, channelname, title, start, stop):
 
 @plugin.route('/record_always/<channelid>/<channelname>/<title>')
 def record_always(channelid, channelname, title):
+    channelid = channelid.decode("utf8")
+    channelname = channelname.decode("utf8")
+    title = title.decode("utf8")
+
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
@@ -526,6 +534,9 @@ def record_always(channelid, channelname, title):
 
 @plugin.route('/record_always_search/<channelid>/<channelname>')
 def record_always_search(channelid, channelname):
+    channelid = channelid.decode("utf8")
+    channelname = channelname.decode("utf8")
+
     title = xbmcgui.Dialog().input("IPTV Recorder: " + _("Title Search (% is wildcard)?"))
     if not title:
         return
@@ -547,6 +558,9 @@ def record_always_search(channelid, channelname):
 
 @plugin.route('/record_always_search_plot/<channelid>/<channelname>')
 def record_always_search_plot(channelid, channelname):
+    channelid = channelid.decode("utf8")
+    channelname = channelname.decode("utf8")
+
     description = xbmcgui.Dialog().input("IPTV Recorder: " + _("Plot Search (% is wildcard)?"))
     if not description:
         return
@@ -869,6 +883,8 @@ def search_plot(plot):
 
 @plugin.route('/channel/<channelid>')
 def channel(channelid):
+    channelid = channelid.decode("utf8")
+
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
@@ -914,9 +930,9 @@ def channel(channelid):
             current = i
 
         if endtime < now:
-            label = "[COLOR grey]%02d:%02d %s - %s[/COLOR] %s[COLOR red]%s[/COLOR]" % (starttime.hour, starttime.minute, day(starttime), channelname, recording, stitle)
+            label = "[COLOR grey]%02d:%02d %s - %s[/COLOR] [COLOR orange]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, stitle, recording)
         else:
-            label = "[COLOR grey]%02d:%02d %s - %s[/COLOR] %s[COLOR yellow]%s[/COLOR]" % (starttime.hour, starttime.minute, day(starttime), channelname, recording, stitle)
+            label = "[COLOR grey]%02d:%02d %s - %s[/COLOR] [COLOR yellow]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, stitle, recording)
 
         context_items = []
 
@@ -967,6 +983,8 @@ def focus(i):
 
 @plugin.route('/remove_favourite_channel/<channelname>')
 def remove_favourite_channel(channelname):
+    channelname = channelname.decode("utf8")
+
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
 
     conn.execute("DELETE FROM favourites WHERE channelname=?", (channelname, ))
@@ -979,6 +997,9 @@ def remove_favourite_channel(channelname):
 
 @plugin.route('/add_favourite_channel/<channelname>/<channelid>/<thumbnail>')
 def add_favourite_channel(channelname, channelid, thumbnail):
+    channelid = channelid.decode("utf8")
+    channelname = channelname.decode("utf8")
+
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
 
     conn.execute("INSERT OR REPLACE INTO favourites(channelname, channelid, logo) VALUES(?, ?, ?)",
@@ -1002,7 +1023,6 @@ def epg():
 
 @plugin.route('/group/<channelgroup>')
 def group(channelgroup=None,section=None):
-
     show_now_next = False
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
