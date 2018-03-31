@@ -1339,7 +1339,8 @@ def xml2utc(xml):
 
 @plugin.route('/xmltv')
 def xmltv():
-    xbmcgui.Dialog().notification("IPTV Recorder", _("Loading data..."), sound=False)
+    dialog = xbmcgui.DialogProgressBG()
+    dialog.create("IPTV Recorder", _("Loading data..."))
 
     profilePath = xbmc.translatePath(plugin.addon.getAddonInfo('profile'))
     xbmcvfs.mkdirs(profilePath)
@@ -1358,12 +1359,14 @@ def xmltv():
 
     tmp = os.path.join(profilePath, 'xmltv.tmp')
     xml = os.path.join(profilePath, 'xmltv.xml')
+    dialog.update(0, message='copying xmltv file')
     xbmcvfs.copy(path, tmp)
 
     f = xbmcvfs.File(tmp, "rb")
     magic = f.read(3)
     f.close()
     if magic == "\x1f\x8b\x08":
+        dialog.update(0, message='unzipping xmltv file')
         import gzip
         g = gzip.open(tmp)
         data = g.read()
@@ -1373,6 +1376,7 @@ def xmltv():
     else:
         xbmcvfs.copy(tmp, xml)
 
+    dialog.update(0, message='creating database')
     databasePath = os.path.join(profilePath, 'xmltv.db')
     conn = sqlite3.connect(databasePath, detect_types=sqlite3.PARSE_DECLTYPES)
     conn.execute('PRAGMA foreign_keys = ON')
@@ -1393,8 +1397,11 @@ def xmltv():
 
     htmlparser = HTMLParser()
 
+    dialog.update(0, message='finding channels')
     match = re.findall('<channel(.*?)</channel>', data, flags=(re.I|re.DOTALL))
     if match:
+        total = len(match)
+        i = 0
         for m in match:
             id = re.search('id="(.*?)"', m)
             if id:
@@ -1410,8 +1417,15 @@ def xmltv():
 
             conn.execute("INSERT OR IGNORE INTO channels(id, name, icon) VALUES (?, ?, ?)", [id, name, icon])
 
+            i += 1
+            percent = 0 + int(100.0 * i / total)
+            dialog.update(percent, message='finding channels')
+
+    dialog.update(0, message='finding programmes')
     match = re.findall('<programme(.*?)</programme>', data, flags=(re.I|re.DOTALL))
     if match:
+        total = len(match)
+        i = 0
         for m in match:
             channel = re.search('channel="(.*?)"', m)
             if channel:
@@ -1458,6 +1472,12 @@ def xmltv():
             conn.execute("INSERT OR IGNORE INTO programmes(channelid, title, sub_title, start, stop, date, description, episode, categories) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [channel, title, sub_title, start, stop, date, description, episode, categories])
 
+            i += 1
+            percent = 0 + int(100.0 * i / total)
+            dialog.update(percent, message='finding programmes')
+
+
+    dialog.update(0, message='finding streams')
     mode = plugin.get_setting('external.m3u')
     if mode == "0":
         m3uPathType = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uPathType')
@@ -1478,6 +1498,8 @@ def xmltv():
     data = f.read().decode("utf8")
 
     channels = re.findall('#EXTINF:(.*?)(?:\r\n|\r|\n)(.*?)(?:\r\n|\r|\n|$)', data, flags=(re.I | re.DOTALL))
+    total = len(channels)
+    i = 0
     for channel in channels:
 
         name = channel[0].rsplit(',', 1)[-1]
@@ -1504,10 +1526,15 @@ def xmltv():
         conn.execute("INSERT OR IGNORE INTO streams(name, tvg_name, tvg_id, tvg_logo, groups, url) VALUES (?, ?, ?, ?, ?, ?)",
         [name.strip(), tvg_name, tvg_id, tvg_logo, groups, url.strip()])
 
+        i += 1
+        percent = 0 + int(100.0 * i / total)
+        dialog.update(percent, message='finding streams')
+
     conn.commit()
     conn.close()
 
-    xbmcgui.Dialog().notification("IPTV Recorder", _("Finished loading data"), sound=False)
+    dialog.update(100, message='finished')
+    #dialog.close()
     return
 
 @plugin.route('/')
