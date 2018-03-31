@@ -679,7 +679,6 @@ def day(timestamp):
         elif yesterday.date() == timestamp.date():
             return _('Yesterday')
         else:
-            d = timestamp.strftime("%A")
             return timestamp.strftime("%A").decode(language_encoding).title()
 
 
