@@ -43,6 +43,7 @@ try:
     else:
         lang = xbmc.getLanguage(xbmc.ENGLISH_NAME)
     locale.setlocale(locale.LC_TIME, lang)
+    language_code,language_encoding = locale.getlocale(locale.LC_TIME)
 except Exception, ex:
     log("Unable to set locale to %s: %s" % (lang, str(ex)))
 
@@ -678,7 +679,8 @@ def day(timestamp):
         elif yesterday.date() == timestamp.date():
             return _('Yesterday')
         else:
-            return timestamp.strftime("%A").title()
+            d = timestamp.strftime("%A")
+            return timestamp.strftime("%A").decode(language_encoding).title()
 
 
 @plugin.route('/delete_search_title/<title>')
