@@ -45,11 +45,13 @@
 </category>
 
 <category label="Scheduler">
+    <setting type="lsep" label="Watch Timers require External Player (set in Playback)"/>
     <setting id="task.scheduler" label="Use Task Scheduler on Windows" type="bool" default="false"  />
     <setting id="python" label="python(w) exe" type="file" default="pythonw.exe"  />
 </category>
 
 <category label="Playback">
+    <setting id="external.player.watch" label="Use External Player for Watch Timers" type="bool" default="false"  />
     <setting id="external.player" label="External Player (eg ffplay)" type="file" default=""  />
     <setting id="external.player.args" label="External Player Arguments" type="text" default="-fs"  />
 </category>

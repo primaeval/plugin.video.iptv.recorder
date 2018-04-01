@@ -172,14 +172,14 @@ def jobs():
 
     items = []
 
-    for uid, uuid, channelid, channelname, title, start, stop in jobs:
+    for uid, uuid, channelid, channelname, title, start, stop, type in jobs:
 
         context_items = []
 
         context_items.append((_("Delete Job"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job, job=uuid))))
         context_items.append((_("Delete All Jobs"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_all_jobs))))
 
-        label = "%s [COLOR yellow]%s[/COLOR] %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, utc2local(start), utc2local(stop))
+        label = "%s [COLOR yellow]%s[/COLOR] %s[COLOR grey]%s - %s[/COLOR] %s" % (channelname, title, CR, utc2local(start), utc2local(stop), type)
 
         items.append({
             'label': label,
@@ -206,15 +206,21 @@ def rules():
         context_items.append((_("Delete Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_rule, uid=uid))))
         context_items.append((_("Delete All Rules"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_all_rules))))
 
+        if type.startswith("WATCH"):
+            type = type.replace("WATCH ","")
+            type_label = "WATCH"
+        else:
+            type_label = "RECORD"
+
         label = "TODO"
         if type == "ALWAYS":
-            label = "%s [COLOR yellow]%s[/COLOR]" % (channelname, title)
+            label = "%s [COLOR yellow]%s[/COLOR] %s" % (channelname, title, type_label)
         elif type == "DAILY":
-            label =  "%s [COLOR yellow]%s[/COLOR] %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, utc2local(start).time(), utc2local(stop).time())
+            label =  "%s [COLOR yellow]%s[/COLOR] %s[COLOR grey]%s - %s[/COLOR] %s" % (channelname, title, CR, utc2local(start).time(), utc2local(stop).time(), type_label)
         elif type == "SEARCH":
-            label = "%s [COLOR yellow]%s[/COLOR]" % (channelname, title)
+            label = "%s [COLOR yellow]%s[/COLOR] %s" % (channelname, title, type_label)
         elif type == "PLOT":
-            label = "%s [COLOR yellow](%s)[/COLOR]" % (channelname, description)
+            label = "%s [COLOR yellow](%s)[/COLOR] %s" % (channelname, description, type_label)
 
         items.append({
             'label': label,
@@ -356,8 +362,8 @@ def ffmpeg_location():
 
 
 @plugin.route('/record_once/<programmeid>')
-def record_once(programmeid, do_refresh=True):
-    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh]).start()
+def record_once(programmeid, do_refresh=True, watch=False):
+    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch]).start()
 
 
 @plugin.route('/watch_once/<programmeid>')
@@ -448,9 +454,6 @@ def record_once_thread(programmeid, do_refresh=True, watch=False):
     probe_cmd = cmd
     cmd = probe_cmd + ["-y", "-t", str(seconds), "-c", "copy", path]
 
-    if watch == True:
-        cmd = [plugin.get_setting('external.player'), plugin.get_setting('external.player.args'), url]
-
     directory = "special://profile/addon_data/plugin.video.iptv.recorder/jobs/"
     xbmcvfs.mkdirs(directory)
     job = str(uuid.uuid1())
@@ -458,19 +461,30 @@ def record_once_thread(programmeid, do_refresh=True, watch=False):
 
     f = xbmcvfs.File(pyjob, 'wb')
     f.write("import os, subprocess\n")
-    f.write("probe_cmd = %s\n" % repr(probe_cmd))
-    f.write("subprocess.call(probe_cmd, shell=%s)\n" % windows()) #TODO maybe optional
-    f.write("cmd = %s\n" % repr(cmd))
-    f.write("p = subprocess.Popen(cmd, shell=%s)\n" % windows())
-    f.write("f = open(r'%s', 'w+')\n" % xbmc.translatePath(pyjob+'.pid'))
-    f.write("f.write(repr(p.pid))\n")
-    f.write("f.close()\n")
-    #f.write("p.wait()\n")
-    #f.write("os.unlink(%s)\n" % xbmc.translatePath(pyjob+'.pid'))
-    #TODO copy file somewhere else
+
+    if watch == False:
+        f.write("probe_cmd = %s\n" % repr(probe_cmd))
+        f.write("subprocess.call(probe_cmd, shell=%s)\n" % windows()) #TODO maybe optional
+        f.write("cmd = %s\n" % repr(cmd))
+        f.write("p = subprocess.Popen(cmd, shell=%s)\n" % windows())
+        f.write("f = open(r'%s', 'w+')\n" % xbmc.translatePath(pyjob+'.pid'))
+        f.write("f.write(repr(p.pid))\n")
+        f.write("f.close()\n")
+        #f.write("p.wait()\n")
+        #f.write("os.unlink(%s)\n" % xbmc.translatePath(pyjob+'.pid'))
+        #TODO copy file somewhere else
+    else:
+        if (plugin.get_setting('external.player.watch') == 'true') or (windows() and (plugin.get_setting('task.scheduler') == 'true')):
+            cmd = [plugin.get_setting('external.player'), plugin.get_setting('external.player.args'), url]
+            f.write("cmd = %s\n" % repr(cmd))
+            f.write("p = subprocess.Popen(cmd, shell=%s)\n" % windows())
+        else:
+            cmd = 'xbmc.Player().play("%s")\n' % url
+            f.write("import xbmc\n")
+            f.write("%s\n" % cmd.encode("utf8"))
     f.close()
 
-    if windows() and plugin.get_setting('task.scheduler') == 'true':
+    if windows() and (plugin.get_setting('task.scheduler') == 'true'):
         if immediate:
             cmd = 'RunScript(%s)' % (pyjob)
             xbmc.executebuiltin(cmd)
@@ -495,8 +509,13 @@ def record_once_thread(programmeid, do_refresh=True, watch=False):
             cmd = 'AlarmClock(%s, RunScript(%s), %d, True)' % (job, pyjob, minutes)
             xbmc.executebuiltin(cmd)
 
-    conn.execute("INSERT OR REPLACE INTO jobs(uuid, channelid, channelname, title, start, stop) VALUES(?, ?, ?, ?, ?, ?)",
-    [job, channelid, channelname, title, start, stop])
+    if watch:
+        type = "WATCH"
+    else:
+        type = "RECORD"
+
+    conn.execute("INSERT OR REPLACE INTO jobs(uuid, channelid, channelname, title, start, stop, type) VALUES(?, ?, ?, ?, ?, ?)",
+    [job, channelid, channelname, title, start, stop, type])
     conn.commit()
     conn.close()
 
@@ -1067,9 +1086,9 @@ def channel(channelid):
         i += 1
         uid, channel , title , sub_title , start , stop , date , description , episode, categories = p
 
-        job = cursor.execute("SELECT uuid FROM jobs WHERE channelid=? AND start=? AND stop=?", (channelid, start, stop)).fetchone()
+        job, type = cursor.execute("SELECT uuid, type FROM jobs WHERE channelid=? AND start=? AND stop=?", (channelid, start, stop)).fetchone()
         if job:
-            recording = "[COLOR red]RECORD[/COLOR]"
+            recording = "[COLOR red]%s[/COLOR]" % type
         else:
             recording = ""
 
@@ -1342,16 +1361,21 @@ def service_thread():
 
     for uid, jchannelid, jchannelname, jtitle, jstart, jstop, jdescription, type  in rules:
 
+        watch = False
+        if type.startswith("WATCH"):
+            type = type.replace("WATCH ","")
+            watch = True
+
         if type == "ALWAYS":
             #TODO scrub [] from title
 
             programmes = cursor.execute(
-            'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE channelid=? AND title=?',
+            'SELECT uid, channelid , title , sub_title , date , description , episode, categories FROM programmes WHERE channelid=? AND title=?',
             (jchannelid, jtitle)).fetchall()
 
             for p in programmes:
-                uid, channel , title , sub_title , start , stop , date , description , episode, categories = p
-                record_once(programmeid=uid, do_refresh=False)
+                uid, channel , title , sub_title , date , description , episode, categories = p
+                record_once(programmeid=uid, do_refresh=False, watch=watch)
 
         elif type == "DAILY":
             tjstart = jstart.time()
@@ -1366,19 +1390,19 @@ def service_thread():
                 tstart = start.time()
                 tstop = stop.time()
                 if tjstart == tstart and tjstop == tstop:
-                    record_once(programmeid=uid, do_refresh=False)
+                    record_once(programmeid=uid, do_refresh=False, watch=watch)
 
         elif type == "SEARCH":
             programmes = cursor.execute("SELECT uid FROM programmes WHERE channelid=? AND title LIKE ?", (jchannelid, "%"+jtitle+"%")).fetchall()
             for p in programmes:
                 uid = p[0]
-                record_once(programmeid=uid, do_refresh=False)
+                record_once(programmeid=uid, do_refresh=False, watch=watch)
 
         elif type == "PLOT":
             programmes = cursor.execute("SELECT uid FROM programmes WHERE channelid=? AND description LIKE ?", (jchannelid, "%"+jdescription+"%")).fetchall()
             for p in programmes:
                 uid = p[0]
-                record_once(programmeid=uid, do_refresh=False)
+                record_once(programmeid=uid, do_refresh=False, watch=watch)
 
     refresh()
 
@@ -1542,7 +1566,7 @@ def xmltv():
     #TODO check primary key
     conn.execute('CREATE TABLE IF NOT EXISTS streams(uid INTEGER PRIMARY KEY ASC, name TEXT, tvg_name TEXT, tvg_id TEXT, tvg_logo TEXT, groups TEXT, url TEXT)')
     conn.execute('CREATE TABLE IF NOT EXISTS favourites(channelname TEXT, channelid TEXT, logo TEXT, PRIMARY KEY(channelname))')
-    conn.execute('CREATE TABLE IF NOT EXISTS jobs(uid INTEGER PRIMARY KEY ASC, uuid TEXT, channelid TEXT, channelname TEXT, title TEXT, start TIMESTAMP, stop TIMESTAMP)')
+    conn.execute('CREATE TABLE IF NOT EXISTS jobs(uid INTEGER PRIMARY KEY ASC, uuid TEXT, channelid TEXT, channelname TEXT, title TEXT, start TIMESTAMP, stop TIMESTAMP, type TEXT)')
 
     data = xbmcvfs.File(xml, 'rb').read().decode("utf8")
 
