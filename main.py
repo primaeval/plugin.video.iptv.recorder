@@ -1713,6 +1713,16 @@ def xmltv():
     #dialog.close()
     return
 
+@plugin.route('/nuke')
+def nuke():
+    if not (xbmcgui.Dialog().yesno("IPTV Recorder", _("Delete Everything and Start Again?"))):
+        return
+
+    xbmcvfs.delete(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
+    time.sleep(5)
+    full_service()
+
+
 @plugin.route('/')
 def index():
     items = []
@@ -1804,6 +1814,14 @@ def index():
         {
             'label': _("xmltv"),
             'path': plugin.url_for('xmltv'),
+            'thumbnail':get_icon_path('settings'),
+            'context_menu': context_items,
+        })
+
+        items.append(
+        {
+            'label': _("NUKE"),
+            'path': plugin.url_for('nuke'),
             'thumbnail':get_icon_path('settings'),
             'context_menu': context_items,
         })
