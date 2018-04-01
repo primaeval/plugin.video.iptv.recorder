@@ -366,8 +366,10 @@ def record_once_thread(programmeid, do_refresh=True):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
-    programme = cursor.execute('SELECT channelid, title, start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]" FROM programmes WHERE uid=? LIMIT 1', (programmeid, )).fetchone()
-    channelid, title, start, stop = programme
+    programme = cursor.execute('SELECT channelid, title, sub_title, start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date, description, episode, categories FROM programmes WHERE uid=? LIMIT 1', (programmeid, )).fetchone()
+    channelid, title, sub_title, start, stop, date, description, episode, categories = programme
+
+    json_nfo = json.dumps({"channelid":channelid, "title":title, "sub_title":sub_title, "start":datetime2timestamp(start), "stop":datetime2timestamp(stop), "date":date, "description":description, "episode":episode, "categories":categories})
 
     channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
     if not channel:
@@ -418,11 +420,17 @@ def record_once_thread(programmeid, do_refresh=True):
     length = local_endtime - local_starttime
     seconds = total_seconds(length)
 
-    filename = urllib.quote_plus(label.encode("utf8"))+'.ts'
+    filename = urllib.quote_plus(label.encode("utf8"))
     path = os.path.join(xbmc.translatePath(plugin.get_setting('recordings')), filename)
+    json_path = path + '.json'
+    path = path + '.ts'
     ffmpeg = ffmpeg_location()
     if not ffmpeg:
         return
+
+    f = xbmcvfs.File(json_path,'w')
+    f.write(json_nfo)
+    f.close()
 
     cmd = [ffmpeg]
     for h in headers:
