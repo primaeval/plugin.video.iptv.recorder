@@ -1086,8 +1086,9 @@ def channel(channelid):
         i += 1
         uid, channel , title , sub_title , start , stop , date , description , episode, categories = p
 
-        job, type = cursor.execute("SELECT uuid, type FROM jobs WHERE channelid=? AND start=? AND stop=?", (channelid, start, stop)).fetchone()
+        job = cursor.execute("SELECT uuid, type FROM jobs WHERE channelid=? AND start=? AND stop=?", (channelid, start, stop)).fetchone()
         if job:
+            job, type  = job
             recording = "[COLOR red]%s[/COLOR]" % type
         else:
             recording = ""
