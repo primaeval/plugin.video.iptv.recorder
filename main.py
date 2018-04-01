@@ -463,8 +463,9 @@ def record_once_thread(programmeid, do_refresh=True, watch=False):
     f.write("import os, subprocess\n")
 
     if watch == False:
-        f.write("probe_cmd = %s\n" % repr(probe_cmd))
-        f.write("subprocess.call(probe_cmd, shell=%s)\n" % windows()) #TODO maybe optional
+        if plugin.get_setting('probe') == 'true':
+            f.write("probe_cmd = %s\n" % repr(probe_cmd))
+            f.write("subprocess.call(probe_cmd, shell=%s)\n" % windows())
         f.write("cmd = %s\n" % repr(cmd))
         f.write("p = subprocess.Popen(cmd, shell=%s)\n" % windows())
         f.write("f = open(r'%s', 'w+')\n" % xbmc.translatePath(pyjob+'.pid'))
@@ -1710,7 +1711,8 @@ def xmltv():
     conn.close()
 
     dialog.update(100, message='finished')
-    #dialog.close()
+    time.sleep(1)
+    dialog.close()
     return
 
 @plugin.route('/nuke')
@@ -1812,7 +1814,7 @@ def index():
 
         items.append(
         {
-            'label': _("xmltv"),
+            'label': _("(Re)Load Data"),
             'path': plugin.url_for('xmltv'),
             'thumbnail':get_icon_path('settings'),
             'context_menu': context_items,
