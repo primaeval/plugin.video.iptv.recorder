@@ -1653,7 +1653,6 @@ def xmltv():
             percent = 0 + int(100.0 * i / total)
             dialog.update(percent, message='finding programmes')
 
-
     dialog.update(0, message='finding streams')
     mode = plugin.get_setting('external.m3u')
     if mode == "0":
@@ -1695,6 +1694,11 @@ def xmltv():
             tvg_logo = tvg_logo.group(1)
 
         url = channel[1]
+        search = plugin.get_setting('m3u.regex.search')
+        replace = plugin.get_setting('m3u.regex.replace')
+        if search and replace:
+            log((search,replace,url))
+            url = re.sub(search, replace, url)
 
         groups = re.search('group-title="(.*?)"', channel[0])
         if groups:
@@ -1814,7 +1818,7 @@ def index():
 
         items.append(
         {
-            'label': _("(Re)Load Data"),
+            'label': _("Reload Data"),
             'path': plugin.url_for('xmltv'),
             'thumbnail':get_icon_path('settings'),
             'context_menu': context_items,
