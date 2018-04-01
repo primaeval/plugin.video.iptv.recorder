@@ -369,7 +369,7 @@ def record_once_thread(programmeid, do_refresh=True):
     programme = cursor.execute('SELECT channelid, title, sub_title, start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date, description, episode, categories FROM programmes WHERE uid=? LIMIT 1', (programmeid, )).fetchone()
     channelid, title, sub_title, start, stop, date, description, episode, categories = programme
 
-    json_nfo = json.dumps({"channelid":channelid, "title":title, "sub_title":sub_title, "start":datetime2timestamp(start), "stop":datetime2timestamp(stop), "date":date, "description":description, "episode":episode, "categories":categories})
+    nfo = {"programme":{"channelid":channelid, "title":title, "sub_title":sub_title, "start":datetime2timestamp(start), "stop":datetime2timestamp(stop), "date":date, "description":description, "episode":episode, "categories":categories}}
 
     channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
     if not channel:
@@ -380,6 +380,7 @@ def record_once_thread(programmeid, do_refresh=True):
         uid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
     thumbnail = tvg_logo
     channelname = name
+    nfo["channel"] = {"channelname":channelname, "thumbnail":thumbnail, "channelid":tvg_id}
 
     if not url:
         xbmc.log("No url for %s" % channelname, xbmc.LOGERROR)
@@ -428,6 +429,7 @@ def record_once_thread(programmeid, do_refresh=True):
     if not ffmpeg:
         return
 
+    json_nfo = json.dumps(nfo)
     f = xbmcvfs.File(json_path,'w')
     f.write(json_nfo)
     f.close()
@@ -1299,18 +1301,25 @@ def recordings():
         if file.endswith('.ts'):
             path = os.path.join(xbmc.translatePath(dir), file)
 
+            label = urllib.unquote_plus(file)[0:-3]
+            channelname = label.split(' - ', 1)[0]
+            thumbnail = thumbnails.get(channelname)
+
             json_nfo_path = path.replace('.ts','.json')
             json_nfo = xbmcvfs.File(json_nfo_path,'r').read()
             description = ""
             if json_nfo:
                 json_nfo = json.loads(json_nfo)
                 if type(json_nfo) == dict:
-                    description = json_nfo.get("description")
+                    programme = json_nfo.get("programme")
+                    if programme:
+                        description = programme.get("description")
+                    channel = json_nfo.get("channel")
+                    if channel:
+                        thumbnail = channel.get("thumbnail")
+                        channelname = channel.get("channelname")
                     #TODO more nfo
 
-            label = urllib.unquote_plus(file)[0:-3]
-            channelname = label.split(' - ', 1)[0]
-            thumbnail = thumbnails.get(channelname)
 
             context_items = []
 
