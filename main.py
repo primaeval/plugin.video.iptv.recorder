@@ -1299,10 +1299,18 @@ def recordings():
         if file.endswith('.ts'):
             path = os.path.join(xbmc.translatePath(dir), file)
 
+            json_nfo_path = path.replace('.ts','.json')
+            json_nfo = xbmcvfs.File(json_nfo_path,'r').read()
+            description = ""
+            if json_nfo:
+                json_nfo = json.loads(json_nfo)
+                if type(json_nfo) == dict:
+                    description = json_nfo.get("description")
+                    #TODO more nfo
+
             label = urllib.unquote_plus(file)[0:-3]
-            channelname = label.split(' - ', 1)[0] #TODO meta info
+            channelname = label.split(' - ', 1)[0]
             thumbnail = thumbnails.get(channelname)
-            #TODO save some info from broadcast
 
             context_items = []
 
@@ -1317,7 +1325,7 @@ def recordings():
                 'is_playable': True,
                 'context_menu': context_items,
                 'info_type': 'Video',
-                'info':{"title": label},
+                'info':{"title": label, "plot":description},
             })
 
     return items
