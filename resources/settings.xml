@@ -50,7 +50,7 @@
 </category>
 
 <category label="Playback">
-    <setting id="external.player" label="External Player" type="file" default="ffplay"  />
+    <setting id="external.player" label="External Player (eg ffplay)" type="file" default=""  />
     <setting id="external.player.args" label="External Player Arguments" type="text" default="-fs"  />
 </category>
 
