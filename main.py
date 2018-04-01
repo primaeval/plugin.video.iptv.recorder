@@ -514,7 +514,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False):
     else:
         type = "RECORD"
 
-    conn.execute("INSERT OR REPLACE INTO jobs(uuid, channelid, channelname, title, start, stop, type) VALUES(?, ?, ?, ?, ?, ?)",
+    conn.execute("INSERT OR REPLACE INTO jobs(uuid, channelid, channelname, title, start, stop, type) VALUES(?, ?, ?, ?, ?, ?, ?)",
     [job, channelid, channelname, title, start, stop, type])
     conn.commit()
     conn.close()
