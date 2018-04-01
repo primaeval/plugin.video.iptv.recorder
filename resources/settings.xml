@@ -5,6 +5,8 @@
     <setting id="multiline" label="Show Items on Two Lines" type="bool" default="false" />
     <setting id="hide.channel.name" label="Hide Channel Names if Logo Exists" type="bool" default="false" />
 
+    <setting id="scroll.now" label="Scroll to Now in Channel Listing" type="bool" default="true" />
+
     <setting type="lsep" label="Look in your skin/xml/MyVideoNav.xml &lt;view&gt;&lt;/view&gt;"/>
     <setting type="lsep" label="Wide List is 51 in Confluence, 55 in Estuary. "/>
     <setting id="view.mode" label="Force View Mode id" type="number" default="" />

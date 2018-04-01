@@ -1150,7 +1150,8 @@ def channel(channelid):
         #listitem._listitem.setArt({"icon": thumbnail, "landscape": thumbnail, "clearart": thumbnail, "clearlogo": thumbnail, "thumb": thumbnail, "poster": thumbnail, "banner": thumbnail, "fanart":thumbnail})
         items.append(listitem)
 
-    threading.Thread(target=focus,args=[current]).start()
+    if plugin.get_setting('scroll.now') == 'true':
+        threading.Thread(target=focus,args=[current]).start()
 
     return items
 
