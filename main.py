@@ -1523,37 +1523,6 @@ def xmltv():
     profilePath = xbmc.translatePath(plugin.addon.getAddonInfo('profile'))
     xbmcvfs.mkdirs(profilePath)
 
-    mode = plugin.get_setting('external.xmltv')
-    if mode == "0":
-        epgPathType = xbmcaddon.Addon('pvr.iptvsimple').getSetting('epgPathType')
-        if epgPathType == "0":
-            path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('epgPath')
-        else:
-            path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('epgUrl')
-    elif mode == "1":
-        path = plugin.get_setting('external.xmltv.file')
-    else:
-        path = plugin.get_setting('external.xmltv.url')
-
-    tmp = os.path.join(profilePath, 'xmltv.tmp')
-    xml = os.path.join(profilePath, 'xmltv.xml')
-    dialog.update(0, message='copying xmltv file')
-    xbmcvfs.copy(path, tmp)
-
-    f = xbmcvfs.File(tmp, "rb")
-    magic = f.read(3)
-    f.close()
-    if magic == "\x1f\x8b\x08":
-        dialog.update(0, message='unzipping xmltv file')
-        import gzip
-        g = gzip.open(tmp)
-        data = g.read()
-        f = xbmcvfs.File(xml, "wb")
-        f.write(data)
-        f.close()
-    else:
-        xbmcvfs.copy(tmp, xml)
-
     dialog.update(0, message='creating database')
     databasePath = os.path.join(profilePath, 'xmltv.db')
     conn = sqlite3.connect(databasePath, detect_types=sqlite3.PARSE_DECLTYPES)
@@ -1571,146 +1540,188 @@ def xmltv():
     conn.execute('CREATE TABLE IF NOT EXISTS favourites(channelname TEXT, channelid TEXT, logo TEXT, PRIMARY KEY(channelname))')
     conn.execute('CREATE TABLE IF NOT EXISTS jobs(uid INTEGER PRIMARY KEY ASC, uuid TEXT, channelid TEXT, channelname TEXT, title TEXT, start TIMESTAMP, stop TIMESTAMP, type TEXT)')
 
-    data = xbmcvfs.File(xml, 'rb').read().decode("utf8")
+    for x in ["1","2"]:
 
-    htmlparser = HTMLParser()
-
-    dialog.update(0, message='finding channels')
-    match = re.findall('<channel(.*?)</channel>', data, flags=(re.I|re.DOTALL))
-    if match:
-        total = len(match)
-        i = 0
-        for m in match:
-            id = re.search('id="(.*?)"', m)
-            if id:
-                id = htmlparser.unescape(id.group(1))
-
-            name = re.search('<display-name.*?>(.*?)</display-name', m)
-            if name:
-                name = htmlparser.unescape(name.group(1))
-
-            icon = re.search('<icon.*?src="(.*?)"', m)
-            if icon:
-                icon = icon.group(1)
-
-            conn.execute("INSERT OR IGNORE INTO channels(id, name, icon) VALUES (?, ?, ?)", [id, name, icon])
-
-            i += 1
-            percent = 0 + int(100.0 * i / total)
-            dialog.update(percent, message='finding channels')
-
-    dialog.update(0, message='finding programmes')
-    match = re.findall('<programme(.*?)</programme>', data, flags=(re.I|re.DOTALL))
-    if match:
-        total = len(match)
-        i = 0
-        for m in match:
-            channel = re.search('channel="(.*?)"', m)
-            if channel:
-                channel = htmlparser.unescape(channel.group(1))
-
-            start = re.search('start="(.*?)"', m)
-            if start:
-                start = start.group(1)
-                start = xml2utc(start)
-
-            stop = re.search('stop="(.*?)"', m)
-            if stop:
-                stop = stop.group(1)
-                stop = xml2utc(stop)
-
-            title = re.search('<title.*?>(.*?)</title', m)
-            if title:
-                title = htmlparser.unescape(title.group(1))
-
-            sub_title = re.search('<sub-title.*?>(.*?)</sub-title', m)
-            if sub_title:
-                sub_title = htmlparser.unescape(sub_title.group(1))
-
-            description = re.search('<desc.*?>(.*?)</desc', m)
-            if description:
-                description = htmlparser.unescape(description.group(1))
-
-            date = re.search('<date.*?>(.*?)</date', m)
-            if date:
-                date = date.group(1)
-
-            #TODO other systems
-            episode = re.search('<episode-num system="xmltv_ns">(.*?)<', m)
-            if episode:
-                episode = htmlparser.unescape(episode.group(1))
-
-            cats = re.findall('<category.*?>(.*?)</category>', m, flags=(re.I|re.DOTALL))
-            if cats:
-                categories = htmlparser.unescape((','.join(cats)))
-
+        mode = plugin.get_setting('external.xmltv.'+x)
+        if mode == "0":
+            if x == "1":
+                epgPathType = xbmcaddon.Addon('pvr.iptvsimple').getSetting('epgPathType')
+                if epgPathType == "0":
+                    path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('epgPath')
+                else:
+                    path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('epgUrl')
             else:
-                categories = ''
-
-            conn.execute("INSERT OR IGNORE INTO programmes(channelid, title, sub_title, start, stop, date, description, episode, categories) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [channel, title, sub_title, start, stop, date, description, episode, categories])
-
-            i += 1
-            percent = 0 + int(100.0 * i / total)
-            dialog.update(percent, message='finding programmes')
-
-    dialog.update(0, message='finding streams')
-    mode = plugin.get_setting('external.m3u')
-    if mode == "0":
-        m3uPathType = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uPathType')
-
-        if m3uPathType == "0":
-            path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uPath')
+                path = ""
+        elif mode == "1":
+            path = plugin.get_setting('external.xmltv.file.'+x)
         else:
-            path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uUrl')
-    elif mode == "1":
-        path = plugin.get_setting('external.m3u.file')
-    else:
-        path = plugin.get_setting('external.m3u.url')
+            path = plugin.get_setting('external.xmltv.url.'+x)
 
-    m3uFile = 'special://profile/addon_data/plugin.video.iptv.recorder/channels.m3u'
+        if path:
 
-    xbmcvfs.copy(path, m3uFile)
-    f = xbmcvfs.File(m3uFile)
-    data = f.read().decode("utf8")
+            tmp = os.path.join(profilePath, 'xmltv'+x+'.tmp')
+            xml = os.path.join(profilePath, 'xmltv'+x+'.xml')
+            dialog.update(0, message='copying xmltv file')
+            xbmcvfs.copy(path, tmp)
 
-    channels = re.findall('#EXTINF:(.*?)(?:\r\n|\r|\n)(.*?)(?:\r\n|\r|\n|$)', data, flags=(re.I | re.DOTALL))
-    total = len(channels)
-    i = 0
-    for channel in channels:
+            f = xbmcvfs.File(tmp, "rb")
+            magic = f.read(3)
+            f.close()
+            if magic == "\x1f\x8b\x08":
+                dialog.update(0, message='unzipping xmltv file')
+                import gzip
+                g = gzip.open(tmp)
+                data = g.read()
+                f = xbmcvfs.File(xml, "wb")
+                f.write(data)
+                f.close()
+            else:
+                xbmcvfs.copy(tmp, xml)
 
-        name = channel[0].rsplit(',', 1)[-1]
-        tvg_name = re.search('tvg-name="(.*?)"', channel[0])
-        if tvg_name:
-            tvg_name = tvg_name.group(1)
+            data = xbmcvfs.File(xml, 'rb').read().decode("utf8")
 
-        tvg_id = re.search('tvg-id="(.*?)"', channel[0])
-        if tvg_id:
-            tvg_id = tvg_id.group(1)
+            htmlparser = HTMLParser()
+
+            dialog.update(0, message='finding channels')
+            match = re.findall('<channel(.*?)</channel>', data, flags=(re.I|re.DOTALL))
+            if match:
+                total = len(match)
+                i = 0
+                for m in match:
+                    id = re.search('id="(.*?)"', m)
+                    if id:
+                        id = htmlparser.unescape(id.group(1))
+
+                    name = re.search('<display-name.*?>(.*?)</display-name', m)
+                    if name:
+                        name = htmlparser.unescape(name.group(1))
+
+                    icon = re.search('<icon.*?src="(.*?)"', m)
+                    if icon:
+                        icon = icon.group(1)
+
+                    conn.execute("INSERT OR IGNORE INTO channels(id, name, icon) VALUES (?, ?, ?)", [id, name, icon])
+
+                    i += 1
+                    percent = 0 + int(100.0 * i / total)
+                    dialog.update(percent, message='finding channels')
+
+            dialog.update(0, message='finding programmes')
+            match = re.findall('<programme(.*?)</programme>', data, flags=(re.I|re.DOTALL))
+            if match:
+                total = len(match)
+                i = 0
+                for m in match:
+                    channel = re.search('channel="(.*?)"', m)
+                    if channel:
+                        channel = htmlparser.unescape(channel.group(1))
+
+                    start = re.search('start="(.*?)"', m)
+                    if start:
+                        start = start.group(1)
+                        start = xml2utc(start)
+
+                    stop = re.search('stop="(.*?)"', m)
+                    if stop:
+                        stop = stop.group(1)
+                        stop = xml2utc(stop)
+
+                    title = re.search('<title.*?>(.*?)</title', m)
+                    if title:
+                        title = htmlparser.unescape(title.group(1))
+
+                    sub_title = re.search('<sub-title.*?>(.*?)</sub-title', m)
+                    if sub_title:
+                        sub_title = htmlparser.unescape(sub_title.group(1))
+
+                    description = re.search('<desc.*?>(.*?)</desc', m)
+                    if description:
+                        description = htmlparser.unescape(description.group(1))
+
+                    date = re.search('<date.*?>(.*?)</date', m)
+                    if date:
+                        date = date.group(1)
+
+                    #TODO other systems
+                    episode = re.search('<episode-num system="xmltv_ns">(.*?)<', m)
+                    if episode:
+                        episode = htmlparser.unescape(episode.group(1))
+
+                    cats = re.findall('<category.*?>(.*?)</category>', m, flags=(re.I|re.DOTALL))
+                    if cats:
+                        categories = htmlparser.unescape((','.join(cats)))
+
+                    else:
+                        categories = ''
+
+                    conn.execute("INSERT OR IGNORE INTO programmes(channelid, title, sub_title, start, stop, date, description, episode, categories) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    [channel, title, sub_title, start, stop, date, description, episode, categories])
+
+                    i += 1
+                    percent = 0 + int(100.0 * i / total)
+                    dialog.update(percent, message='finding programmes')
+
+        dialog.update(0, message='finding streams')
+        mode = plugin.get_setting('external.m3u.'+x)
+        if mode == "0":
+            if x == "1":
+                m3uPathType = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uPathType')
+
+                if m3uPathType == "0":
+                    path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uPath')
+                else:
+                    path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uUrl')
+            else:
+                path = ""
+        elif mode == "1":
+            path = plugin.get_setting('external.m3u.file.'+x)
         else:
-            tvg_id = name
+            path = plugin.get_setting('external.m3u.url.'+x)
 
-        tvg_logo = re.search('tvg-logo="(.*?)"', channel[0])
-        if tvg_logo:
-            tvg_logo = tvg_logo.group(1)
+        if path:
 
-        url = channel[1]
-        search = plugin.get_setting('m3u.regex.search')
-        replace = plugin.get_setting('m3u.regex.replace')
-        if search and replace:
-            log((search,replace,url))
-            url = re.sub(search, replace, url)
+            m3uFile = 'special://profile/addon_data/plugin.video.iptv.recorder/channels'+x+'.m3u'
 
-        groups = re.search('group-title="(.*?)"', channel[0])
-        if groups:
-            groups = groups.group(1)
+            xbmcvfs.copy(path, m3uFile)
+            f = xbmcvfs.File(m3uFile)
+            data = f.read().decode("utf8")
 
-        conn.execute("INSERT OR IGNORE INTO streams(name, tvg_name, tvg_id, tvg_logo, groups, url) VALUES (?, ?, ?, ?, ?, ?)",
-        [name.strip(), tvg_name, tvg_id, tvg_logo, groups, url.strip()])
+            channels = re.findall('#EXTINF:(.*?)(?:\r\n|\r|\n)(.*?)(?:\r\n|\r|\n|$)', data, flags=(re.I | re.DOTALL))
+            total = len(channels)
+            i = 0
+            for channel in channels:
 
-        i += 1
-        percent = 0 + int(100.0 * i / total)
-        dialog.update(percent, message='finding streams')
+                name = channel[0].rsplit(',', 1)[-1]
+                tvg_name = re.search('tvg-name="(.*?)"', channel[0])
+                if tvg_name:
+                    tvg_name = tvg_name.group(1)
+
+                tvg_id = re.search('tvg-id="(.*?)"', channel[0])
+                if tvg_id:
+                    tvg_id = tvg_id.group(1)
+                else:
+                    tvg_id = name
+
+                tvg_logo = re.search('tvg-logo="(.*?)"', channel[0])
+                if tvg_logo:
+                    tvg_logo = tvg_logo.group(1)
+
+                url = channel[1]
+                search = plugin.get_setting('m3u.regex.search')
+                replace = plugin.get_setting('m3u.regex.replace')
+                if search and replace:
+                    url = re.sub(search, replace, url)
+
+                groups = re.search('group-title="(.*?)"', channel[0])
+                if groups:
+                    groups = groups.group(1)
+
+                conn.execute("INSERT OR IGNORE INTO streams(name, tvg_name, tvg_id, tvg_logo, groups, url) VALUES (?, ?, ?, ?, ?, ?)",
+                [name.strip(), tvg_name, tvg_id, tvg_logo, groups, url.strip()])
+
+                i += 1
+                percent = 0 + int(100.0 * i / total)
+                dialog.update(percent, message='finding streams')
 
     conn.commit()
     conn.close()
