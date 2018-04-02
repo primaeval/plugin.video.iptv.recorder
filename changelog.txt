@@ -1,3 +1,11 @@
+version 0.0.6
+- internal database (old jobs will need to be re-added)
+- 2 xmltv/m3u file inputs
+- watch timer rules
+- internationalisation (French so far, thanks to Chychy)
+- customizable display
+- now/next program in channel listings
+
 version 0.0.3
 - title search
 - plot search
