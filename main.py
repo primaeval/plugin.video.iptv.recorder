@@ -1077,10 +1077,10 @@ def search_categories_dialog():
 
     for search in searches:
         context_items = []
-        context_items.append(("Delete Search" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_search_categories, categories=search))))
+        context_items.append(("Delete Search" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_search_categories, categories=search.encode("utf8")))))
         items.append({
             "label": search,
-            "path": plugin.url_for('search_categories', categories=search),
+            "path": plugin.url_for('search_categories', categories=search.encode("utf8")),
             "thumbnail": get_icon_path('search'),
             'context_menu': context_items,
             })
@@ -1118,6 +1118,8 @@ def search_categories_input(categories):
 
 @plugin.route('/search_categories/<categories>')
 def search_categories(categories):
+    categories = categories.decode("utf8")
+
     #TODO combine with search_title() and group()
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
