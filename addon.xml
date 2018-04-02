@@ -1,25 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <addon id="plugin.video.iptv.recorder"
-version="0.0.5"
+version="0.0.6"
 name="IPTV Recorder"
-provider-name="primaeval">
+provider-name="primaeval, Chychy">
 <requires>
   <import addon="xbmc.python" version="2.20.0"/>
   <import addon="script.module.xbmcswift2" version="2.4.0"/>
   <import addon="script.module.requests" version="2.9.1" />
+  <import addon="script.module.pytz" />
 </requires>
 <extension point="xbmc.python.pluginsource" library="main.py">
   <provides>video</provides>
 </extension>
 <extension point="xbmc.service" library="server.py" start="login"/>
 <extension point="xbmc.addon.metadata">
-  <summary lang="en">Record from IPTV Simple Client with ffmpeg.</summary>
+  <summary lang="en">Record from IPTV Simple Client or xmltv/m3u with ffmpeg.</summary>
   <description lang="en">
 Set your recording path and ffmpeg location.
 On Android ffmpeg will be copied to /data/data to be runnable.
 Complex stream handling might need an extra script instead of ffmpeg.
-ffmpeg simply copies the stream into a transport stream container.</description>
-  <disclaimer lang="en"></disclaimer>
+ffmpeg simply copies the stream into a transport stream container.
+</description>
+<disclaimer lang="en">Make sure recording streams is legal in your country.</disclaimer>
+<source>https://github.com/primaeval/plugin.video.iptv.recorder</source>
+<forum>https://forum.kodi.tv/showthread.php?tid=329991</forum>
+<language>en fr</language>
+<news>All new internal database format. You need to add recording jobs again. Sorry.
+Many thanks to Chychy for the internationalisation.</news>
 </extension>
 </addon>
 

@@ -1,0 +1,199 @@
+#
+msgid ""
+msgstr ""
+
+msgctxt "#30000"
+msgid "Delete All Recordings?"
+msgstr "Supprimer tous les enregistrements?"
+
+msgctxt "#30001"
+msgid "Play Channel"
+msgstr "Lire la chaîne"
+
+msgctxt "#30002"
+msgid "Delete Job"
+msgstr "Supprimer la plannification"
+
+msgctxt "#30003"
+msgid "Finished"
+msgstr "Chargement terminé"
+
+msgctxt "#30004"
+msgid "Record Once"
+msgstr "Enregister une fois"
+
+msgctxt "#30005"
+msgid "Play Channel External"
+msgstr "Lire la châine sur un lecteur externe"
+
+msgctxt "#30006"
+msgid "External Player"
+msgstr "Lecteur externe"
+
+msgctxt "#30007"
+msgid "Title Search (% is wildcard)?"
+msgstr "Rechercher par titre (% est joker)?"
+
+msgctxt "#30008"
+msgid "Delete All Jobs"
+msgstr "Supprimer toutes les plannifications"
+
+msgctxt "#30009"
+msgid "Search Plot"
+msgstr "Recherche par description"
+
+msgctxt "#30010"
+msgid "Add Favourite Channel"
+msgstr "Ajouter la chaîne aux favoris"
+
+msgctxt "#30011"
+msgid "Delete All Rules"
+msgstr "Supprimer toutes les règles"
+
+msgctxt "#30012"
+msgid "Recording Rules"
+msgstr "Règles d'enregistrement"
+
+msgctxt "#30013"
+msgid "Favourite Channels"
+msgstr "Chaînes favorites"
+
+msgctxt "#30014"
+msgid "Delete All Recordings"
+msgstr "Supprimer tous les enregistrements"
+
+msgctxt "#30015"
+msgid "Full EPG"
+msgstr "EPG Complet"
+
+msgctxt "#30016"
+msgid "Search Title"
+msgstr "Recherche par titre"
+
+msgctxt "#30017"
+msgid "xmltv"
+msgstr "xmltv"
+
+msgctxt "#30018"
+msgid "Delete Search"
+msgstr "Supprimer la recherche"
+
+msgctxt "#30019"
+msgid "Cancel Record?"
+msgstr "Annuler l'enregistrement?"
+
+msgctxt "#30020"
+msgid "Delete Recording?"
+msgstr "Supprimer l'enregistrement?"
+
+msgctxt "#30021"
+msgid "New"
+msgstr "Nouveau"
+
+msgctxt "#30022"
+msgid "Remove Favourite Channel"
+msgstr "Retirer la chaîne des favoris"
+
+msgctxt "#30023"
+msgid "Recording Jobs"
+msgstr "Programmations"
+
+msgctxt "#30024"
+msgid "Plot Search (% is wildcard)?"
+msgstr "Rechercher par description (% est joker)?"
+
+msgctxt "#30025"
+msgid "Add Title Search Rule"
+msgstr "Ajouter une règle de recherche par titre"
+
+msgctxt "#30026"
+msgid "Add Plot Search Rule"
+msgstr "Ajouter une règle de recherche par description"
+
+msgctxt "#30027"
+msgid "Delete All Rules?"
+msgstr "Supprimer toutes les règles?"
+
+msgctxt "#30028"
+msgid "Recordings Folder"
+msgstr "Dossier d'enregistrement"
+
+msgctxt "#30029"
+msgid "ffmpeg exe not found!"
+msgstr "ffmpeg exe non trouvé!"
+
+msgctxt "#30030"
+msgid "Tomorrow"
+msgstr "Demain"
+
+msgctxt "#30031"
+msgid "Today"
+msgstr "Aujourdhui"
+
+msgctxt "#30032"
+msgid "Delete Rule"
+msgstr "Supprimer la règle"
+
+msgctxt "#30033"
+msgid "Channel Groups"
+msgstr "Groupes de chaînes"
+
+msgctxt "#30034"
+msgid "Loading data..."
+msgstr "Chargement des données..."
+
+msgctxt "#30035"
+msgid "Cancel Record"
+msgstr "Annuler l'enregistrement"
+
+msgctxt "#30036"
+msgid "Service"
+msgstr "Service"
+
+msgctxt "#30037"
+msgid "Delete Recording"
+msgstr "Supprimer l'enregistrement"
+
+msgctxt "#30038"
+msgid "Yesterday"
+msgstr "Hier"
+
+msgctxt "#30039"
+msgid "Delete All Jobs?"
+msgstr "Supprimer toutes les programmations?"
+
+msgctxt "#30040"
+msgid "Recordings"
+msgstr "Enregistrements"
+
+msgctxt "#30041"
+msgid "Record Always"
+msgstr "Enregistrer tout le temps"
+
+msgctxt "#30042"
+msgid "Record Daily"
+msgstr "Enregistrer tous les jours"
+
+msgctxt "#30043"
+msgid "Creating database"
+msgstr "Création de la base de données"
+
+msgctxt "#30044"
+msgid "Copying xmltv file"
+msgstr "Copie du fichier xmltv"
+
+msgctxt "#30042"
+msgid "Unzipping xmltv file"
+msgstr "Décompression du fichier xmltv"
+
+msgctxt "#30046"
+msgid "Finding channels"
+msgstr "Recherche des chaînes"
+
+msgctxt "#30047"
+msgid "Finding programmes"
+msgstr "Recherche des programmes"
+
+msgctxt "#30048"
+msgid "Finding streams"
+msgstr "Recherche des flux"
