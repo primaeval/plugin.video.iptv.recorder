@@ -1,3 +1,6 @@
+version 0.0.7
+- category search
+
 version 0.0.6
 - internal database (old jobs will need to be re-added)
 - 2 xmltv/m3u file inputs
