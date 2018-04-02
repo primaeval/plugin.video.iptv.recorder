@@ -14,7 +14,7 @@ provider-name="primaeval,Chychy">
 </extension>
 <extension point="xbmc.service" library="server.py" start="login"/>
 <extension point="xbmc.addon.metadata">
-  <summary lang="en">Record from IPTV Simple Client with ffmpeg.</summary>
+  <summary lang="en">Record from IPTV Simple Client or xmltv/m3u with ffmpeg.</summary>
   <description lang="en">
 Set your recording path and ffmpeg location.
 On Android ffmpeg will be copied to /data/data to be runnable.
