@@ -15,7 +15,7 @@ msgid "Delete Job"
 msgstr ""
 
 msgctxt "#30003"
-msgid "Finished loading data"
+msgid "Finished"
 msgstr ""
 
 msgctxt "#30004"
@@ -172,4 +172,28 @@ msgstr ""
 
 msgctxt "#30042"
 msgid "Record Daily"
+msgstr ""
+
+msgctxt "#30043"
+msgid "Creating database"
+msgstr ""
+
+msgctxt "#30044"
+msgid "Copying xmltv file"
+msgstr ""
+
+msgctxt "#30042"
+msgid "Unzipping xmltv file"
+msgstr ""
+
+msgctxt "#30046"
+msgid "Finding channels"
+msgstr ""
+
+msgctxt "#30047"
+msgid "Finding programmes"
+msgstr ""
+
+msgctxt "#30048"
+msgid "Finding streams"
 msgstr ""

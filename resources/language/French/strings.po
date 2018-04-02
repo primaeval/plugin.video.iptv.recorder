@@ -15,8 +15,8 @@ msgid "Delete Job"
 msgstr "Supprimer la plannification"
 
 msgctxt "#30003"
-msgid "Finished loading data"
-msgstr "Chargement des données terminé"
+msgid "Finished"
+msgstr "Chargement terminé"
 
 msgctxt "#30004"
 msgid "Record Once"
@@ -173,3 +173,27 @@ msgstr "Enregistrer tout le temps"
 msgctxt "#30042"
 msgid "Record Daily"
 msgstr "Enregistrer tous les jours"
+
+msgctxt "#30043"
+msgid "Creating database"
+msgstr "Création de la base de données"
+
+msgctxt "#30044"
+msgid "Copying xmltv file"
+msgstr "Copie du fichier xmltv"
+
+msgctxt "#30042"
+msgid "Unzipping xmltv file"
+msgstr "Décompression du fichier xmltv"
+
+msgctxt "#30046"
+msgid "Finding channels"
+msgstr "Recherche des chaînes"
+
+msgctxt "#30047"
+msgid "Finding programmes"
+msgstr "Recherche des programmes"
+
+msgctxt "#30048"
+msgid "Finding streams"
+msgstr "Recherche des flux"

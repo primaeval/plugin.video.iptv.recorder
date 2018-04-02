@@ -1523,7 +1523,7 @@ def xmltv():
     profilePath = xbmc.translatePath(plugin.addon.getAddonInfo('profile'))
     xbmcvfs.mkdirs(profilePath)
 
-    dialog.update(0, message='creating database')
+    dialog.update(0, message=_("Creating database"))
     databasePath = os.path.join(profilePath, 'xmltv.db')
     conn = sqlite3.connect(databasePath, detect_types=sqlite3.PARSE_DECLTYPES)
     conn.execute('PRAGMA foreign_keys = ON')
@@ -1561,14 +1561,14 @@ def xmltv():
 
             tmp = os.path.join(profilePath, 'xmltv'+x+'.tmp')
             xml = os.path.join(profilePath, 'xmltv'+x+'.xml')
-            dialog.update(0, message='copying xmltv file')
+            dialog.update(0, message=_("Copying xmltv file"))
             xbmcvfs.copy(path, tmp)
 
             f = xbmcvfs.File(tmp, "rb")
             magic = f.read(3)
             f.close()
             if magic == "\x1f\x8b\x08":
-                dialog.update(0, message='unzipping xmltv file')
+                dialog.update(0, message=_("Unzipping xmltv file"))
                 import gzip
                 g = gzip.open(tmp)
                 data = g.read()
@@ -1582,7 +1582,7 @@ def xmltv():
 
             htmlparser = HTMLParser()
 
-            dialog.update(0, message='finding channels')
+            dialog.update(0, message=_("Finding channels"))
             match = re.findall('<channel(.*?)</channel>', data, flags=(re.I|re.DOTALL))
             if match:
                 total = len(match)
@@ -1604,9 +1604,9 @@ def xmltv():
 
                     i += 1
                     percent = 0 + int(100.0 * i / total)
-                    dialog.update(percent, message='finding channels')
+                    dialog.update(percent, message=_("Finding channels"))
 
-            dialog.update(0, message='finding programmes')
+            dialog.update(0, message=_("Finding programmes"))
             match = re.findall('<programme(.*?)</programme>', data, flags=(re.I|re.DOTALL))
             if match:
                 total = len(match)
@@ -1659,9 +1659,9 @@ def xmltv():
 
                     i += 1
                     percent = 0 + int(100.0 * i / total)
-                    dialog.update(percent, message='finding programmes')
+                    dialog.update(percent, message=_("Finding programmes"))
 
-        dialog.update(0, message='finding streams')
+        dialog.update(0, message=_("Finding streams"))
         mode = plugin.get_setting('external.m3u.'+x)
         if mode == "0":
             if x == "1":
@@ -1721,12 +1721,12 @@ def xmltv():
 
                 i += 1
                 percent = 0 + int(100.0 * i / total)
-                dialog.update(percent, message='finding streams')
+                dialog.update(percent, message=_("Finding streams"))
 
     conn.commit()
     conn.close()
 
-    dialog.update(100, message='finished')
+    dialog.update(100, message=_("Finished loading data"))
     time.sleep(1)
     dialog.close()
     return
