@@ -1181,7 +1181,7 @@ def search_categories(categories):
             'thumbnail': thumbnail,
             'context_menu': context_items,
             'info_type': 'Video',
-            'info':{"title": title, "categories":description, "genre":categories}
+            'info':{"title": title, "plot":description, "genre":categories}
         })
     return items
 
