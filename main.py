@@ -895,7 +895,7 @@ def search_title(title):
         channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
         if not channel:
             continue
-        uid, channelname, tvg_name, tvg_id, tvg_logo, groups, url = channel
+        cuid, channelname, tvg_name, tvg_id, tvg_logo, groups, url = channel
         thumbnail = tvg_logo
 
         job = cursor.execute("SELECT * FROM jobs WHERE channelid=? AND start=? AND stop=?", (channelid, start, stop)).fetchone()
@@ -1006,7 +1006,7 @@ def search_plot(plot):
         channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
         if not channel:
             continue
-        uid, channelname, tvg_name, tvg_id, tvg_logo, groups, url = channel
+        cuid, channelname, tvg_name, tvg_id, tvg_logo, groups, url = channel
         thumbnail = tvg_logo
 
         job = cursor.execute("SELECT * FROM jobs WHERE channelid=? AND start=? AND stop=?", (channelid, start, stop)).fetchone()
@@ -1136,7 +1136,7 @@ def search_categories(categories):
         channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
         if not channel:
             continue
-        uid, channelname, tvg_name, tvg_id, tvg_logo, groups, url = channel
+        cuid, channelname, tvg_name, tvg_id, tvg_logo, groups, url = channel
         thumbnail = tvg_logo
 
         job = cursor.execute("SELECT * FROM jobs WHERE channelid=? AND start=? AND stop=?", (channelid, start, stop)).fetchone()
