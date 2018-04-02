@@ -1055,6 +1055,7 @@ def search_plot(plot):
         })
     return items
 
+
 @plugin.route('/delete_search_categories/<categories>')
 def delete_search_categories(categories):
     searches = plugin.get_storage('search_categories')
@@ -1088,13 +1089,29 @@ def search_categories_dialog():
 
 @plugin.route('/search_categories_input/<categories>')
 def search_categories_input(categories):
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
+    programmes = cursor.execute('SELECT DISTINCT categories FROM programmes').fetchall()
+
+    cats = set()
+    for programme in programmes:
+        programme_categories = programme[0]
+        cats.add(programme_categories)
+        programme_categories = programme_categories.split(',')
+        for category in programme_categories:
+            if category:
+                cats.add(category)
+    cats = sorted(list(cats))
+
     searches = plugin.get_storage('search_categories')
     if categories == "categories":
         categories = ""
     d = xbmcgui.Dialog()
-    what = d.input(_("Search categories"), categories)
+    what = d.select(_("Search categories"), cats)
     if not what:
         return
+    what = cats[what]
     searches[what] = ''
     return search_categories(what)
 
