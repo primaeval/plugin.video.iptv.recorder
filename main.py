@@ -1055,6 +1055,117 @@ def search_plot(plot):
         })
     return items
 
+@plugin.route('/delete_search_categories/<categories>')
+def delete_search_categories(categories):
+    searches = plugin.get_storage('search_categories')
+    if categories in searches:
+        del searches[categories]
+    refresh()
+
+
+@plugin.route('/search_categories_dialog')
+def search_categories_dialog():
+    searches = plugin.get_storage('search_categories')
+
+    items = []
+    items.append({
+        "label": _("New"),
+        "path": plugin.url_for('search_categories_input', categories='categories'),
+        "thumbnail": get_icon_path('search'),
+    })
+
+    for search in searches:
+        context_items = []
+        context_items.append(("Delete Search" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_search_categories, categories=search))))
+        items.append({
+            "label": search,
+            "path": plugin.url_for('search_categories', categories=search),
+            "thumbnail": get_icon_path('search'),
+            'context_menu': context_items,
+            })
+    return items
+
+
+@plugin.route('/search_categories_input/<categories>')
+def search_categories_input(categories):
+    searches = plugin.get_storage('search_categories')
+    if categories == "categories":
+        categories = ""
+    d = xbmcgui.Dialog()
+    what = d.input(_("Search categories"), categories)
+    if not what:
+        return
+    searches[what] = ''
+    return search_categories(what)
+
+
+@plugin.route('/search_categories/<categories>')
+def search_categories(categories):
+    #TODO combine with search_title() and group()
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
+    programmes = cursor.execute(
+    'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE categories LIKE ?',
+    ("%"+categories+"%", )).fetchall()
+
+    items = []
+
+    for p in programmes:
+        uid, channelid , title , sub_title , start , stop , date , description , episode, categories = p
+
+        channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
+        if not channel:
+            continue
+        uid, channelname, tvg_name, tvg_id, tvg_logo, groups, url = channel
+        thumbnail = tvg_logo
+
+        job = cursor.execute("SELECT * FROM jobs WHERE channelid=? AND start=? AND stop=?", (channelid, start, stop)).fetchone()
+        if job:
+            recording = "[COLOR red]RECORD[/COLOR]"
+        else:
+            recording = ""
+
+        starttime = utc2local(start)
+        endtime = utc2local(stop)
+
+        if sub_title:
+            stitle = "%s - %s" % (title, sub_title)
+        else:
+            stitle = title
+
+        label = "[COLOR grey]%02d:%02d %s[/COLOR] %s %s[COLOR yellow]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, CR, stitle, recording)
+
+        context_items = []
+
+        echannelname = channelname.encode("utf8")
+        echannelid = channelid.encode("utf8")
+
+        if recording:
+            context_items.append((_("Cancel Record"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job, job=job[0]))))
+        else:
+            context_items.append((_("Record Once"), 'XBMC.RunPlugin(%s)' %
+            (plugin.url_for(record_once, programmeid=uid))))
+
+        context_items.append((_("Play Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=echannelname))))
+        if plugin.get_setting('external.player'):
+            context_items.append((_("Play Channel External"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external, channelname=echannelname))))
+
+        if url:
+            path = plugin.url_for(broadcast, programmeid=uid)
+        else:
+            path = ""
+
+        items.append({
+            'label': label,
+            'path': path,
+            'thumbnail': thumbnail,
+            'context_menu': context_items,
+            'info_type': 'Video',
+            'info':{"title": title, "categories":description, "genre":categories}
+        })
+    return items
+
 
 @plugin.route('/channel/<channelid>')
 def channel(channelid):
@@ -1815,6 +1926,14 @@ def index():
     {
         'label': _("Search Plot"),
         'path': plugin.url_for('search_plot_dialog'),
+        'thumbnail':get_icon_path('search'),
+        'context_menu': context_items,
+    })
+
+    items.append(
+    {
+        'label': _("Search Categories"),
+        'path': plugin.url_for('search_categories_dialog'),
         'thumbnail':get_icon_path('search'),
         'context_menu': context_items,
     })
