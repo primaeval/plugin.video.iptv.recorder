@@ -1341,6 +1341,8 @@ def groups():
             'thumbnail': get_icon_path('folder'),
         })
 
+    return items
+
 
 @plugin.route('/service')
 def service():
