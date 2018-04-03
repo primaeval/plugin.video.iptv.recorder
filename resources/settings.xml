@@ -23,7 +23,7 @@
 
     <setting type="sep"/>
     <setting id="recordings" label="Recordings Folder" type="folder" default="special://temp"/>
-    <setting id="ffmpeg" label="ffmpeg exe" type="file" default="ffmpeg"/>
+    <setting id="ffmpeg" label="ffmpeg exe" type="file" default=""/>
 
     <setting type="sep"/>
     <setting id="probe" label="Probe Stream Before Record" type="bool" default="true"  />
