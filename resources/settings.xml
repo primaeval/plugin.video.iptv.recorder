@@ -4,6 +4,7 @@
 
     <setting id="multiline" label="Show Items on Two Lines" type="bool" default="false" />
     <setting id="hide.channel.name" label="Hide Channel Names if Logo Exists" type="bool" default="false" />
+    <setting id="show.categories" label="Show Categories" type="bool" default="false" />
 
     <setting id="scroll.now" label="Scroll to Now in Channel Listing" type="bool" default="true" />
 

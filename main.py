@@ -1374,11 +1374,11 @@ def group(channelgroup=None,section=None):
     now = datetime.utcnow()
 
     if show_now_next:
-        now_titles = cursor.execute('SELECT channelid, title, start AS "start [TIMESTAMP]", description FROM programmes WHERE start<? AND stop>?', (now, now)).fetchall()
-        now_titles = {x[0]:(x[1],x[2],x[3]) for x in now_titles}
+        now_titles = cursor.execute('SELECT channelid, title, start AS "start [TIMESTAMP]", description, categories FROM programmes WHERE start<? AND stop>?', (now, now)).fetchall()
+        now_titles = {x[0]:(x[1],x[2],x[3],x[4]) for x in now_titles}
         #TODO limit to one per channelid
-        next_titles = cursor.execute('SELECT channelid, title, start AS "start [TIMESTAMP]" FROM programmes WHERE start>? ORDER BY start DESC', (now,)).fetchall()
-        next_titles = {x[0]:(x[1],x[2]) for x in next_titles}
+        next_titles = cursor.execute('SELECT channelid, title, start AS "start [TIMESTAMP]", categories FROM programmes WHERE start>? ORDER BY start DESC', (now,)).fetchall()
+        next_titles = {x[0]:(x[1],x[2],x[3]) for x in next_titles}
 
     for stream_channel in collection:
 
@@ -1399,6 +1399,7 @@ def group(channelgroup=None,section=None):
             logo = tvg_logo
 
         description = ""
+        categories = ""
 
         if show_now_next:
 
@@ -1406,14 +1407,22 @@ def group(channelgroup=None,section=None):
                 title = now_titles[channelid][0]
                 local_start = utc2local(now_titles[channelid][1])
                 description = now_titles[channelid][2]
-                now_title = "[COLOR yellow]%02d:%02d %s[/COLOR]" % (local_start.hour, local_start.minute, title)
+                if plugin.get_setting('show.categories') == 'true':
+                    categories = "[COLOR grey]%s[/COLOR]" % now_titles[channelid][3]
+                else:
+                    categories = ""
+                now_title = "[COLOR yellow]%02d:%02d %s[/COLOR] %s" % (local_start.hour, local_start.minute, title, categories)
             else:
                 now_title = ""
 
             if channelid in next_titles:
                 title = next_titles[channelid][0]
                 local_start = utc2local(next_titles[channelid][1])
-                next_title =  "[COLOR blue]%02d:%02d %s[/COLOR]" % (local_start.hour, local_start.minute, title)
+                if plugin.get_setting('show.categories') == 'true':
+                    next_categories = "[COLOR grey]%s[/COLOR]" % next_titles[channelid][2]
+                else:
+                    next_categories = ""
+                next_title =  "[COLOR blue]%02d:%02d %s[/COLOR] %s" % (local_start.hour, local_start.minute, title, next_categories)
             else:
                 next_title = ""
 
@@ -1447,7 +1456,7 @@ def group(channelgroup=None,section=None):
             'path': plugin.url_for(channel, channelid=channelid),
             'context_menu': context_items,
             'thumbnail': thumbnail,
-            'info':{"plot":description}
+            'info':{"plot":description, "genre":categories}
         })
 
     return items
