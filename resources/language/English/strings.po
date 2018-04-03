@@ -197,3 +197,39 @@ msgstr ""
 msgctxt "#30048"
 msgid "Finding streams"
 msgstr ""
+
+msgctxt "#30045"
+msgid "NUKE"
+msgstr ""
+
+msgctxt "#30049"
+msgid "Finished loading data"
+msgstr ""
+
+msgctxt "#30050"
+msgid "Watch Daily"
+msgstr ""
+
+msgctxt "#30051"
+msgid "Delete Everything and Start Again?"
+msgstr ""
+
+msgctxt "#30052"
+msgid "Watch Once"
+msgstr ""
+
+msgctxt "#30053"
+msgid "Reload Data"
+msgstr ""
+
+msgctxt "#30054"
+msgid "Search Categories"
+msgstr ""
+
+msgctxt "#30055"
+msgid "Search categories"
+msgstr ""
+
+msgctxt "#30056"
+msgid "Watch Always"
+msgstr ""
