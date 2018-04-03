@@ -792,11 +792,12 @@ def broadcast(programmeid):
         'thumbnail': thumbnail or get_icon_path('tv'),
     })
 
-    items.append({
-        'label': _("Play Channel External") + " - %s" % (channelname),
-        'path': plugin.url_for(play_channel_external, channelname=echannelname),
-        'thumbnail': thumbnail or get_icon_path('tv'),
-    })
+    if plugin.get_setting('external.player'):
+        items.append({
+            'label': _("Play Channel External") + " - %s" % (channelname),
+            'path': plugin.url_for(play_channel_external, channelname=echannelname),
+            'thumbnail': thumbnail or get_icon_path('tv'),
+        })
 
     #TODO Watch Timers
 
