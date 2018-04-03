@@ -182,7 +182,7 @@ msgctxt "#30044"
 msgid "Copying xmltv file"
 msgstr ""
 
-msgctxt "#30042"
+msgctxt "#30045"
 msgid "Unzipping xmltv file"
 msgstr ""
 
@@ -198,38 +198,62 @@ msgctxt "#30048"
 msgid "Finding streams"
 msgstr ""
 
-msgctxt "#30045"
+msgctxt "#30049"
 msgid "NUKE"
 msgstr ""
 
-msgctxt "#30049"
+msgctxt "#30050"
 msgid "Finished loading data"
 msgstr ""
 
-msgctxt "#30050"
+msgctxt "#30051"
 msgid "Watch Daily"
 msgstr ""
 
-msgctxt "#30051"
+msgctxt "#30052"
 msgid "Delete Everything and Start Again?"
 msgstr ""
 
-msgctxt "#30052"
+msgctxt "#30053"
 msgid "Watch Once"
 msgstr ""
 
-msgctxt "#30053"
+msgctxt "#30054"
 msgid "Reload Data"
 msgstr ""
 
-msgctxt "#30054"
-msgid "Search Categories"
-msgstr ""
-
 msgctxt "#30055"
-msgid "Search categories"
+msgid "Search Categories"
 msgstr ""
 
 msgctxt "#30056"
 msgid "Watch Always"
+msgstr ""
+
+msgctxt "#30057"
+msgid "Monday"
+msgstr ""
+
+msgctxt "#30058"
+msgid "Tuesday"
+msgstr ""
+
+msgctxt "#30059"
+msgid "Wednesday"
+msgstr ""
+
+msgctxt "#30060"
+msgid "Thursday"
+msgstr ""
+
+msgctxt "#30061"
+msgid "Friday"
+msgstr ""
+
+msgctxt "#30062"
+msgid "Saturday"
+msgstr ""
+
+msgctxt "#30063"
+msgid "Sunday"
 msgstr ""
