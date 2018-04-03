@@ -42,10 +42,12 @@ try:
         lang = xbmc.getLanguage(xbmc.ISO_639_1)
     else:
         lang = xbmc.getLanguage(xbmc.ENGLISH_NAME)
+    #TODO fails on LibreELEC
     locale.setlocale(locale.LC_TIME, lang)
     language_code,language_encoding = locale.getlocale(locale.LC_TIME)
 except Exception, ex:
     log("Unable to set locale to %s: %s" % (lang, str(ex)))
+    language_encoding = "utf8"
 
 
 if plugin.get_setting("multiline") == "true":
