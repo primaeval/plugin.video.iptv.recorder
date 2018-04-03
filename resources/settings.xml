@@ -56,7 +56,7 @@
 </category>
 
 <category label="Service">
-    <setting id="service.delay.seconds" label="Startup Delay (seconds)" type="number" default="30"/>
+    <setting id="service.delay.seconds" label="Startup Delay (seconds)" type="number" default="60"/>
     <setting id="service" label="Background Service" type="bool" default="true" />
     <setting id="service.startup" label="Update on Login" type="bool" default="true" visible="eq(-1,true)"/>
     <setting id="service.type" label="Service Schedule Type" type="enum" default="Period" visible="eq(-2,true)" values="None|Period|Time" />
