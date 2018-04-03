@@ -1859,6 +1859,7 @@ def xmltv():
     dialog.close()
     return
 
+
 @plugin.route('/nuke')
 def nuke():
     if not (xbmcgui.Dialog().yesno("IPTV Recorder", _("Delete Everything and Start Again?"))):
@@ -1897,7 +1898,6 @@ def index():
         'thumbnail':get_icon_path('recordings'),
         'context_menu': context_items,
     })
-
 
     items.append(
     {
