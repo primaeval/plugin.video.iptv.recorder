@@ -1224,16 +1224,21 @@ def channel(channelid):
         if endtime > now and starttime < now:
             current = i
 
+        if plugin.get_setting('show.categories') == 'true':
+            categories_label = "[COLOR grey]%s[/COLOR]" % categories
+        else:
+            categories_label = ""
+
         if (plugin.get_setting('hide.channel.name') == "true") and thumbnail:
             if endtime < now:
-                label = "%02d:%02d [COLOR grey]%s[/COLOR] %s[COLOR orange]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), CR, stitle, recording)
+                label = "%02d:%02d [COLOR grey]%s[/COLOR] %s %s[COLOR orange]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), categories_label, CR, stitle, recording)
             else:
-                label = "%02d:%02d [COLOR grey]%s[/COLOR] %s[COLOR yellow]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), CR, stitle, recording)
+                label = "%02d:%02d [COLOR grey]%s[/COLOR] %s %s[COLOR yellow]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), categories_label, CR, stitle, recording)
         else:
             if endtime < now:
-                label = "%02d:%02d [COLOR grey]%s[/COLOR] %s %s[COLOR orange]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, CR, stitle, recording)
+                label = "%02d:%02d [COLOR grey]%s[/COLOR] %s %s %s[COLOR orange]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, categories_label, CR, stitle, recording)
             else:
-                label = "%02d:%02d [COLOR grey]%s[/COLOR] %s %s[COLOR yellow]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, CR, stitle, recording)
+                label = "%02d:%02d [COLOR grey]%s[/COLOR] %s %s %s[COLOR yellow]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, categories_label, CR, stitle, recording)
 
         context_items = []
 
@@ -1251,6 +1256,9 @@ def channel(channelid):
         context_items.append((_("Play Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=echannelname))))
         if plugin.get_setting('external.player'):
             context_items.append((_("Play Channel External"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external, channelname=echannelname))))
+
+        context_items.append((title.encode("utf8"), 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('search_title', title=title.encode("utf8")))))
+        context_items.append((categories.encode("utf8"), 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('search_categories', categories=categories.encode("utf8")))))
 
         if url:
             path = plugin.url_for(broadcast, programmeid=uid)
