@@ -27,6 +27,12 @@ ffmpeg simply copies the stream into a transport stream container.
 <language>en fr</language>
 <news>All new internal database format. You need to add recording jobs again. Sorry.
 Many thanks to Chychy for the internationalisation.</news>
+<assets>
+  <icon>icon.png</icon>
+  <screenshot>resources/screenshots/screenshot-00.jpg</screenshot>
+  <screenshot>resources/screenshots/screenshot-01.jpg</screenshot>
+  <screenshot>resources/screenshots/screenshot-02.jpg</screenshot>
+</assets>
 </extension>
 </addon>
 
