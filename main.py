@@ -869,6 +869,8 @@ def search_title_input(title):
 
 @plugin.route('/search_title/<title>')
 def search_title(title):
+    title = title.decode("utf8")
+
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
@@ -989,6 +991,8 @@ def search_plot_input(plot):
 
 @plugin.route('/search_plot/<plot>')
 def search_plot(plot):
+    plot = plot.decode("utf8")
+
     #TODO combine with search_title() and group()
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
