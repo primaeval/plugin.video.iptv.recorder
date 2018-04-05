@@ -1001,6 +1001,10 @@ def search_title_input(title):
 def search_title(title):
     title = title.decode("utf8")
 
+    if plugin.get_setting('add.context.searches') == 'true':
+        searches = plugin.get_storage('search_title')
+        searches[title] = ''
+
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
@@ -1145,6 +1149,10 @@ def search_categories_input(categories):
 def search_categories(categories):
     categories = categories.decode("utf8")
 
+    if plugin.get_setting('add.context.searches') == 'true':
+        searches = plugin.get_storage('search_categories')
+        searches[categories] = ''
+
     #TODO combine with search_title() and group()
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
@@ -1181,6 +1189,9 @@ def channel(channelid):
 
     conn.commit()
     conn.close()
+
+    if plugin.get_setting('add.favourite.channel') == 'true':
+        add_favourite_channel(channelname, channelid, thumbnail)
 
     return listing(programmes, scroll=True)
 
@@ -1295,8 +1306,10 @@ def focus(i):
     #TODO deal with hidden ..
     win = xbmcgui.Window(xbmcgui.getCurrentWindowId())
     cid = win.getFocusId()
-    clist = win.getControl(cid)
-    clist.selectItem(i)
+    if cid:
+        clist = win.getControl(cid)
+        if clist:
+            clist.selectItem(i)
 
 
 @plugin.route('/remove_favourite_channel/<channelname>')
