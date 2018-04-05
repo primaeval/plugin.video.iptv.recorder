@@ -1122,7 +1122,7 @@ def search_categories_input(categories):
     for programme in programmes:
         programme_categories = programme[0]
         cats.add(programme_categories)
-        programme_categories = programme_categories.split(',')
+        programme_categories = programme_categories.split(', ')
         for category in programme_categories:
             if category:
                 cats.add(category)
@@ -1136,6 +1136,7 @@ def search_categories_input(categories):
     if not what:
         return
     what = cats[what]
+    what = what.strip()
     searches[what] = ''
     return search_categories(what)
 
