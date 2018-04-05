@@ -1370,7 +1370,7 @@ def group(channelgroup=None,section=None):
         collection = channels
         show_now_next = plugin.get_setting('show.now.next.all') == "true"
     elif section == "FAVOURITES":
-        favourite_channels = cursor.execute("SELECT * FROM favourites").fetchall()
+        favourite_channels = cursor.execute("SELECT * FROM favourites ORDER BY channelname").fetchall()
         collection = favourite_channels
         show_now_next = plugin.get_setting('show.now.next.favourites') == "true"
     else:
