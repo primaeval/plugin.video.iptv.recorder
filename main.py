@@ -1221,15 +1221,10 @@ def listing(programmes, scroll=False):
         else:
             stitle = title
 
-        #if endtime > now and starttime < now:
-        #if starttime < now:
-            #current = i
-
         if plugin.get_setting('show.categories') == 'true':
             categories_label = "[COLOR grey]%s[/COLOR]" % categories
         else:
             categories_label = ""
-
 
         if endtime < now:
             color = "orange"
