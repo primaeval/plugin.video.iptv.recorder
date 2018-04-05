@@ -2003,10 +2003,15 @@ def index():
 
 if __name__ == '__main__':
     plugin.run()
+
     containerAddonName = xbmc.getInfoLabel('Container.PluginName')
     AddonName = xbmcaddon.Addon().getAddonInfo('id')
+
     if containerAddonName == AddonName:
+
         if big_list_view == True:
+
             view_mode = int(plugin.get_setting('view.mode') or "0")
+
             if view_mode:
                 plugin.set_view_mode(view_mode)
