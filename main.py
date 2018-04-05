@@ -1277,6 +1277,7 @@ def listing(programmes, scroll=False):
             'info':{"title": title, "plot":description, "genre":categories}
         }
         listitem = ListItem().from_dict(**dictitem)
+        #TODO which one is Krypton Estuary widelist thumbnail?
         #listitem._listitem.setArt({"icon": thumbnail, "landscape": thumbnail, "clearart": thumbnail, "clearlogo": thumbnail, "thumb": thumbnail, "poster": thumbnail, "banner": thumbnail, "fanart":thumbnail})
         items.append(listitem)
 
