@@ -1194,7 +1194,6 @@ def listing(programmes, scroll=False):
     now = datetime.now()
 
     current = None
-    current_set = False
 
     i = 1
     for p in programmes:
@@ -1231,9 +1230,8 @@ def listing(programmes, scroll=False):
             if plugin.get_setting('show.finished') == 'false':
                 continue
         else:
-            if not current_set:
+            if current == None:
                 current = i
-            current_set = True
             color = "yellow"
         i += 1
 
