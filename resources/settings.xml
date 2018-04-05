@@ -20,7 +20,7 @@
     <setting id="show.now.next.favourites" label="Show Now/Next in Favourites" type="bool" default="true" />
 </category>
 
-<category label="Recording">
+<category label="Jobs and Rules">
     <setting id="minutes.before" label="Minutes Before" type="number" default="1"  />
     <setting id="minutes.after" label="Minutes After" type="number" default="1"  />
 
@@ -30,6 +30,9 @@
 
     <setting type="sep"/>
     <setting id="probe" label="Probe Stream Before Record" type="bool" default="true"  />
+
+    <setting type="sep"/>
+    <setting id="silent" label="Silent Notifications" type="bool" default="false"  />
 </category>
 
 <category label="Data">

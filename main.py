@@ -197,6 +197,9 @@ def rules():
         if type.startswith("WATCH"):
             type = type.replace("WATCH ","")
             type_label = "WATCH"
+        elif type.startswith("REMIND"):
+            type = type.replace("REMIND ","")
+            type_label = "REMIND"
         else:
             type_label = "RECORD"
 
@@ -350,16 +353,21 @@ def ffmpeg_location():
 
 
 @plugin.route('/record_once/<programmeid>')
-def record_once(programmeid, do_refresh=True, watch=False):
-    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch]).start()
+def record_once(programmeid, do_refresh=True, watch=False, remind=False):
+    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind]).start()
 
 
 @plugin.route('/watch_once/<programmeid>')
-def watch_once(programmeid, do_refresh=True, watch=True):
-    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch]).start()
+def watch_once(programmeid, do_refresh=True, watch=True, remind=False):
+    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind]).start()
 
 
-def record_once_thread(programmeid, do_refresh=True, watch=False):
+@plugin.route('/remind_once/<programmeid>')
+def remind_once(programmeid, do_refresh=True, watch=False, remind=True):
+    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind]).start()
+
+
+def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
     #TODO check for ffmpeg process already recording if job is re-added
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
@@ -450,7 +458,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False):
     f = xbmcvfs.File(pyjob, 'wb')
     f.write("import os, subprocess\n")
 
-    if watch == False:
+    if watch == False and remind == False:
         if plugin.get_setting('probe') == 'true':
             f.write("probe_cmd = %s\n" % repr(probe_cmd))
             f.write("subprocess.call(probe_cmd, shell=%s)\n" % windows())
@@ -462,6 +470,10 @@ def record_once_thread(programmeid, do_refresh=True, watch=False):
         #f.write("p.wait()\n")
         #f.write("os.unlink(%s)\n" % xbmc.translatePath(pyjob+'.pid'))
         #TODO copy file somewhere else
+    elif remind == True:
+        cmd = 'xbmcgui.Dialog().notification("%s", "%s", sound=%s)\n' % (channelname, title, plugin.get_setting('silent')=="false")
+        f.write("import xbmc, xbmcgui\n")
+        f.write("%s\n" % cmd.encode("utf8"))
     else:
         if (plugin.get_setting('external.player.watch') == 'true') or (windows() and (plugin.get_setting('task.scheduler') == 'true')):
             cmd = [plugin.get_setting('external.player'), plugin.get_setting('external.player.args'), url]
@@ -500,6 +512,8 @@ def record_once_thread(programmeid, do_refresh=True, watch=False):
 
     if watch:
         type = "WATCH"
+    elif remind:
+        type = "REMIND"
     else:
         type = "RECORD"
 
@@ -707,6 +721,100 @@ def watch_always_search_plot(channelid, channelname):
     service()
 
 
+@plugin.route('/remind_daily/<channelid>/<channelname>/<title>/<start>/<stop>')
+def remind_daily(channelid, channelname, title, start, stop):
+    channelid = channelid.decode("utf8")
+    channelname = channelname.decode("utf8")
+    title = title.decode("utf8")
+
+    start = timestamp2datetime(float(start))
+    stop = timestamp2datetime(float(stop))
+
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
+    #TODO problem with PRIMARY KEYS, UNIQUE and TIMESTAMP
+    rule = cursor.execute('SELECT * FROM rules WHERE channelid=? AND channelname=? AND title=? AND start=? AND stop =? AND type=?', (channelid, channelname, title, start, stop, "REMIND DAILY")).fetchone()
+
+    if not rule:
+        conn.execute("INSERT OR REPLACE INTO rules(channelid, channelname, title, start, stop, type) VALUES(?, ?, ?, ?, ?, ?)",
+        [channelid, channelname, title, start, stop, "REMIND DAILY"])
+
+    conn.commit()
+    conn.close()
+
+    service()
+
+
+@plugin.route('/remind_always/<channelid>/<channelname>/<title>')
+def remind_always(channelid, channelname, title):
+    channelid = channelid.decode("utf8")
+    channelname = channelname.decode("utf8")
+    title = title.decode("utf8")
+
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
+    rule = cursor.execute('SELECT * FROM rules WHERE channelid=? AND channelname=? AND title=? AND type=?', (channelid, channelname, title, "REMIND ALWAYS")).fetchone()
+
+    if not rule:
+        conn.execute("INSERT OR REPLACE INTO rules(channelid, channelname, title, type) VALUES(?, ?, ?, ?)",
+        [channelid, channelname, title, "REMIND ALWAYS"])
+
+    conn.commit()
+    conn.close()
+
+    service()
+
+
+@plugin.route('/remind_always_search/<channelid>/<channelname>')
+def remind_always_search(channelid, channelname):
+    channelid = channelid.decode("utf8")
+    channelname = channelname.decode("utf8")
+
+    title = xbmcgui.Dialog().input("IPTV reminder: " + _("Title Search (% is wildcard)?"))
+    if not title:
+        return
+
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
+    rule = cursor.execute('SELECT * FROM rules WHERE channelid=? AND channelname=? AND title=? AND type=?', (channelid, channelname, title, "REMIND SEARCH")).fetchone()
+
+    if not rule:
+        conn.execute("INSERT OR REPLACE INTO rules(channelid, channelname, title, type) VALUES(?, ?, ?, ?)",
+        [channelid, channelname, title, "REMIND SEARCH"])
+
+    conn.commit()
+    conn.close()
+
+    service()
+
+
+@plugin.route('/remind_always_search_plot/<channelid>/<channelname>')
+def remind_always_search_plot(channelid, channelname):
+    channelid = channelid.decode("utf8")
+    channelname = channelname.decode("utf8")
+
+    description = xbmcgui.Dialog().input("IPTV reminder: " + _("Plot Search (% is wildcard)?"))
+    if not description:
+        return
+
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
+    rule = cursor.execute('SELECT * FROM rules WHERE channelid=? AND channelname=? AND description=? AND type=?', (channelid, channelname, description, "REMIND PLOT")).fetchone()
+
+    if not rule:
+        conn.execute("INSERT OR REPLACE INTO rules(channelid, channelname, description, type) VALUES(?, ?, ?, ?)",
+        [channelid, channelname, description, "REMIND PLOT"])
+
+    conn.commit()
+    conn.close()
+
+    service()
+
+
 @plugin.route('/broadcast/<programmeid>')
 def broadcast(programmeid):
 
@@ -769,6 +877,26 @@ def broadcast(programmeid):
     items.append({
         'label': _("Watch Daily") + " - %s - %s %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, utc2local(start).time(), utc2local(stop).time()),
         'path': plugin.url_for(watch_daily, channelid=echannelid, channelname=echannelname, title=etitle, start=start_ts, stop=stop_ts),
+        'thumbnail': thumbnail or get_icon_path('recordings'),
+    })
+
+    items.append({
+        'label': _("Remind Once") + " - %s - %s %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, utc2local(start), utc2local(stop)),
+        'path': plugin.url_for(remind_once, programmeid=programmeid),
+        'thumbnail': thumbnail or get_icon_path('recordings'),
+    })
+
+    items.append({
+        'label': _("Remind Always") + " - %s - %s" % (channelname, title),
+        'path': plugin.url_for(remind_always, channelid=echannelid, channelname=echannelname, title=etitle),
+        'thumbnail': thumbnail or get_icon_path('recordings'),
+    })
+
+    start_ts = datetime2timestamp(start)
+    stop_ts = datetime2timestamp(stop)
+    items.append({
+        'label': _("Remind Daily") + " - %s - %s %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, utc2local(start).time(), utc2local(stop).time()),
+        'path': plugin.url_for(remind_daily, channelid=echannelid, channelname=echannelname, title=etitle, start=start_ts, stop=stop_ts),
         'thumbnail': thumbnail or get_icon_path('recordings'),
     })
 
@@ -1379,9 +1507,13 @@ def service_thread():
     for uid, jchannelid, jchannelname, jtitle, jstart, jstop, jdescription, type  in rules:
 
         watch = False
+        remind = False
         if type.startswith("WATCH"):
             type = type.replace("WATCH ","")
             watch = True
+        elif type.startswith("REMIND"):
+            type = type.replace("REMIND ","")
+            remind = True
 
         if type == "ALWAYS":
             #TODO scrub [] from title
@@ -1392,7 +1524,7 @@ def service_thread():
 
             for p in programmes:
                 uid, channel , title , sub_title , date , description , episode, categories = p
-                record_once(programmeid=uid, do_refresh=False, watch=watch)
+                record_once(programmeid=uid, do_refresh=False, watch=watch, remind=remind)
 
         elif type == "DAILY":
             tjstart = jstart.time()
@@ -1407,19 +1539,19 @@ def service_thread():
                 tstart = start.time()
                 tstop = stop.time()
                 if tjstart == tstart and tjstop == tstop:
-                    record_once(programmeid=uid, do_refresh=False, watch=watch)
+                    record_once(programmeid=uid, do_refresh=False, watch=watch, remind=remind)
 
         elif type == "SEARCH":
             programmes = cursor.execute("SELECT uid FROM programmes WHERE channelid=? AND title LIKE ?", (jchannelid, "%"+jtitle+"%")).fetchall()
             for p in programmes:
                 uid = p[0]
-                record_once(programmeid=uid, do_refresh=False, watch=watch)
+                record_once(programmeid=uid, do_refresh=False, watch=watch, remind=remind)
 
         elif type == "PLOT":
             programmes = cursor.execute("SELECT uid FROM programmes WHERE channelid=? AND description LIKE ?", (jchannelid, "%"+jdescription+"%")).fetchall()
             for p in programmes:
                 uid = p[0]
-                record_once(programmeid=uid, do_refresh=False, watch=watch)
+                record_once(programmeid=uid, do_refresh=False, watch=watch, remind=remind)
 
     refresh()
 
@@ -1779,7 +1911,7 @@ def index():
 
     items.append(
     {
-        'label': _("Recording Jobs"),
+        'label': _("Jobs"),
         'path': plugin.url_for('jobs'),
         'thumbnail':get_icon_path('recordings'),
         'context_menu': context_items,
@@ -1787,7 +1919,7 @@ def index():
 
     items.append(
     {
-        'label': _("Recording Rules"),
+        'label': _("Rules"),
         'path': plugin.url_for('rules'),
         'thumbnail':get_icon_path('recordings'),
         'context_menu': context_items,
