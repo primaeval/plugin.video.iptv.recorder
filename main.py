@@ -878,71 +878,10 @@ def search_title(title):
     'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE title LIKE ?',
     ("%"+title+"%", )).fetchall()
 
-    items = []
+    conn.commit()
+    conn.close()
 
-    for p in programmes:
-        uid, channelid , title , sub_title , start , stop , date , description , episode, categories = p
-
-        channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
-        if not channel:
-            continue
-        cuid, channelname, tvg_name, tvg_id, tvg_logo, groups, url = channel
-        thumbnail = tvg_logo
-
-        job = cursor.execute("SELECT * FROM jobs WHERE channelid=? AND start=? AND stop=?", (channelid, start, stop)).fetchone()
-        if job:
-            recording = "[COLOR red]RECORD[/COLOR]"
-        else:
-            recording = ""
-
-        starttime = utc2local(start)
-        endtime = utc2local(stop)
-
-        if sub_title:
-            stitle = "%s - %s" % (title, sub_title)
-        else:
-            stitle = title
-
-        if plugin.get_setting('show.categories') == 'true':
-            categories_label = "[COLOR grey]%s[/COLOR]" % categories
-        else:
-            categories_label = ""
-
-        label = "[COLOR grey]%02d:%02d %s[/COLOR] %s %s %s[COLOR yellow]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, categories_label, CR, stitle, recording)
-
-        context_items = []
-
-        echannelname = channelname.encode("utf8")
-        echannelid = channelid.encode("utf8")
-
-        if recording:
-            context_items.append((_("Cancel Record"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job, job=job[0]))))
-        else:
-            context_items.append((_("Record Once"), 'XBMC.RunPlugin(%s)' %
-            (plugin.url_for(record_once, programmeid=uid))))
-
-        context_items.append((_("Play Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=echannelname))))
-        if plugin.get_setting('external.player'):
-            context_items.append((_("Play Channel External"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external, channelname=echannelname))))
-
-        context_items.append((echannelname, 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('channel', channelid=echannelid))))
-        context_items.append((title.encode("utf8"), 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('search_title', title=title.encode("utf8")))))
-        context_items.append((categories.encode("utf8"), 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('search_categories', categories=categories.encode("utf8")))))
-
-        if url:
-            path = plugin.url_for(broadcast, programmeid=uid)
-        else:
-            path = ""
-
-        items.append({
-            'label': label,
-            'path': path,
-            'thumbnail': thumbnail,
-            'context_menu': context_items,
-            'info_type': 'Video',
-            'info':{"title": title, "plot":description, "genre":categories}
-        })
-    return items
+    return listing(programmes, scroll=True)
 
 
 @plugin.route('/delete_search_plot/<plot>')
@@ -1001,71 +940,10 @@ def search_plot(plot):
     'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE description LIKE ?',
     ("%"+plot+"%", )).fetchall()
 
-    items = []
+    conn.commit()
+    conn.close()
 
-    for p in programmes:
-        uid, channelid , title , sub_title , start , stop , date , description , episode, categories = p
-
-        channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
-        if not channel:
-            continue
-        cuid, channelname, tvg_name, tvg_id, tvg_logo, groups, url = channel
-        thumbnail = tvg_logo
-
-        job = cursor.execute("SELECT * FROM jobs WHERE channelid=? AND start=? AND stop=?", (channelid, start, stop)).fetchone()
-        if job:
-            recording = "[COLOR red]RECORD[/COLOR]"
-        else:
-            recording = ""
-
-        starttime = utc2local(start)
-        endtime = utc2local(stop)
-
-        if sub_title:
-            stitle = "%s - %s" % (title, sub_title)
-        else:
-            stitle = title
-
-        if plugin.get_setting('show.categories') == 'true':
-            categories_label = "[COLOR grey]%s[/COLOR]" % categories
-        else:
-            categories_label = ""
-
-        label = "[COLOR grey]%02d:%02d %s[/COLOR] %s %s %s[COLOR yellow]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, categories_label, CR, stitle, recording)
-
-        context_items = []
-
-        echannelname = channelname.encode("utf8")
-        echannelid = channelid.encode("utf8")
-
-        if recording:
-            context_items.append((_("Cancel Record"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job, job=job[0]))))
-        else:
-            context_items.append((_("Record Once"), 'XBMC.RunPlugin(%s)' %
-            (plugin.url_for(record_once, programmeid=uid))))
-
-        context_items.append((_("Play Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=echannelname))))
-        if plugin.get_setting('external.player'):
-            context_items.append((_("Play Channel External"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external, channelname=echannelname))))
-
-        context_items.append((echannelname, 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('channel', channelid=echannelid))))
-        context_items.append((title.encode("utf8"), 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('search_title', title=title.encode("utf8")))))
-        context_items.append((categories.encode("utf8"), 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('search_categories', categories=categories.encode("utf8")))))
-
-        if url:
-            path = plugin.url_for(broadcast, programmeid=uid)
-        else:
-            path = ""
-
-        items.append({
-            'label': label,
-            'path': path,
-            'thumbnail': thumbnail,
-            'context_menu': context_items,
-            'info_type': 'Video',
-            'info':{"title": title, "plot":description, "genre":categories}
-        })
-    return items
+    return listing(programmes, scroll=True)
 
 
 @plugin.route('/delete_search_categories/<categories>')
@@ -1140,71 +1018,10 @@ def search_categories(categories):
     'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE categories LIKE ?',
     ("%"+categories+"%", )).fetchall()
 
-    items = []
+    conn.commit()
+    conn.close()
 
-    for p in programmes:
-        uid, channelid , title , sub_title , start , stop , date , description , episode, categories = p
-
-        channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
-        if not channel:
-            continue
-        cuid, channelname, tvg_name, tvg_id, tvg_logo, groups, url = channel
-        thumbnail = tvg_logo
-
-        job = cursor.execute("SELECT * FROM jobs WHERE channelid=? AND start=? AND stop=?", (channelid, start, stop)).fetchone()
-        if job:
-            recording = "[COLOR red]RECORD[/COLOR]"
-        else:
-            recording = ""
-
-        starttime = utc2local(start)
-        endtime = utc2local(stop)
-
-        if sub_title:
-            stitle = "%s - %s" % (title, sub_title)
-        else:
-            stitle = title
-
-        if plugin.get_setting('show.categories') == 'true':
-            categories_label = "[COLOR grey]%s[/COLOR]" % categories
-        else:
-            categories_label = ""
-
-        label = "[COLOR grey]%02d:%02d %s[/COLOR] %s %s %s[COLOR yellow]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, categories_label, CR, stitle, recording)
-
-        context_items = []
-
-        echannelname = channelname.encode("utf8")
-        echannelid = channelid.encode("utf8")
-
-        if recording:
-            context_items.append((_("Cancel Record"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job, job=job[0]))))
-        else:
-            context_items.append((_("Record Once"), 'XBMC.RunPlugin(%s)' %
-            (plugin.url_for(record_once, programmeid=uid))))
-
-        context_items.append((_("Play Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=echannelname))))
-        if plugin.get_setting('external.player'):
-            context_items.append((_("Play Channel External"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external, channelname=echannelname))))
-
-        context_items.append((echannelname, 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('channel', channelid=echannelid))))
-        context_items.append((title.encode("utf8"), 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('search_title', title=title.encode("utf8")))))
-        context_items.append((categories.encode("utf8"), 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('search_categories', categories=categories.encode("utf8")))))
-
-        if url:
-            path = plugin.url_for(broadcast, programmeid=uid)
-        else:
-            path = ""
-
-        items.append({
-            'label': label,
-            'path': path,
-            'thumbnail': thumbnail,
-            'context_menu': context_items,
-            'info_type': 'Video',
-            'info':{"title": title, "plot":description, "genre":categories}
-        })
-    return items
+    return listing(programmes, scroll=True)
 
 
 @plugin.route('/channel/<channelid>')
@@ -1227,6 +1044,16 @@ def channel(channelid):
     programmes = cursor.execute(
     'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE channelid=?', (channelid, )).fetchall()
 
+    conn.commit()
+    conn.close()
+
+    return listing(programmes, scroll=True)
+
+
+def listing(programmes, scroll=False):
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
     items = []
 
     now = datetime.now()
@@ -1236,7 +1063,13 @@ def channel(channelid):
     i = 0
     for p in programmes:
         i += 1
-        uid, channel , title , sub_title , start , stop , date , description , episode, categories = p
+        uid, channelid , title , sub_title , start , stop , date , description , episode, categories = p
+
+        channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
+        if not channel:
+            continue
+        cuid, channelname, tvg_name, tvg_id, tvg_logo, groups, url = channel
+        thumbnail = tvg_logo
 
         job = cursor.execute("SELECT uuid, type FROM jobs WHERE channelid=? AND start=? AND stop=?", (channelid, start, stop)).fetchone()
         if job:
@@ -1311,8 +1144,11 @@ def channel(channelid):
         #listitem._listitem.setArt({"icon": thumbnail, "landscape": thumbnail, "clearart": thumbnail, "clearlogo": thumbnail, "thumb": thumbnail, "poster": thumbnail, "banner": thumbnail, "fanart":thumbnail})
         items.append(listitem)
 
-    if plugin.get_setting('scroll.now') == 'true':
+    if scroll and plugin.get_setting('scroll.now') == 'true':
         threading.Thread(target=focus,args=[current]).start()
+
+    conn.commit()
+    conn.close()
 
     return items
 
