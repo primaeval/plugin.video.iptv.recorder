@@ -257,3 +257,23 @@ msgstr ""
 msgctxt "#30063"
 msgid "Sunday"
 msgstr ""
+
+msgctxt "#30064"
+msgid "Remind Daily"
+msgstr ""
+
+msgctxt "#30065"
+msgid "Rules"
+msgstr ""
+
+msgctxt "#30066"
+msgid "Jobs"
+msgstr ""
+
+msgctxt "#30067"
+msgid "Remind Once"
+msgstr ""
+
+msgctxt "#30068"
+msgid "Remind Always"
+msgstr ""
