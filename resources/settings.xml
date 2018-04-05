@@ -9,6 +9,7 @@
     <setting id="show.categories" label="Show Categories" type="bool" default="false" />
 
     <setting id="scroll.now" label="Scroll to Now in Channel Listing" type="bool" default="true" />
+    <setting id="scroll.ms" label="Scroll Timeout (msec)" type="number" default="2000" />
 
     <setting type="lsep" label="Look in your skin/xml/MyVideoNav.xml &lt;view&gt;&lt;/view&gt;"/>
     <setting type="lsep" label="Wide List is 51 in Confluence, 55 in Estuary. "/>

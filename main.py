@@ -1306,7 +1306,7 @@ def listing(programmes, scroll=False):
 
 def focus(i):
     #TODO find way to check this has worked (clist.getSelectedPosition returns -1)
-    xbmc.sleep(1000)
+    xbmc.sleep(int(plugin.get_setting('scroll.ms') or "0"))
     #TODO deal with hidden ..
     win = xbmcgui.Window(xbmcgui.getCurrentWindowId())
     cid = win.getFocusId()
