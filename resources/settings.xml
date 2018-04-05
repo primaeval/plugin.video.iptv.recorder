@@ -2,6 +2,8 @@
 
 <category label="Display">
 
+    <setting id="show.finished" label="Show Finished Programmes" type="bool" default="true" />
+
     <setting id="multiline" label="Show Items on Two Lines" type="bool" default="false" />
     <setting id="hide.channel.name" label="Hide Channel Names if Logo Exists" type="bool" default="false" />
     <setting id="show.categories" label="Show Categories" type="bool" default="false" />

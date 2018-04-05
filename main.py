@@ -875,7 +875,7 @@ def search_title(title):
     cursor = conn.cursor()
 
     programmes = cursor.execute(
-    'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE title LIKE ?',
+    'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE title LIKE ? ORDER BY start, stop, channelid',
     ("%"+title+"%", )).fetchall()
 
     conn.commit()
@@ -937,7 +937,7 @@ def search_plot(plot):
     cursor = conn.cursor()
 
     programmes = cursor.execute(
-    'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE description LIKE ?',
+    'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE description LIKE ? ORDER BY start, stop, channelid',
     ("%"+plot+"%", )).fetchall()
 
     conn.commit()
@@ -1015,7 +1015,7 @@ def search_categories(categories):
     cursor = conn.cursor()
 
     programmes = cursor.execute(
-    'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE categories LIKE ?',
+    'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE categories LIKE ? ORDER BY start, stop, channelid',
     ("%"+categories+"%", )).fetchall()
 
     conn.commit()
@@ -1059,10 +1059,10 @@ def listing(programmes, scroll=False):
     now = datetime.now()
 
     current = None
+    current_set = False
 
-    i = 0
+    i = 1
     for p in programmes:
-        i += 1
         uid, channelid , title , sub_title , start , stop , date , description , episode, categories = p
 
         channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
@@ -1086,18 +1086,26 @@ def listing(programmes, scroll=False):
         else:
             stitle = title
 
-        if endtime > now and starttime < now:
-            current = i
+        #if endtime > now and starttime < now:
+        #if starttime < now:
+            #current = i
 
         if plugin.get_setting('show.categories') == 'true':
             categories_label = "[COLOR grey]%s[/COLOR]" % categories
         else:
             categories_label = ""
 
+
         if endtime < now:
             color = "orange"
+            if plugin.get_setting('show.finished') == 'false':
+                continue
         else:
+            if not current_set:
+                current = i
+            current_set = True
             color = "yellow"
+        i += 1
 
         if (plugin.get_setting('hide.channel.name') == "true") and thumbnail:
             channelname_label = ""
