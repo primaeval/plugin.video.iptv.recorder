@@ -953,6 +953,8 @@ def day(timestamp):
 
 @plugin.route('/delete_search_title/<title>')
 def delete_search_title(title):
+    title = title.decode("utf8")
+
     searches = plugin.get_storage('search_title')
     if title in searches:
         del searches[title]
@@ -1014,6 +1016,8 @@ def search_title(title):
 
 @plugin.route('/delete_search_plot/<plot>')
 def delete_search_plot(plot):
+    plot = plot.decode("utf8")
+
     searches = plugin.get_storage('search_plot')
     if plot in searches:
         del searches[plot]
@@ -1076,6 +1080,8 @@ def search_plot(plot):
 
 @plugin.route('/delete_search_categories/<categories>')
 def delete_search_categories(categories):
+    categories = categories.decode("utf8")
+
     searches = plugin.get_storage('search_categories')
     if categories in searches:
         del searches[categories]
