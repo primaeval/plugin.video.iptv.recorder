@@ -1795,7 +1795,7 @@ def xmltv():
 
                     cats = re.findall('<category.*?>(.*?)</category>', m, flags=(re.I|re.DOTALL))
                     if cats:
-                        categories = htmlparser.unescape((','.join(cats)))
+                        categories = htmlparser.unescape((', '.join(cats)))
 
                     else:
                         categories = ''
