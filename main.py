@@ -1200,6 +1200,9 @@ def listing(programmes, scroll=False):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
+    channels = cursor.execute("SELECT * FROM streams").fetchall()
+    channels = {x[3]:x for x in channels}
+
     items = []
 
     now = datetime.now()
@@ -1210,7 +1213,7 @@ def listing(programmes, scroll=False):
     for p in programmes:
         uid, channelid , title , sub_title , start , stop , date , description , episode, categories = p
 
-        channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
+        channel = channels.get(channelid) #cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
         if not channel:
             continue
         cuid, channelname, tvg_name, tvg_id, tvg_logo, groups, url = channel
@@ -1292,24 +1295,24 @@ def listing(programmes, scroll=False):
         #listitem._listitem.setArt({"icon": thumbnail, "landscape": thumbnail, "clearart": thumbnail, "clearlogo": thumbnail, "thumb": thumbnail, "poster": thumbnail, "banner": thumbnail, "fanart":thumbnail})
         items.append(listitem)
 
-    if scroll and plugin.get_setting('scroll.now') == 'true':
-        threading.Thread(target=focus,args=[current]).start()
-
     conn.commit()
     conn.close()
+
+    if scroll and plugin.get_setting('scroll.now') == 'true':
+        threading.Thread(target=focus,args=[current]).start()
 
     return items
 
 
 def focus(i):
+    #TODO find way to check this has worked (clist.getSelectedPosition returns -1)
     xbmc.sleep(1000)
     #TODO deal with hidden ..
     win = xbmcgui.Window(xbmcgui.getCurrentWindowId())
     cid = win.getFocusId()
     if cid:
         clist = win.getControl(cid)
-        if clist:
-            clist.selectItem(i)
+        clist.selectItem(i)
 
 
 @plugin.route('/remove_favourite_channel/<channelname>')
