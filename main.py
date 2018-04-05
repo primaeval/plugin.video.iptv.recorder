@@ -1261,16 +1261,17 @@ def channel(channelid):
         else:
             categories_label = ""
 
-        if (plugin.get_setting('hide.channel.name') == "true") and thumbnail:
-            if endtime < now:
-                label = "%02d:%02d [COLOR grey]%s[/COLOR] %s %s[COLOR orange]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), categories_label, CR, stitle, recording)
-            else:
-                label = "%02d:%02d [COLOR grey]%s[/COLOR] %s %s[COLOR yellow]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), categories_label, CR, stitle, recording)
+        if endtime < now:
+            color = "orange"
         else:
-            if endtime < now:
-                label = "%02d:%02d [COLOR grey]%s[/COLOR] %s %s %s[COLOR orange]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, categories_label, CR, stitle, recording)
-            else:
-                label = "%02d:%02d [COLOR grey]%s[/COLOR] %s %s %s[COLOR yellow]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname, categories_label, CR, stitle, recording)
+            color = "yellow"
+
+        if (plugin.get_setting('hide.channel.name') == "true") and thumbnail:
+            channelname_label = ""
+        else:
+            channelname_label = channelname
+
+        label = "%02d:%02d [COLOR grey]%s[/COLOR] %s %s %s[COLOR %s]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname_label, categories_label, CR, stitle, color, recording)
 
         context_items = []
 
