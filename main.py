@@ -1271,7 +1271,7 @@ def channel(channelid):
         else:
             channelname_label = channelname
 
-        label = "%02d:%02d [COLOR grey]%s[/COLOR] %s %s %s[COLOR %s]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname_label, categories_label, CR, stitle, color, recording)
+        label = "%02d:%02d [COLOR grey]%s[/COLOR] %s %s %s[COLOR %s]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname_label, categories_label, CR, color, stitle, recording)
 
         context_items = []
 
