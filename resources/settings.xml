@@ -10,6 +10,9 @@
     <setting id="show.categories" label="Show Categories" type="bool" default="false" />
 
     <setting type="sep"/>
+    <setting id="refresh" label="Refresh Folder on Context Menu Commands" type="bool" default="false" />
+
+    <setting type="sep"/>
     <setting id="scroll.now" label="Scroll to Now in Channel Listing" type="bool" default="true" />
     <setting id="scroll.ms" label="Scroll Timeout (msec)" type="number" default="2000" />
 

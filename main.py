@@ -529,7 +529,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
 def refresh():
     containerAddonName = xbmc.getInfoLabel('Container.PluginName')
     AddonName = xbmcaddon.Addon().getAddonInfo('id')
-    if containerAddonName == AddonName:
+    if (containerAddonName == AddonName) and (plugin.get_setting('refresh') == 'true') :
         xbmc.executebuiltin('Container.Refresh')
 
 
