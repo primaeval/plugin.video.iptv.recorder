@@ -277,3 +277,11 @@ msgstr ""
 msgctxt "#30068"
 msgid "Remind Always"
 msgstr ""
+
+msgctxt "#30069"
+msgid "Cancel Watch"
+msgstr ""
+
+msgctxt "#30070"
+msgid "Cancel Remind"
+msgstr ""

@@ -122,3 +122,5 @@ __strings['rules'] = 30065
 __strings['jobs'] = 30066
 __strings['remind once'] = 30067
 __strings['remind always'] = 30068
+__strings['cancel watch'] = 30069
+__strings['cancel remind'] = 30070
