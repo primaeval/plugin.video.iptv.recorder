@@ -27,7 +27,7 @@
 
     <setting type="sep"/>
     <setting id="add.favourite.channel" label="Add Channel to Favourites when Visited" type="bool" default="true" />
-    <setting id="add.context.searches" label="Add Context Searches Search Lists" type="bool" default="true" />
+    <setting id="add.context.searches" label="Add Context Searches to Search Lists" type="bool" default="true" />
 </category>
 
 <category label="Jobs and Rules">
