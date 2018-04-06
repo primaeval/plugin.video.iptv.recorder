@@ -409,7 +409,14 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
 
     label = "%s - %s %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, local_starttime, local_endtime)
 
-    job = cursor.execute("SELECT * FROM jobs WHERE channelid=? AND start=? AND stop=?", (channelid, start, stop)).fetchone()
+    if watch:
+        type = "WATCH"
+    elif remind:
+        type = "REMIND"
+    else:
+        type = "RECORD"
+
+    job = cursor.execute("SELECT * FROM jobs WHERE channelid=? AND start=? AND stop=? AND type=?", (channelid, start, stop, type)).fetchone()
     if job:
         return
 
@@ -509,13 +516,6 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
         else:
             cmd = 'AlarmClock(%s, RunScript(%s), %d, True)' % (job, pyjob, minutes)
             xbmc.executebuiltin(cmd)
-
-    if watch:
-        type = "WATCH"
-    elif remind:
-        type = "REMIND"
-    else:
-        type = "RECORD"
 
     conn.execute("INSERT OR REPLACE INTO jobs(uuid, channelid, channelname, title, start, stop, type) VALUES(?, ?, ?, ?, ?, ?, ?)",
     [job, channelid, channelname, title, start, stop, type])
@@ -1219,10 +1219,12 @@ def listing(programmes, scroll=False):
         cuid, channelname, tvg_name, tvg_id, tvg_logo, groups, url = channel
         thumbnail = tvg_logo
 
-        job = cursor.execute("SELECT uuid, type FROM jobs WHERE channelid=? AND start=? AND stop=?", (channelid, start, stop)).fetchone()
-        if job:
-            job, type  = job
-            recording = "[COLOR red]%s[/COLOR]" % type
+        jobs = cursor.execute("SELECT uuid, type FROM jobs WHERE channelid=? AND start=? AND stop=?", (channelid, start, stop)).fetchall()
+        if jobs:
+            types = []
+            for uuid, type in jobs:
+                types.append(type)
+            recording = "[COLOR red]%s[/COLOR]" % ' ,'.join(types)
         else:
             recording = ""
 
@@ -1263,8 +1265,14 @@ def listing(programmes, scroll=False):
         title=title.encode("utf8")
 
         if recording:
-            uuid = job[0]
-            context_items.append((_("Cancel Record"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job, job=uuid))))
+            for uuid, type in jobs:
+                if type == "RECORD":
+                    message = _("Cancel Record")
+                elif type == "REMIND":
+                    message = _("Cancel Remind")
+                elif type == "WATCH":
+                    message = _("Cancel Watch")
+                context_items.append((message, 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job, job=uuid))))
         else:
             context_items.append((_("Record Once"), 'XBMC.RunPlugin(%s)' %
             (plugin.url_for(record_once, programmeid=uid))))
