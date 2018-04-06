@@ -1224,7 +1224,7 @@ def listing(programmes, scroll=False):
             types = []
             for uuid, type in jobs:
                 types.append(type)
-            recording = "[COLOR red]%s[/COLOR]" % ' ,'.join(types)
+            recording = "[COLOR red]%s[/COLOR]" % ', '.join(types)
         else:
             recording = ""
 
