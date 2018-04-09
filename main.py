@@ -1711,6 +1711,77 @@ def xmltv():
     conn.execute('CREATE TABLE IF NOT EXISTS favourites(channelname TEXT, channelid TEXT, logo TEXT, PRIMARY KEY(channelname))')
     conn.execute('CREATE TABLE IF NOT EXISTS jobs(uid INTEGER PRIMARY KEY ASC, uuid TEXT, channelid TEXT, channelname TEXT, title TEXT, start TIMESTAMP, stop TIMESTAMP, type TEXT)')
 
+    shifts = {}
+
+    for x in ["1","2"]:
+
+        dialog.update(0, message=_("Finding streams"))
+        mode = plugin.get_setting('external.m3u.'+x)
+        if mode == "0":
+            if x == "1":
+                m3uPathType = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uPathType')
+
+                if m3uPathType == "0":
+                    path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uPath')
+                else:
+                    path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uUrl')
+            else:
+                path = ""
+        elif mode == "1":
+            path = plugin.get_setting('external.m3u.file.'+x)
+        else:
+            path = plugin.get_setting('external.m3u.url.'+x)
+
+        if path:
+
+            m3uFile = 'special://profile/addon_data/plugin.video.iptv.recorder/channels'+x+'.m3u'
+
+            xbmcvfs.copy(path, m3uFile)
+            f = xbmcvfs.File(m3uFile)
+            data = f.read().decode("utf8")
+
+            channels = re.findall('#EXTINF:(.*?)(?:\r\n|\r|\n)(.*?)(?:\r\n|\r|\n|$)', data, flags=(re.I | re.DOTALL))
+            total = len(channels)
+            i = 0
+            for channel in channels:
+
+                name = channel[0].rsplit(',', 1)[-1]
+                tvg_name = re.search('tvg-name="(.*?)"', channel[0])
+                if tvg_name:
+                    tvg_name = tvg_name.group(1)
+
+                tvg_id = re.search('tvg-id="(.*?)"', channel[0])
+                if tvg_id:
+                    tvg_id = tvg_id.group(1)
+                else:
+                    tvg_id = name
+
+                tvg_logo = re.search('tvg-logo="(.*?)"', channel[0])
+                if tvg_logo:
+                    tvg_logo = tvg_logo.group(1)
+
+                tvg_shift = re.search('tvg-shift="(.*?)"', channel[0])
+                if tvg_shift:
+                    tvg_shift = tvg_shift.group(1)
+                    shifts[tvg_id] = tvg_shift
+
+                url = channel[1]
+                search = plugin.get_setting('m3u.regex.search')
+                replace = plugin.get_setting('m3u.regex.replace')
+                if search and replace:
+                    url = re.sub(search, replace, url)
+
+                groups = re.search('group-title="(.*?)"', channel[0])
+                if groups:
+                    groups = groups.group(1)
+
+                conn.execute("INSERT OR IGNORE INTO streams(name, tvg_name, tvg_id, tvg_logo, groups, url) VALUES (?, ?, ?, ?, ?, ?)",
+                [name.strip(), tvg_name, tvg_id, tvg_logo, groups, url.strip()])
+
+                i += 1
+                percent = 0 + int(100.0 * i / total)
+                dialog.update(percent, message=_("Finding streams"))
+
     for x in ["1","2"]:
 
         mode = plugin.get_setting('external.xmltv.'+x)
@@ -1787,15 +1858,24 @@ def xmltv():
                     if channel:
                         channel = htmlparser.unescape(channel.group(1))
 
+                    if channel in shifts:
+                        shift = int(shifts[channel])
+                    else:
+                        shift = None
+
                     start = re.search('start="(.*?)"', m)
                     if start:
                         start = start.group(1)
                         start = xml2utc(start)
+                        if shift:
+                            start = start + timedelta(hours=shift)
 
                     stop = re.search('stop="(.*?)"', m)
                     if stop:
                         stop = stop.group(1)
                         stop = xml2utc(stop)
+                        if shift:
+                            stop = stop + timedelta(hours=shift)
 
                     title = re.search('<title.*?>(.*?)</title', m)
                     if title:
@@ -1832,67 +1912,7 @@ def xmltv():
                     percent = 0 + int(100.0 * i / total)
                     dialog.update(percent, message=_("Finding programmes"))
 
-        dialog.update(0, message=_("Finding streams"))
-        mode = plugin.get_setting('external.m3u.'+x)
-        if mode == "0":
-            if x == "1":
-                m3uPathType = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uPathType')
 
-                if m3uPathType == "0":
-                    path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uPath')
-                else:
-                    path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uUrl')
-            else:
-                path = ""
-        elif mode == "1":
-            path = plugin.get_setting('external.m3u.file.'+x)
-        else:
-            path = plugin.get_setting('external.m3u.url.'+x)
-
-        if path:
-
-            m3uFile = 'special://profile/addon_data/plugin.video.iptv.recorder/channels'+x+'.m3u'
-
-            xbmcvfs.copy(path, m3uFile)
-            f = xbmcvfs.File(m3uFile)
-            data = f.read().decode("utf8")
-
-            channels = re.findall('#EXTINF:(.*?)(?:\r\n|\r|\n)(.*?)(?:\r\n|\r|\n|$)', data, flags=(re.I | re.DOTALL))
-            total = len(channels)
-            i = 0
-            for channel in channels:
-
-                name = channel[0].rsplit(',', 1)[-1]
-                tvg_name = re.search('tvg-name="(.*?)"', channel[0])
-                if tvg_name:
-                    tvg_name = tvg_name.group(1)
-
-                tvg_id = re.search('tvg-id="(.*?)"', channel[0])
-                if tvg_id:
-                    tvg_id = tvg_id.group(1)
-                else:
-                    tvg_id = name
-
-                tvg_logo = re.search('tvg-logo="(.*?)"', channel[0])
-                if tvg_logo:
-                    tvg_logo = tvg_logo.group(1)
-
-                url = channel[1]
-                search = plugin.get_setting('m3u.regex.search')
-                replace = plugin.get_setting('m3u.regex.replace')
-                if search and replace:
-                    url = re.sub(search, replace, url)
-
-                groups = re.search('group-title="(.*?)"', channel[0])
-                if groups:
-                    groups = groups.group(1)
-
-                conn.execute("INSERT OR IGNORE INTO streams(name, tvg_name, tvg_id, tvg_logo, groups, url) VALUES (?, ?, ?, ?, ?, ?)",
-                [name.strip(), tvg_name, tvg_id, tvg_logo, groups, url.strip()])
-
-                i += 1
-                percent = 0 + int(100.0 * i / total)
-                dialog.update(percent, message=_("Finding streams"))
 
     conn.commit()
     conn.close()
