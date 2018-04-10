@@ -1740,6 +1740,14 @@ def xmltv():
             f = xbmcvfs.File(m3uFile)
             data = f.read().decode("utf8")
 
+            global_shift = 0
+            header = re.search('#EXTM3U(.*)', data)
+            if header:
+                tvg_shift = re.search('tvg-shift="(.*?)"', header.group(1))
+                if tvg_shift:
+                    tvg_shift = tvg_shift.group(1)
+                    global_shift = int(tvg_shift)
+
             channels = re.findall('#EXTINF:(.*?)(?:\r\n|\r|\n)(.*?)(?:\r\n|\r|\n|$)', data, flags=(re.I | re.DOTALL))
             total = len(channels)
             i = 0
@@ -1758,6 +1766,7 @@ def xmltv():
                 if tvg_logo:
                     tvg_logo = tvg_logo.group(1)
 
+                shifts[tvg_id] = global_shift
                 tvg_shift = re.search('tvg-shift="(.*?)"', channel[0])
                 if tvg_shift:
                     tvg_shift = tvg_shift.group(1)
