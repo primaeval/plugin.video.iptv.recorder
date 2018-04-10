@@ -1753,8 +1753,6 @@ def xmltv():
                 tvg_id = re.search('tvg-id="(.*?)"', channel[0])
                 if tvg_id:
                     tvg_id = tvg_id.group(1)
-                else:
-                    tvg_id = name
 
                 tvg_logo = re.search('tvg-logo="(.*?)"', channel[0])
                 if tvg_logo:
@@ -1834,9 +1832,11 @@ def xmltv():
                     if id:
                         id = htmlparser.unescape(id.group(1))
 
-                    name = re.search('<display-name.*?>(.*?)</display-name', m)
-                    if name:
-                        name = htmlparser.unescape(name.group(1))
+                    name = None
+                    names = re.findall('<display-name.*?>(.*?)</display-name', m)
+                    if names:
+                        for name in reversed(names): #First only
+                            name = htmlparser.unescape(name)
 
                     icon = re.search('<icon.*?src="(.*?)"', m)
                     if icon:
@@ -1912,7 +1912,19 @@ def xmltv():
                     percent = 0 + int(100.0 * i / total)
                     dialog.update(percent, message=_("Finding programmes"))
 
-
+    missing_streams = conn.execute('SELECT name, tvg_name FROM streams WHERE tvg_id IS null').fetchall()
+    channels = conn.execute('SELECT id, name FROM channels').fetchall()
+    channels = {x[1]:x[0] for x in channels}
+    for name, tvg_name in missing_streams:
+        if tvg_name:
+            tvg_id = None
+            tvg_name = tvg_name.replace("_"," ")
+            if tvg_name in channels:
+                tvg_id = channels[tvg_name]
+                conn.execute("UPDATE streams SET tvg_id=? WHERE tvg_name=?", (tvg_id, tvg_name))
+        elif name in channels:
+            tvg_id = channels[name]
+            conn.execute("UPDATE streams SET tvg_id=? WHERE name=?", (tvg_id, name))
 
     conn.commit()
     conn.close()
