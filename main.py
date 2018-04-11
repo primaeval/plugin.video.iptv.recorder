@@ -1927,9 +1927,9 @@ def xmltv():
     for name, tvg_name in missing_streams:
         if tvg_name:
             tvg_id = None
-            tvg_name = tvg_name.replace("_"," ")
-            if tvg_name in channels:
-                tvg_id = channels[tvg_name]
+            _tvg_name = tvg_name.replace("_"," ")
+            if _tvg_name in channels:
+                tvg_id = channels[_tvg_name]
                 conn.execute("UPDATE streams SET tvg_id=? WHERE tvg_name=?", (tvg_id, tvg_name))
         elif name in channels:
             tvg_id = channels[name]
