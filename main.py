@@ -1738,7 +1738,9 @@ def xmltv():
 
             xbmcvfs.copy(path, m3uFile)
             f = xbmcvfs.File(m3uFile)
-            data = f.read().decode("utf8")
+            data = f.read()
+            if path.endswith("8"):
+                data = data.decode("utf8")
 
             global_shift = 0
             header = re.search('#EXTM3U(.*)', data)
