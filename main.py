@@ -1739,7 +1739,6 @@ def xmltv():
             m3uFile = 'special://profile/addon_data/plugin.video.iptv.recorder/channels'+x+'.m3u'
 
             xbmcvfs.copy(path, m3uFile)
-            #encoding = chardet.detect(open(xbmc.translatePath(m3uFile), "rb").read())
             f = open(xbmc.translatePath(m3uFile),'rb')
             data = f.read()
             encoding = chardet.detect(data)
