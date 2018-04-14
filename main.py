@@ -22,6 +22,7 @@ import pytz
 from struct import *
 from collections import namedtuple
 from language import get_string as _
+import chardet
 
 
 def addon_id():
@@ -1365,6 +1366,7 @@ def epg():
 
 @plugin.route('/group/<channelgroup>')
 def group(channelgroup=None,section=None):
+    channelgroup=channelgroup.decode("utf8")
     show_now_next = False
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
@@ -1737,10 +1739,10 @@ def xmltv():
             m3uFile = 'special://profile/addon_data/plugin.video.iptv.recorder/channels'+x+'.m3u'
 
             xbmcvfs.copy(path, m3uFile)
-            f = xbmcvfs.File(m3uFile)
+            encoding = chardet.detect(open(xbmc.translatePath(m3uFile), "rb").read())
+            f = open(xbmc.translatePath(m3uFile),'r')
             data = f.read()
-            if path.endswith("8"):
-                data = data.decode("utf8")
+            data = data.decode(encoding['encoding'])
 
             global_shift = 0
             header = re.search('#EXTM3U(.*)', data)
