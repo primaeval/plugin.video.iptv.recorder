@@ -541,6 +541,7 @@ def record_daily(channelid, channelname, title, start, stop):
     channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
     title = title.decode("utf8")
+    title = xbmcgui.Dialog().input(_("% is Wildcard"), title)
 
     start = timestamp2datetime(float(start))
     stop = timestamp2datetime(float(stop))
@@ -566,6 +567,7 @@ def record_always(channelid, channelname, title):
     channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
     title = title.decode("utf8")
+    title = xbmcgui.Dialog().input(_("% is Wildcard"), title)
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
@@ -635,6 +637,7 @@ def watch_daily(channelid, channelname, title, start, stop):
     channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
     title = title.decode("utf8")
+    title = xbmcgui.Dialog().input(_("% is Wildcard"), title)
 
     start = timestamp2datetime(float(start))
     stop = timestamp2datetime(float(stop))
@@ -660,6 +663,7 @@ def watch_always(channelid, channelname, title):
     channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
     title = title.decode("utf8")
+    title = xbmcgui.Dialog().input(_("% is Wildcard"), title)
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
@@ -729,6 +733,7 @@ def remind_daily(channelid, channelname, title, start, stop):
     channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
     title = title.decode("utf8")
+    title = xbmcgui.Dialog().input(_("% is Wildcard"), title)
 
     start = timestamp2datetime(float(start))
     stop = timestamp2datetime(float(stop))
@@ -754,6 +759,7 @@ def remind_always(channelid, channelname, title):
     channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
     title = title.decode("utf8")
+    title = xbmcgui.Dialog().input(_("% is Wildcard"), title)
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
