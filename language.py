@@ -124,3 +124,4 @@ __strings['remind once'] = 30067
 __strings['remind always'] = 30068
 __strings['cancel watch'] = 30069
 __strings['cancel remind'] = 30070
+__strings['% is wildcard'] = 30071
