@@ -1544,6 +1544,11 @@ def service_thread():
 
     for uid, jchannelid, jchannelname, jtitle, jstart, jstop, jdescription, type  in rules:
 
+        if '%' in jtitle:
+            compare='LIKE'
+        else:
+            compare='='
+
         watch = False
         remind = False
         if type.startswith("WATCH"):
@@ -1557,7 +1562,7 @@ def service_thread():
             #TODO scrub [] from title
 
             programmes = cursor.execute(
-            'SELECT uid, channelid , title , sub_title , date , description , episode, categories FROM programmes WHERE channelid=? AND title=?',
+            'SELECT uid, channelid , title , sub_title , date , description , episode, categories FROM programmes WHERE channelid=? AND title %s ?' % compare,
             (jchannelid, jtitle)).fetchall()
 
             for p in programmes:
@@ -1569,7 +1574,7 @@ def service_thread():
             tjstop = jstop.time()
 
             programmes = cursor.execute(
-            'SELECT uid, start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]" FROM programmes WHERE channelid=? AND title=?',
+            'SELECT uid, start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]" FROM programmes WHERE channelid=? AND title %s ?' % compare,
             (jchannelid, jtitle)).fetchall()
 
             for p in programmes:
