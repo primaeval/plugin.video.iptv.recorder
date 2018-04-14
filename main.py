@@ -1786,7 +1786,7 @@ def xmltv():
                 url = channel[1]
                 search = plugin.get_setting('m3u.regex.search')
                 replace = plugin.get_setting('m3u.regex.replace')
-                if search and replace:
+                if search:
                     url = re.sub(search, replace, url)
 
                 groups = re.search('group-title="(.*?)"', channel[0])
@@ -1900,6 +1900,11 @@ def xmltv():
                     title = re.search('<title.*?>(.*?)</title', m)
                     if title:
                         title = htmlparser.unescape(title.group(1))
+                    search = plugin.get_setting('xmltv.title.regex.search')
+                    replace = plugin.get_setting('xmltv.title.regex.replace')
+                    if search:
+                        title = re.sub(search, replace, title)
+                    title = title.strip()
 
                     sub_title = re.search('<sub-title.*?>(.*?)</sub-title', m)
                     if sub_title:
