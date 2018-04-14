@@ -80,6 +80,7 @@ def delete(path):
 
 @plugin.route('/play_channel/<channelname>')
 def play_channel(channelname):
+    channelname = channelname.decode("utf8")
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
     c = conn.cursor()
 
@@ -93,6 +94,7 @@ def play_channel(channelname):
 
 @plugin.route('/play_channel_external/<channelname>')
 def play_channel_external(channelname):
+    channelname = channelname.decode("utf8")
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
     c = conn.cursor()
 
@@ -1054,6 +1056,7 @@ def search_plot_dialog():
 
 @plugin.route('/search_plot_input/<plot>')
 def search_plot_input(plot):
+    plot = plot.decode("utf8")
     searches = plugin.get_storage('search_plot')
     if plot == "plot":
         plot = ""
@@ -1118,6 +1121,7 @@ def search_categories_dialog():
 
 @plugin.route('/search_categories_input/<categories>')
 def search_categories_input(categories):
+    categories = categories.decode("utf8")
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
@@ -1367,6 +1371,7 @@ def epg():
 @plugin.route('/group/<channelgroup>')
 def group(channelgroup=None,section=None):
     channelgroup=channelgroup.decode("utf8")
+
     show_now_next = False
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
@@ -1585,6 +1590,7 @@ def service_thread():
 
 @plugin.route('/delete_recording/<label>/<path>')
 def delete_recording(label, path):
+    label = label.decode("utf8")
     if not (xbmcgui.Dialog().yesno("IPTV Recorder", "[COLOR red]" + _("Delete Recording?") + "[/COLOR]", label)):
         return
     xbmcvfs.delete(path)
@@ -1739,6 +1745,7 @@ def xmltv():
             m3uFile = 'special://profile/addon_data/plugin.video.iptv.recorder/channels'+x+'.m3u'
 
             xbmcvfs.copy(path, m3uFile)
+            f = open(xbmc.translatePath(m3uFile),'rb')
             f = open(xbmc.translatePath(m3uFile),'rb')
             data = f.read()
             encoding = chardet.detect(data)
