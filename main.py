@@ -1324,6 +1324,7 @@ def listing(programmes, scroll=False):
 
 
 def focus(i):
+
     #TODO find way to check this has worked (clist.getSelectedPosition returns -1)
     xbmc.sleep(int(plugin.get_setting('scroll.ms') or "0"))
     #TODO deal with hidden ..
@@ -1331,7 +1332,9 @@ def focus(i):
     cid = win.getFocusId()
     if cid:
         clist = win.getControl(cid)
-        clist.selectItem(i)
+        if clist:
+            try: clist.selectItem(i)
+            except: pass
 
 
 @plugin.route('/remove_favourite_channel/<channelname>')
@@ -1376,7 +1379,8 @@ def epg():
 
 @plugin.route('/group/<channelgroup>')
 def group(channelgroup=None,section=None):
-    channelgroup=channelgroup.decode("utf8")
+    if channelgroup:
+        channelgroup=channelgroup.decode("utf8")
 
     show_now_next = False
 
