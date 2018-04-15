@@ -1952,7 +1952,7 @@ def xmltv():
                     percent = 0 + int(100.0 * i / total)
                     dialog.update(percent, message=_("Finding programmes"))
 
-    missing_streams = conn.execute('SELECT name, tvg_name FROM streams WHERE tvg_id IS null').fetchall()
+    missing_streams = conn.execute('SELECT name, tvg_name FROM streams WHERE tvg_id IS null OR tvg_id IS ""').fetchall()
     channels = conn.execute('SELECT id, name FROM channels').fetchall()
     channels = {x[1]:x[0] for x in channels}
     for name, tvg_name in missing_streams:
