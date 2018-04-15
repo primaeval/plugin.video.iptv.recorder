@@ -1437,6 +1437,8 @@ def group(channelgroup=None,section=None):
             uid, name, tvg_name, tvg_id, tvg_logo, groups, url = stream_channel
             channelname = name
             channelid = tvg_id
+            if not channelid:
+                continue
             thumbnail = tvg_logo or get_icon_path('tv')
             logo = tvg_logo
 
