@@ -208,7 +208,7 @@ msgstr "Chargement des données terminé"
 
 msgctxt "#30051"
 msgid "Watch Daily"
-msgstr "Regarder tous les jours"
+msgstr "Mettre en veille tous les jours"
 
 msgctxt "#30052"
 msgid "Delete Everything and Start Again?"
@@ -216,7 +216,7 @@ msgstr "Tout supprimer et recharger?"
 
 msgctxt "#30053"
 msgid "Watch Once"
-msgstr "Regarder une fois"
+msgstr "Mettre en veille une fois"
 
 msgctxt "#30054"
 msgid "Reload Data"
@@ -228,7 +228,7 @@ msgstr "Recherche Catégorie"
 
 msgctxt "#30056"
 msgid "Watch Always"
-msgstr "Regarder tout le temps"
+msgstr "Mettre en veille tout le temps"
 
 msgctxt "#30057"
 msgid "Monday"
@@ -277,3 +277,15 @@ msgstr "Rappeler une fois"
 msgctxt "#30068"
 msgid "Remind Always"
 msgstr "Rappeler tout le temps"
+
+msgctxt "#30069"
+msgid "Cancel Watch"
+msgstr "Annuler la mise en veille"
+
+msgctxt "#30070"
+msgid "Cancel Remind"
+msgstr "Annuler le rappel"
+
+msgctxt "#30071"
+msgid "% is Wildcard"
+msgstr "% est joker"
