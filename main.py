@@ -1273,7 +1273,8 @@ def listing(programmes, scroll=False):
 
         echannelid = channelid.encode("utf8")
         echannelname=channelname.encode("utf8")
-        title=title.encode("utf8")
+        etitle=title.encode("utf8")
+        ecategories=categories.encode("utf8")
 
         if recording:
             for uuid, type in jobs:
@@ -1293,8 +1294,8 @@ def listing(programmes, scroll=False):
             context_items.append((_("Play Channel External"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external, channelname=echannelname))))
 
         context_items.append((echannelname, 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('channel', channelid=echannelid))))
-        context_items.append((title.encode("utf8"), 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('search_title', title=title.encode("utf8")))))
-        context_items.append((categories.encode("utf8"), 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('search_categories', categories=categories.encode("utf8")))))
+        context_items.append((etitle, 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('search_title', title=etitle))))
+        context_items.append((ecategories, 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('search_categories', categories=ecategories))))
 
         if url:
             path = plugin.url_for(broadcast, programmeid=uid)
