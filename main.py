@@ -1212,8 +1212,10 @@ def listing(programmes, scroll=False):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
-    channels = cursor.execute("SELECT * FROM streams").fetchall()
-    channels = {x[3]:x for x in channels}
+    streams = cursor.execute("SELECT * FROM streams").fetchall()
+    streams = {x[3]:x for x in streams}
+    channels = cursor.execute("SELECT * FROM channels").fetchall()
+    channels = {x[1]:x for x in channels}
 
     items = []
 
@@ -1225,11 +1227,18 @@ def listing(programmes, scroll=False):
     for p in programmes:
         uid, channelid , title , sub_title , start , stop , date , description , episode, categories = p
 
-        channel = channels.get(channelid) #cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
-        if not channel:
+        stream = streams.get(channelid) #cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
+        channel = channels.get(channelid)
+        if stream:
+            cuid, channelname, tvg_name, tvg_id, tvg_logo, groups, url = stream
+            thumbnail = tvg_logo
+        elif channel:
+            uid, tvg_id, channelname, tvg_logo = channel
+            url = ""
+            thumbnail = tvg_logo
+        else:
             continue
-        cuid, channelname, tvg_name, tvg_id, tvg_logo, groups, url = channel
-        thumbnail = tvg_logo
+
 
         jobs = cursor.execute("SELECT uuid, type FROM jobs WHERE channelid=? AND start=? AND stop=?", (channelid, start, stop)).fetchall()
         if jobs:
@@ -1287,16 +1296,19 @@ def listing(programmes, scroll=False):
                     message = _("Cancel Watch")
                 context_items.append((message, 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job, job=uuid))))
         else:
-            context_items.append((_("Record Once"), 'XBMC.RunPlugin(%s)' %
-            (plugin.url_for(record_once, programmeid=uid))))
+            if url:
+                context_items.append((_("Record Once"), 'XBMC.RunPlugin(%s)' %
+                (plugin.url_for(record_once, programmeid=uid))))
 
-        context_items.append((_("Play Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=echannelname))))
-        if plugin.get_setting('external.player'):
-            context_items.append((_("Play Channel External"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external, channelname=echannelname))))
+        if url:
+            context_items.append((_("Play Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=echannelname))))
+            if plugin.get_setting('external.player'):
+                context_items.append((_("Play Channel External"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external, channelname=echannelname))))
 
         context_items.append((echannelname, 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('channel', channelid=echannelid))))
         context_items.append((etitle, 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('search_title', title=etitle))))
-        context_items.append((ecategories, 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('search_categories', categories=ecategories))))
+        if ecategories:
+            context_items.append((ecategories, 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('search_categories', categories=ecategories))))
 
         if url:
             path = plugin.url_for(broadcast, programmeid=uid)
