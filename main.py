@@ -23,6 +23,7 @@ from struct import *
 from collections import namedtuple
 from language import get_string as _
 import chardet
+import gzip
 
 
 def addon_id():
@@ -1847,7 +1848,6 @@ def xmltv():
             f.close()
             if magic == "\x1f\x8b\x08":
                 dialog.update(0, message=_("Unzipping xmltv file"))
-                import gzip
                 g = gzip.open(tmp)
                 data = g.read()
                 f = xbmcvfs.File(xml, "wb")
@@ -1857,8 +1857,14 @@ def xmltv():
                 xbmcvfs.copy(tmp, xml)
 
             data = xbmcvfs.File(xml, 'rb').read()
-            encoding = chardet.detect(data)
-            data = data.decode(encoding['encoding'])
+
+            match = re.search('<\?xml.*?encoding="(.*?)"',data,flags=(re.I|re.DOTALL))
+            if match:
+                encoding = match.group(1)
+            else:
+                chardet_encoding = chardet.detect(data)
+                encoding = chardet_encoding['encoding']
+            data = data.decode(encoding)
 
             htmlparser = HTMLParser()
 
