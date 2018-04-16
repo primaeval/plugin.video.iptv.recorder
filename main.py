@@ -1914,20 +1914,21 @@ def xmltv():
                         if shift:
                             stop = stop + timedelta(hours=shift)
 
-                    title = re.search('<title.*?>(.*?)</title', m)
+                    title = re.search('<title.*?>(.*?)</title', m, flags=(re.I|re.DOTALL))
                     if title:
                         title = htmlparser.unescape(title.group(1))
                     search = plugin.get_setting('xmltv.title.regex.search')
                     replace = plugin.get_setting('xmltv.title.regex.replace')
                     if search:
                         title = re.sub(search, replace, title)
-                    title = title.strip()
+                    if title:
+                        title = title.strip()
 
-                    sub_title = re.search('<sub-title.*?>(.*?)</sub-title', m)
+                    sub_title = re.search('<sub-title.*?>(.*?)</sub-title', m, flags=(re.I|re.DOTALL))
                     if sub_title:
                         sub_title = htmlparser.unescape(sub_title.group(1))
 
-                    description = re.search('<desc.*?>(.*?)</desc', m)
+                    description = re.search('<desc.*?>(.*?)</desc', m, flags=(re.I|re.DOTALL))
                     if description:
                         description = htmlparser.unescape(description.group(1))
 
@@ -1936,7 +1937,7 @@ def xmltv():
                         date = date.group(1)
 
                     #TODO other systems
-                    episode = re.search('<episode-num system="xmltv_ns">(.*?)<', m)
+                    episode = re.search('<episode-num system="xmltv_ns">(.*?)<', m, flags=(re.I|re.DOTALL))
                     if episode:
                         episode = htmlparser.unescape(episode.group(1))
 
