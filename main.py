@@ -1856,7 +1856,9 @@ def xmltv():
             else:
                 xbmcvfs.copy(tmp, xml)
 
-            data = xbmcvfs.File(xml, 'rb').read().decode("utf8")
+            data = xbmcvfs.File(xml, 'rb').read()
+            encoding = chardet.detect(data)
+            data = data.decode(encoding['encoding'])
 
             htmlparser = HTMLParser()
 
