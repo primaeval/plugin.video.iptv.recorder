@@ -1242,11 +1242,6 @@ def listing(programmes, scroll=False):
         starttime = utc2local(start)
         endtime = utc2local(stop)
 
-        if sub_title:
-            stitle = "%s - %s" % (title, sub_title)
-        else:
-            stitle = title
-
         if plugin.get_setting('show.categories') == 'true':
             categories_label = "[COLOR grey]%s[/COLOR]" % categories
         else:
@@ -1262,12 +1257,17 @@ def listing(programmes, scroll=False):
             color = "yellow"
         i += 1
 
+        if sub_title:
+            stitle = "[COLOR %s]%s[/COLOR] [COLOR grey]- %s[/COLOR]" % (color, title, sub_title)
+        else:
+            stitle = "[COLOR %s]%s[/COLOR]" % (color, title)
+
         if (plugin.get_setting('hide.channel.name') == "true") and thumbnail:
             channelname_label = ""
         else:
             channelname_label = channelname
 
-        label = "%02d:%02d [COLOR grey]%s[/COLOR] %s %s %s[COLOR %s]%s[/COLOR] %s" % (starttime.hour, starttime.minute, day(starttime), channelname_label, categories_label, CR, color, stitle, recording)
+        label = "%02d:%02d [COLOR grey]%s[/COLOR] %s %s %s%s %s" % (starttime.hour, starttime.minute, day(starttime), channelname_label, categories_label, CR, stitle, recording)
 
         context_items = []
 
