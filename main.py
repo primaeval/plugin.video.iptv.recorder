@@ -1965,17 +1965,17 @@ def xmltv():
                     dialog.update(percent, message=_("Finding programmes"))
 
     missing_streams = conn.execute('SELECT name, tvg_name FROM streams WHERE tvg_id IS null OR tvg_id IS ""').fetchall()
-    channels = conn.execute('SELECT id, name FROM channels').fetchall()
-    channels = {x[1]:x[0] for x in channels}
+    sql_channels = conn.execute('SELECT id, name FROM channels').fetchall()
+    lower_channels = {x[1].lower():x[0] for x in sql_channels}
     for name, tvg_name in missing_streams:
         if tvg_name:
             tvg_id = None
-            _tvg_name = tvg_name.replace("_"," ")
-            if _tvg_name in channels:
-                tvg_id = channels[_tvg_name]
+            _tvg_name = tvg_name.replace("_"," ").lower()
+            if _tvg_name in lower_channels:
+                tvg_id = lower_channels[_tvg_name]
                 conn.execute("UPDATE streams SET tvg_id=? WHERE tvg_name=?", (tvg_id, tvg_name))
-        elif name in channels:
-            tvg_id = channels[name]
+        elif name.lower() in lower_channels:
+            tvg_id = lower_channels[name.lower()]
             conn.execute("UPDATE streams SET tvg_id=? WHERE name=?", (tvg_id, name))
 
     conn.commit()
