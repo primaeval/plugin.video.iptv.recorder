@@ -419,6 +419,22 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
         label = "%s - %s %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, local_starttime, local_endtime)
         filename = urllib.quote_plus(label.encode("utf8"))
 
+    ftitle = urllib.quote(title.encode("utf8"))
+    ftitle = ftitle.replace("%20",' ')
+    fchannelname = urllib.quote(channelname.encode("utf8"))
+    fchannelname = fchannelname.replace("%20",' ')
+    folder = ""
+    if episode:
+        if episode == "MOVIE":
+            folder = "Movies"
+            if date and len(date) == 4:
+                filename = "%s (%s) - %s - %s" % (ftitle, date, fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
+            else:
+                filename = "%s - %s - %s" % (ftitle, fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
+        else:
+            folder = ftitle
+            filename = "%s %s - %s - %s" % (ftitle, episode, fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
+
     if watch:
         type = "WATCH"
     elif remind:
@@ -445,7 +461,12 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
     length = local_endtime - local_starttime
     seconds = total_seconds(length)
 
-    path = os.path.join(xbmc.translatePath(plugin.get_setting('recordings')), filename)
+    if folder:
+        dir = os.path.join(xbmc.translatePath(plugin.get_setting('recordings')), "TV", folder)
+    else:
+        dir = os.path.join(xbmc.translatePath(plugin.get_setting('recordings')), "Other", folder)
+    xbmcvfs.mkdirs(dir)
+    path = os.path.join(dir, filename)
     json_path = path + '.json'
     path = path + '.ts'
     ffmpeg = ffmpeg_location()
@@ -1970,16 +1991,22 @@ def xmltv():
                     if date:
                         date = date.group(1)
 
+                    cats = re.findall('<category.*?>(.*?)</category>', m, flags=(re.I|re.DOTALL))
+                    if cats:
+                        categories = htmlparser.unescape((', '.join(cats)))
+                    else:
+                        categories = ''
+                    cats = categories.lower()
+                    film_movie = ("movie" in cats) or ("film" in cats)
+
                     #TODO other systems
                     episode = re.findall('<episode-num system="(.*?)">(.*?)<', m, flags=(re.I|re.DOTALL))
                     episode = {x[0]:x[1] for x in episode}
-                    episode = json.dumps(episode)
 
                     SE = None
                     if episode:
-                        j = json.loads(episode)
-                        if j.get('xmltv_ns'):
-                            num = j.get('xmltv_ns')
+                        if episode.get('xmltv_ns'):
+                            num = episode.get('xmltv_ns')
                             parts = num.split('.')
                             if len(parts) >= 2:
                                 S = parts[0]
@@ -1987,16 +2014,17 @@ def xmltv():
                                 S = int(S if S else 0) + 1
                                 E = int(E if E else 0) + 1
                             SE = "S%02dE%02d" % (S,E)
-                        elif j.get('common'):
-                            SE = j.get('common')
-                    log(SE)
-
-                    cats = re.findall('<category.*?>(.*?)</category>', m, flags=(re.I|re.DOTALL))
-                    if cats:
-                        categories = htmlparser.unescape((', '.join(cats)))
-
-                    else:
-                        categories = ''
+                        elif episode.get('common'):
+                            SE = episode.get('common')
+                        elif episode.get('dd_progid'):
+                            num = episode.get('dd_progid')
+                            if num.startswith('EP') and date and len(date) == 8:
+                                SE = "%s-%s-%s" % (date[0:4], date[4:6], date[6:8])
+                            elif num.startswith('MV'):
+                                SE = "MOVIE"
+                    elif film_movie:
+                        SE = "MOVIE"
+                    episode = SE
 
                     conn.execute("INSERT OR IGNORE INTO programmes(channelid, title, sub_title, start, stop, date, description, episode, categories, xml) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     [channel, title, sub_title, start, stop, date, description, episode, categories, xml])
