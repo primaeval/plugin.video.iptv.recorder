@@ -68,8 +68,8 @@
     <setting id="external.m3u.url.2" label="External m3u Url 2" visible="eq(-2,2)" type="text" default=""/>
 
     <setting type="sep"/>
-    <setting id="m3u.regex.search" label="m3u Regex Search" type="text" default=""/>
-    <setting id="m3u.regex.replace" label="m3u Regex Replace" type="text" default=""/>
+    <setting id="m3u.regex.search" label="m3u Url Regex Search" type="text" default=""/>
+    <setting id="m3u.regex.replace" label="m3u Url Regex Replace" type="text" default=""/>
 
     <setting type="sep"/>
     <setting id="xmltv.title.regex.search" label="xmltv Title Regex Search (eg \[.*?\])" type="text" default=""/>
