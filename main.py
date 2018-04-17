@@ -1747,7 +1747,7 @@ def xmltv():
     conn.execute('DROP TABLE IF EXISTS channels')
     conn.execute('DROP TABLE IF EXISTS streams')
     conn.execute('CREATE TABLE IF NOT EXISTS channels(uid INTEGER PRIMARY KEY ASC, id TEXT, name TEXT, icon TEXT)')
-    conn.execute('CREATE TABLE IF NOT EXISTS programmes(uid INTEGER PRIMARY KEY ASC, channelid TEXT, title TEXT, sub_title TEXT, start TIMESTAMP, stop TIMESTAMP, date TEXT, description TEXT, episode TEXT, categories TEXT)')
+    conn.execute('CREATE TABLE IF NOT EXISTS programmes(uid INTEGER PRIMARY KEY ASC, channelid TEXT, title TEXT, sub_title TEXT, start TIMESTAMP, stop TIMESTAMP, date TEXT, description TEXT, episode TEXT, categories TEXT, xml TEXT)')
     #TODO unique fails with timestamps: UNIQUE(channelid, channelname, start, stop, description, type)
     conn.execute('CREATE TABLE IF NOT EXISTS rules(uid INTEGER PRIMARY KEY ASC, channelid TEXT, channelname TEXT, title TEXT, sub_title TEXT, start TIMESTAMP, stop TIMESTAMP, date TEXT, description TEXT, episode TEXT, categories TEXT, type TEXT)')
     #TODO check primary key
@@ -1917,6 +1917,8 @@ def xmltv():
                 total = len(match)
                 i = 0
                 for m in match:
+                    xml = '<programme%s</programme>' % m
+
                     channel = re.search('channel="(.*?)"', m)
                     if channel:
                         channel = htmlparser.unescape(channel.group(1))
@@ -1963,9 +1965,25 @@ def xmltv():
                         date = date.group(1)
 
                     #TODO other systems
-                    episode = re.search('<episode-num system="xmltv_ns">(.*?)<', m, flags=(re.I|re.DOTALL))
+                    episode = re.findall('<episode-num system="(.*?)">(.*?)<', m, flags=(re.I|re.DOTALL))
+                    episode = {x[0]:x[1] for x in episode}
+                    episode = json.dumps(episode)
+
+                    SE = None
                     if episode:
-                        episode = htmlparser.unescape(episode.group(1))
+                        j = json.loads(episode)
+                        if j.get('xmltv_ns'):
+                            num = j.get('xmltv_ns')
+                            parts = num.split('.')
+                            if len(parts) >= 2:
+                                S = parts[0]
+                                E = parts[1].split('/')[0]
+                                S = int(S if S else 0) + 1
+                                E = int(E if E else 0) + 1
+                            SE = "S%02dE%02d" % (S,E)
+                        elif j.get('common'):
+                            SE = j.get('common')
+                    log(SE)
 
                     cats = re.findall('<category.*?>(.*?)</category>', m, flags=(re.I|re.DOTALL))
                     if cats:
@@ -1974,8 +1992,8 @@ def xmltv():
                     else:
                         categories = ''
 
-                    conn.execute("INSERT OR IGNORE INTO programmes(channelid, title, sub_title, start, stop, date, description, episode, categories) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    [channel, title, sub_title, start, stop, date, description, episode, categories])
+                    conn.execute("INSERT OR IGNORE INTO programmes(channelid, title, sub_title, start, stop, date, description, episode, categories, xml) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    [channel, title, sub_title, start, stop, date, description, episode, categories, xml])
 
                     i += 1
                     percent = 0 + int(100.0 * i / total)
