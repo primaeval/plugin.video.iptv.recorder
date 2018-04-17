@@ -500,16 +500,15 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
     pyjob = directory + job + ".py"
 
     f = xbmcvfs.File(pyjob, 'wb')
-    f.write("import os, subprocess\n")
+    f.write("import os, subprocess, time\n")
 
     if watch == False and remind == False:
         f.write("cmd = %s\n" % repr(cmd))
-        f.write("p = subprocess.Popen(cmd, shell=%s)\n" % windows())
-        f.write("f = open(r'%s', 'w+')\n" % xbmc.translatePath(pyjob+'.pid'))
-        f.write("f.write(repr(p.pid))\n")
-        f.write("f.close()\n")
-        #f.write("p.wait()\n")
-        #f.write("os.unlink(%s)\n" % xbmc.translatePath(pyjob+'.pid'))
+        f.write("for trial in range(5):\n")
+        f.write("  result = subprocess.call(cmd, shell=%s)\n" % windows())
+        f.write("  if result == 0:\n")
+        f.write("    break\n")
+        f.write("  time.sleep(5)\n")
         #TODO copy file somewhere else
     elif remind == True:
         cmd = 'xbmcgui.Dialog().notification("%s", "%s", sound=%s)\n' % (channelname, title, plugin.get_setting('silent')=="false")
