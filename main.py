@@ -510,7 +510,8 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
         f.write("  f.write(repr(p.pid))\n")
         f.write("  f.close()\n")
         f.write("  result = p.wait()\n")
-        f.write("  if result == 0:\n")
+        f.write("  time.sleep(1)\n")
+        f.write("  if result == 0 or os.path.exists(r'%s') == False:\n" % xbmc.translatePath(pyjob))
         f.write("    break\n")
         f.write("  time.sleep(5)\n")
         #TODO copy file somewhere else
