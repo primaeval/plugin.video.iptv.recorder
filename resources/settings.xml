@@ -37,10 +37,6 @@
     <setting type="sep"/>
     <setting id="recordings" label="Recordings Folder" type="folder" default="special://temp"/>
     <setting id="ffmpeg" label="ffmpeg exe" type="file" default=""/>
-    <setting id="plain.name" label="Plain File Name" type="bool" default="false"  />
-
-    <setting type="sep"/>
-    <setting id="probe" label="Probe Stream Before Record" type="bool" default="true"  />
 
     <setting type="sep"/>
     <setting id="silent" label="Silent Notifications" type="bool" default="false"  />
