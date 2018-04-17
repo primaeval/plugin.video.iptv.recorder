@@ -1948,7 +1948,7 @@ def xmltv():
                 total = len(match)
                 i = 0
                 for m in match:
-                    xml = '<programme%s</programme>' % m
+                    xml = "" #'<programme%s</programme>' % m
 
                     channel = re.search('channel="(.*?)"', m)
                     if channel:
