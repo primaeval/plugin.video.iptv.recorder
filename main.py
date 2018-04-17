@@ -421,19 +421,30 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
 
     ftitle = urllib.quote(title.encode("utf8"))
     ftitle = ftitle.replace("%20",' ')
+    if sub_title:
+        fsub_title = urllib.quote(sub_title.encode("utf8"))
+        fsub_title = sub_title.replace("%20",' ')
     fchannelname = urllib.quote(channelname.encode("utf8"))
     fchannelname = fchannelname.replace("%20",' ')
     folder = ""
+    movie = False
+    series = False
     if episode:
         if episode == "MOVIE":
-            folder = "Movies"
+            movie = True
             if date and len(date) == 4:
                 filename = "%s (%s) - %s - %s" % (ftitle, date, fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
             else:
                 filename = "%s - %s - %s" % (ftitle, fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
         else:
+            series = True
             folder = ftitle
             filename = "%s %s - %s - %s" % (ftitle, episode, fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
+    else:
+        if sub_title:
+            filename = "%s %s - %s - %s" % (ftitle, fsub_title, fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
+        else:
+            filename = "%s - %s - %s" % (ftitle, fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
 
     if watch:
         type = "WATCH"
@@ -461,8 +472,10 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
     length = local_endtime - local_starttime
     seconds = total_seconds(length)
 
-    if folder:
+    if series:
         dir = os.path.join(xbmc.translatePath(plugin.get_setting('recordings')), "TV", folder)
+    elif movie:
+        dir = os.path.join(xbmc.translatePath(plugin.get_setting('recordings')), "Movies", folder)
     else:
         dir = os.path.join(xbmc.translatePath(plugin.get_setting('recordings')), "Other", folder)
     xbmcvfs.mkdirs(dir)
@@ -496,9 +509,9 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
     f.write("import os, subprocess\n")
 
     if watch == False and remind == False:
-        if plugin.get_setting('probe') == 'true':
-            f.write("probe_cmd = %s\n" % repr(probe_cmd))
-            f.write("subprocess.call(probe_cmd, shell=%s)\n" % windows())
+        #if plugin.get_setting('probe') == 'true':
+        #    f.write("probe_cmd = %s\n" % repr(probe_cmd+ ["-t","1"]))
+        #    f.write("subprocess.call(probe_cmd, shell=%s)\n" % windows())
         f.write("cmd = %s\n" % repr(cmd))
         f.write("p = subprocess.Popen(cmd, shell=%s)\n" % windows())
         f.write("f = open(r'%s', 'w+')\n" % xbmc.translatePath(pyjob+'.pid'))
@@ -2102,7 +2115,8 @@ def index():
         'thumbnail':get_icon_path('recordings'),
         'context_menu': context_items,
     })
-
+    #TODO
+    '''
     items.append(
     {
         'label': _("Recordings"),
@@ -2110,7 +2124,7 @@ def index():
         'thumbnail':get_icon_path('recordings'),
         'context_menu': context_items,
     })
-
+    '''
     items.append(
     {
         'label': _("Recordings Folder"),
