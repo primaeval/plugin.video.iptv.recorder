@@ -411,14 +411,6 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
     local_starttime = utc2local(start)
     local_endtime = utc2local(stop)
 
-    if plugin.get_setting('plain.name') == 'true':
-        label = "%s - %s - %s - %s" % (channelname, title, local_starttime.strftime("%Y-%m-%d %H-%M"), local_endtime.strftime("%H-%M"))
-        filename = urllib.quote(label.encode("utf8"))
-        filename = filename.replace("%20",' ')
-    else:
-        label = "%s - %s %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, local_starttime, local_endtime)
-        filename = urllib.quote_plus(label.encode("utf8"))
-
     ftitle = urllib.quote(title.encode("utf8"))
     ftitle = ftitle.replace("%20",' ')
     if sub_title:
@@ -433,8 +425,10 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
         if episode == "MOVIE":
             movie = True
             if date and len(date) == 4:
-                filename = "%s (%s) - %s - %s" % (ftitle, date, fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
+                filename = "%s (%s)" % (ftitle, date)
+                folder = "%s (%s) - %s - %s" % (ftitle, date, fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
             else:
+                folder = ftitle
                 filename = "%s - %s - %s" % (ftitle, fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
         else:
             series = True
@@ -509,9 +503,6 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
     f.write("import os, subprocess\n")
 
     if watch == False and remind == False:
-        #if plugin.get_setting('probe') == 'true':
-        #    f.write("probe_cmd = %s\n" % repr(probe_cmd+ ["-t","1"]))
-        #    f.write("subprocess.call(probe_cmd, shell=%s)\n" % windows())
         f.write("cmd = %s\n" % repr(cmd))
         f.write("p = subprocess.Popen(cmd, shell=%s)\n" % windows())
         f.write("f = open(r'%s', 'w+')\n" % xbmc.translatePath(pyjob+'.pid'))
