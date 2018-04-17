@@ -411,7 +411,13 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
     local_starttime = utc2local(start)
     local_endtime = utc2local(stop)
 
-    label = "%s - %s %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, local_starttime, local_endtime)
+    if plugin.get_setting('plain.name') == 'true':
+        label = "%s - %s - %s - %s" % (channelname, title, local_starttime.strftime("%Y-%m-%d %H-%M"), local_endtime.strftime("%H-%M"))
+        filename = urllib.quote(label.encode("utf8"))
+        filename = filename.replace("%20",' ')
+    else:
+        label = "%s - %s %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, local_starttime, local_endtime)
+        filename = urllib.quote_plus(label.encode("utf8"))
 
     if watch:
         type = "WATCH"
@@ -439,7 +445,6 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
     length = local_endtime - local_starttime
     seconds = total_seconds(length)
 
-    filename = urllib.quote_plus(label.encode("utf8"))
     path = os.path.join(xbmc.translatePath(plugin.get_setting('recordings')), filename)
     json_path = path + '.json'
     path = path + '.ts'
