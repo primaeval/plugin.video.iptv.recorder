@@ -1763,12 +1763,15 @@ def xmltv():
         mode = plugin.get_setting('external.m3u.'+x)
         if mode == "0":
             if x == "1":
-                m3uPathType = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uPathType')
+                try:
+                    m3uPathType = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uPathType')
 
-                if m3uPathType == "0":
-                    path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uPath')
-                else:
-                    path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uUrl')
+                    if m3uPathType == "0":
+                        path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uPath')
+                    else:
+                        path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('m3uUrl')
+                except:
+                    path = ""
             else:
                 path = ""
         elif mode == "1":
@@ -1841,11 +1844,14 @@ def xmltv():
         mode = plugin.get_setting('external.xmltv.'+x)
         if mode == "0":
             if x == "1":
-                epgPathType = xbmcaddon.Addon('pvr.iptvsimple').getSetting('epgPathType')
-                if epgPathType == "0":
-                    path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('epgPath')
-                else:
-                    path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('epgUrl')
+                try:
+                    epgPathType = xbmcaddon.Addon('pvr.iptvsimple').getSetting('epgPathType')
+                    if epgPathType == "0":
+                        path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('epgPath')
+                    else:
+                        path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('epgUrl')
+                except:
+                    path = ""
             else:
                 path = ""
         elif mode == "1":
