@@ -411,13 +411,10 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
     local_starttime = utc2local(start)
     local_endtime = utc2local(stop)
 
-    ftitle = urllib.quote(title.encode("utf8"))
-    ftitle = ftitle.replace("%20",' ')
+    ftitle = sane_name(title)
     if sub_title:
-        fsub_title = urllib.quote(sub_title.encode("utf8"))
-        fsub_title = sub_title.replace("%20",' ')
-    fchannelname = urllib.quote(channelname.encode("utf8"))
-    fchannelname = fchannelname.replace("%20",' ')
+        fsub_title = sane_name(sub_title)
+    fchannelname = sane_name(channelname)
     folder = ""
     movie = False
     series = False
@@ -563,6 +560,13 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
     if do_refresh:
         refresh()
 
+def sane_name(name):
+    if plugin.get_setting('sane.name') == 'true':
+        name = urllib.quote(name.encode("utf8"))
+        name = name.replace("%20",' ')
+    else:
+        name = re.sub('[<>:"/\\\|\?*]', '', name)
+    return name
 
 def refresh():
     containerAddonName = xbmc.getInfoLabel('Container.PluginName')
