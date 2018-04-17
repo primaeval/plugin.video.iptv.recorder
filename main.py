@@ -504,8 +504,12 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
 
     if watch == False and remind == False:
         f.write("cmd = %s\n" % repr(cmd))
-        f.write("for trial in range(5):\n")
-        f.write("  result = subprocess.call(cmd, shell=%s)\n" % windows())
+        f.write("for trial in range(2):\n")
+        f.write("  p = subprocess.Popen(cmd, shell=%s)\n" % windows())
+        f.write("  f = open(r'%s', 'w+')\n" % xbmc.translatePath(pyjob+'.pid'))
+        f.write("  f.write(repr(p.pid))\n")
+        f.write("  f.close()\n")
+        f.write("  result = p.wait()\n")
         f.write("  if result == 0:\n")
         f.write("    break\n")
         f.write("  time.sleep(5)\n")
