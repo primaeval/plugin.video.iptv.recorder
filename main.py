@@ -1744,69 +1744,11 @@ def recordings():
             'info':{"title": label, "plot":description},
         })
 
-
     xbmcplugin.addSortMethod( handle=int( sys.argv[ 1 ] ), sortMethod=xbmcplugin.SORT_METHOD_UNSORTED )
     xbmcplugin.addSortMethod( handle=int( sys.argv[ 1 ] ), sortMethod=xbmcplugin.SORT_METHOD_LABEL )
     xbmcplugin.addSortMethod( handle=int( sys.argv[ 1 ] ), sortMethod=xbmcplugin.SORT_METHOD_DATE )
 
     return sorted(items, key=lambda x: x["label"])
-
-
-@plugin.route('/recordings1')
-def recordings1():
-    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
-    c = conn.cursor()
-
-    streams = c.execute("SELECT name, tvg_logo FROM streams").fetchall()
-    thumbnails = {x[0]:x[1] for x in streams}
-
-    dir = plugin.get_setting('recordings')
-    dirs, files = xbmcvfs.listdir(dir)
-
-    items = []
-
-    #TODO sort options
-    for file in sorted(files):
-        if file.endswith('.ts'):
-            path = os.path.join(xbmc.translatePath(dir), file)
-
-            label = urllib.unquote_plus(file)[0:-3]
-            channelname = label.split(' - ', 1)[0]
-            thumbnail = thumbnails.get(channelname)
-
-            json_nfo_path = path.replace('.ts','.json')
-            json_nfo = xbmcvfs.File(json_nfo_path,'r').read()
-            description = ""
-            if json_nfo:
-                json_nfo = json.loads(json_nfo)
-                if type(json_nfo) == dict:
-                    programme = json_nfo.get("programme")
-                    if programme:
-                        description = programme.get("description")
-                    channel = json_nfo.get("channel")
-                    if channel:
-                        thumbnail = channel.get("thumbnail")
-                        channelname = channel.get("channelname")
-                    #TODO more nfo
-
-            context_items = []
-
-            context_items.append((_("Delete Recording"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_recording, label=label, path=path))))
-            context_items.append((_("Delete All Recordings"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_all_recordings))))
-            if plugin.get_setting('external.player'):
-                context_items.append((_("External Player"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_external, path=path))))
-
-            items.append({
-                'label': label,
-                'path': path,
-                'thumbnail': thumbnail or get_icon_path('tv'),
-                'is_playable': True,
-                'context_menu': context_items,
-                'info_type': 'Video',
-                'info':{"title": label, "plot":description},
-            })
-
-    return items
 
 
 def xml2utc(xml):
