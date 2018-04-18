@@ -1275,7 +1275,7 @@ def other(title):
     cursor = conn.cursor()
 
     programmes = cursor.execute(
-    'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE title=? ORDER BY start, channelid, title', (title, )).fetchall()
+    'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE episode IS null AND title=? ORDER BY start, channelid, title', (title, )).fetchall()
 
     conn.commit()
     conn.close()
@@ -1712,7 +1712,7 @@ def others():
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
-    titles = cursor.execute('SELECT DISTINCT title FROM programmes WHERE episode IS null AND start>? ORDER BY title', (datetime.utcnow(), )).fetchall()
+    titles = cursor.execute('SELECT DISTINCT title,episode FROM programmes WHERE episode IS null AND start>? ORDER BY title', (datetime.utcnow(), )).fetchall()
 
     for title_row in titles:
         title = title_row[0]
