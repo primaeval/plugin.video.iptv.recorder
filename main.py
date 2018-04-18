@@ -465,12 +465,17 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
     length = local_endtime - local_starttime
     seconds = total_seconds(length)
 
+    kodi_recordings = xbmc.translatePath(plugin.get_setting('recordings'))
+    ffmpeg_recordings = plugin.get_setting('ffmpeg.recordings') or kodi_recordings
     if series:
-        dir = os.path.join(xbmc.translatePath(plugin.get_setting('recordings')), "TV", folder)
+        dir = os.path.join(kodi_recordings, "TV", folder)
+        ffmpeg_dir = os.path.join(ffmpeg_recordings, "TV", folder)
     elif movie:
-        dir = os.path.join(xbmc.translatePath(plugin.get_setting('recordings')), "Movies", folder)
+        dir = os.path.join(kodi_recordings, "Movies", folder)
+        ffmpeg_dir = os.path.join(ffmpeg_recordings, "Movies", folder)
     else:
-        dir = os.path.join(xbmc.translatePath(plugin.get_setting('recordings')), "Other", folder)
+        dir = os.path.join(kodi_recordings, "Movies", folder)
+        ffmpeg_dir = os.path.join(ffmpeg_recordings, "Movies", folder)
     xbmcvfs.mkdirs(dir)
     path = os.path.join(dir, filename)
     json_path = path + '.json'
@@ -492,7 +497,9 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
     cmd.append(url)
     probe_cmd = cmd
 
-    cmd = probe_cmd + ["-y", "-t", str(seconds), "-c", "copy", path.encode('utf8')]
+    ffmpeg_recording_path = os.path.join(ffmpeg_dir, filename+'.ts')
+
+    cmd = probe_cmd + ["-y", "-t", str(seconds), "-c", "copy", ffmpeg_recording_path.encode('utf8')]
 
     directory = "special://profile/addon_data/plugin.video.iptv.recorder/jobs/"
     xbmcvfs.mkdirs(directory)

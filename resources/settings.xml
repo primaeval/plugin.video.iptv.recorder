@@ -35,7 +35,10 @@
     <setting id="minutes.after" label="Minutes After" type="number" default="1"  />
 
     <setting type="sep"/>
-    <setting id="recordings" label="Recordings Folder" type="folder" default="special://temp"/>
+    <setting id="recordings" label="Kodi Recordings Folder" type="folder" default="special://temp"/>
+    <setting type="lsep" label="OS path eg (smb://server/path/ = \\server\path\)"/>
+    <setting id="ffmpeg.recordings" label="ffmpeg Recordings Folder" type="text" default=""/>
+    <setting type="sep"/>
     <setting id="ffmpeg" label="ffmpeg exe" type="file" default=""/>
 
     <setting type="sep"/>
