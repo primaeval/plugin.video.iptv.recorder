@@ -492,7 +492,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
     cmd.append(url)
     probe_cmd = cmd
 
-    cmd = probe_cmd + ["-y", "-t", str(seconds), "-c", "copy", path]
+    cmd = probe_cmd + ["-y", "-t", str(seconds), "-c", "copy", path.encode('utf8')]
 
     directory = "special://profile/addon_data/plugin.video.iptv.recorder/jobs/"
     xbmcvfs.mkdirs(directory)
@@ -1689,8 +1689,71 @@ def delete_all_recordings():
     refresh()
 
 
+def find_files(root):
+    dirs, files = xbmcvfs.listdir(root)
+    found_files = []
+    for dir in dirs:
+        path = os.path.join(xbmc.translatePath(root), dir)
+        found_files = found_files + find_files(path)
+    file_list = []
+    for file in files:
+        if file.endswith('.ts'):
+            file = os.path.join(xbmc.translatePath(root), file)
+            file_list.append(file)
+    return found_files + file_list
+
+
 @plugin.route('/recordings')
 def recordings():
+    dir = plugin.get_setting('recordings')
+    found_files = find_files(dir)
+
+    items = []
+
+    for path in found_files:
+        json_file = path[:-3]+'.json'
+        info = json.loads(xbmcvfs.File(json_file).read())
+        programme = info["programme"]
+        title = programme['title']
+        sub_title = programme['sub_title'] or ''
+        episode = programme['episode']
+        date = "(%s)" % programme['date'] or ''
+        start = programme['start']
+        if episode and episode != "MOVIE":
+            label = "%s [COLOR grey]%s[/COLOR] %s" % (title, episode, sub_title)
+        elif episode == "MOVIE":
+            label = "%s %s" % (title,date)
+        else:
+            label = "%s %s" % (title, sub_title)
+
+        description = programme['description']
+
+        context_items = []
+
+        context_items.append((_("Delete Recording"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_recording, label=label.encode("utf8"), path=path))))
+        context_items.append((_("Delete All Recordings"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_all_recordings))))
+        if plugin.get_setting('external.player'):
+            context_items.append((_("External Player"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_external, path=path))))
+
+        items.append({
+            'label': label,
+            'path': path,
+            'is_playable': True,
+            'context_menu': context_items,
+            'info_type': 'Video',
+            'info':{"title": label, "plot":description},
+        })
+
+
+    xbmcplugin.addSortMethod( handle=int( sys.argv[ 1 ] ), sortMethod=xbmcplugin.SORT_METHOD_UNSORTED )
+    xbmcplugin.addSortMethod( handle=int( sys.argv[ 1 ] ), sortMethod=xbmcplugin.SORT_METHOD_LABEL )
+    xbmcplugin.addSortMethod( handle=int( sys.argv[ 1 ] ), sortMethod=xbmcplugin.SORT_METHOD_DATE )
+
+    return sorted(items, key=lambda x: x["label"])
+
+
+@plugin.route('/recordings1')
+def recordings1():
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
     c = conn.cursor()
 
@@ -2119,8 +2182,7 @@ def index():
         'thumbnail':get_icon_path('recordings'),
         'context_menu': context_items,
     })
-    #TODO
-    '''
+
     items.append(
     {
         'label': _("Recordings"),
@@ -2128,7 +2190,7 @@ def index():
         'thumbnail':get_icon_path('recordings'),
         'context_menu': context_items,
     })
-    '''
+
     items.append(
     {
         'label': _("Recordings Folder"),
