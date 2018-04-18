@@ -26,6 +26,7 @@ import chardet
 import gzip
 
 
+
 def addon_id():
     return xbmcaddon.Addon().getAddonInfo('id')
 
@@ -415,6 +416,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
     if sub_title:
         fsub_title = sane_name(sub_title)
     fchannelname = sane_name(channelname)
+
     folder = ""
     movie = False
     series = False
@@ -489,6 +491,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
     cmd.append("-i")
     cmd.append(url)
     probe_cmd = cmd
+
     cmd = probe_cmd + ["-y", "-t", str(seconds), "-c", "copy", path]
 
     directory = "special://profile/addon_data/plugin.video.iptv.recorder/jobs/"
@@ -561,11 +564,13 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
         refresh()
 
 def sane_name(name):
-    if plugin.get_setting('sane.name') == 'true':
+    if windows():
         name = urllib.quote(name.encode("utf8"))
         name = name.replace("%20",' ')
     else:
-        name = re.sub('[<>:"/\\\|\?*]', '', name)
+        quote = {'"': '%22', '|': '%7C', '*': '%2A', '/': '/', '<': '%3C', ':': '%3A', '\\': '%5C', '?': '%3F', '>': '%3E'}
+        for char in quote:
+            name = name.replace(char, quote[char])
     return name
 
 def refresh():
