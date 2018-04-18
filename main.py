@@ -1378,10 +1378,15 @@ def listing(programmes, scroll=False):
             color = "yellow"
         i += 1
 
-        if sub_title:
-            stitle = "[COLOR %s]%s[/COLOR] [COLOR grey]- %s[/COLOR]" % (color, title, sub_title)
+        if episode and not episode.startswith('M'):
+            episode = " "+ episode + " "
         else:
-            stitle = "[COLOR %s]%s[/COLOR]" % (color, title)
+            episode = " "
+
+        if sub_title:
+            stitle = "[COLOR %s]%s[/COLOR][COLOR grey]%s- %s[/COLOR]" % (color, title, episode, sub_title)
+        else:
+            stitle = "[COLOR %s]%s[/COLOR][COLOR grey]%s[/COLOR]" % (color, title, episode)
 
         if (plugin.get_setting('hide.channel.name') == "true") and thumbnail:
             channelname_label = ""
