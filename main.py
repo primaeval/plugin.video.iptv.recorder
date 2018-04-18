@@ -298,15 +298,16 @@ def delete_job(job, kill=True, ask=True):
     pyjob = directory + job + ".py"
 
     pid = xbmcvfs.File(pyjob+'.pid').read()
+
+    xbmcvfs.delete(pyjob)
+    xbmcvfs.delete(pyjob+'.pid')
+
     if pid and kill:
         if windows():
             subprocess.Popen(["taskkill", "/im", pid], shell=True)
         else:
             #TODO correct kill switch
             subprocess.Popen(["kill", "-9", pid])
-
-    xbmcvfs.delete(pyjob)
-    xbmcvfs.delete(pyjob+'.pid')
 
     conn.execute("DELETE FROM jobs WHERE uuid=?", (job, ))
     conn.commit()
