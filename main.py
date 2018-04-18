@@ -2270,26 +2270,42 @@ def nuke():
     full_service()
 
 
-@plugin.route('/')
-def index():
+@plugin.route('/search_index')
+def search_index():
     items = []
     context_items = []
 
     items.append(
     {
-        'label': _("Favourite Channels"),
-        'path': plugin.url_for('favourite_channels'),
-        'thumbnail':get_icon_path('favourites'),
+        'label': _("Search Title"),
+        'path': plugin.url_for('search_title_dialog'),
+        'thumbnail':get_icon_path('search'),
         'context_menu': context_items,
     })
 
     items.append(
     {
-        'label': _("Channel Groups"),
-        'path': plugin.url_for('groups'),
-        'thumbnail':get_icon_path('folder'),
+        'label': _("Search Plot"),
+        'path': plugin.url_for('search_plot_dialog'),
+        'thumbnail':get_icon_path('search'),
         'context_menu': context_items,
     })
+
+    items.append(
+    {
+        'label': _("Search Categories"),
+        'path': plugin.url_for('search_categories_dialog'),
+        'thumbnail':get_icon_path('search'),
+        'context_menu': context_items,
+    })
+
+    return items
+
+
+@plugin.route('/browse_index')
+def browse_index():
+    items = []
+    context_items = []
 
     items.append(
     {
@@ -2323,6 +2339,13 @@ def index():
         'context_menu': context_items,
     })
 
+    return items
+
+
+@plugin.route('/maintenance_index')
+def maintenance_index():
+    items = []
+    context_items = []
 
     items.append(
     {
@@ -2337,54 +2360,6 @@ def index():
         'label': _("Rules"),
         'path': plugin.url_for('rules'),
         'thumbnail':get_icon_path('recordings'),
-        'context_menu': context_items,
-    })
-
-    items.append(
-    {
-        'label': _("Recordings"),
-        'path': plugin.url_for('recordings'),
-        'thumbnail':get_icon_path('recordings'),
-        'context_menu': context_items,
-    })
-
-    items.append(
-    {
-        'label': _("Recordings Folder"),
-        'path': plugin.get_setting('recordings'),
-        'thumbnail':get_icon_path('recordings'),
-        'context_menu': context_items,
-    })
-
-    items.append(
-    {
-        'label': _("Full EPG"),
-        'path': plugin.url_for('epg'),
-        'thumbnail':get_icon_path('folder'),
-        'context_menu': context_items,
-    })
-
-    items.append(
-    {
-        'label': _("Search Title"),
-        'path': plugin.url_for('search_title_dialog'),
-        'thumbnail':get_icon_path('search'),
-        'context_menu': context_items,
-    })
-
-    items.append(
-    {
-        'label': _("Search Plot"),
-        'path': plugin.url_for('search_plot_dialog'),
-        'thumbnail':get_icon_path('search'),
-        'context_menu': context_items,
-    })
-
-    items.append(
-    {
-        'label': _("Search Categories"),
-        'path': plugin.url_for('search_categories_dialog'),
-        'thumbnail':get_icon_path('search'),
         'context_menu': context_items,
     })
 
@@ -2414,6 +2389,79 @@ def index():
         })
 
     return items
+
+
+@plugin.route('/')
+def index():
+    items = []
+    context_items = []
+
+    items.append(
+    {
+        'label': _("Favourite Channels"),
+        'path': plugin.url_for('favourite_channels'),
+        'thumbnail':get_icon_path('favourites'),
+        'context_menu': context_items,
+    })
+
+    items.append(
+    {
+        'label': _("Channel Groups"),
+        'path': plugin.url_for('groups'),
+        'thumbnail':get_icon_path('folder'),
+        'context_menu': context_items,
+    })
+
+    items.append(
+    {
+        'label': _("Recordings"),
+        'path': plugin.url_for('recordings'),
+        'thumbnail':get_icon_path('recordings'),
+        'context_menu': context_items,
+    })
+
+    items.append(
+    {
+        'label': _("Recordings Folder"),
+        'path': plugin.get_setting('recordings'),
+        'thumbnail':get_icon_path('recordings'),
+        'context_menu': context_items,
+    })
+
+    items.append(
+    {
+        'label': _("Browse"),
+        'path': plugin.url_for('browse_index'),
+        'thumbnail':get_icon_path('folder'),
+        'context_menu': context_items,
+    })
+
+    items.append(
+    {
+        'label': _("Search"),
+        'path': plugin.url_for('search_index'),
+        'thumbnail':get_icon_path('search'),
+        'context_menu': context_items,
+    })
+
+    items.append(
+    {
+        'label': _("Maintenance"),
+        'path': plugin.url_for('maintenance_index'),
+        'thumbnail':get_icon_path('settings'),
+        'context_menu': context_items,
+    })
+
+    items.append(
+    {
+        'label': _("Full EPG"),
+        'path': plugin.url_for('epg'),
+        'thumbnail':get_icon_path('folder'),
+        'context_menu': context_items,
+    })
+
+    return items
+
 
 if __name__ == '__main__':
     plugin.run()
