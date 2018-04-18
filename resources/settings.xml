@@ -37,7 +37,6 @@
     <setting type="sep"/>
     <setting id="recordings" label="Recordings Folder" type="folder" default="special://temp"/>
     <setting id="ffmpeg" label="ffmpeg exe" type="file" default=""/>
-    <setting id="sane.name" label="Url Encode File Names" type="bool" default="true"  />
 
     <setting type="sep"/>
     <setting id="silent" label="Silent Notifications" type="bool" default="false"  />
