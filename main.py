@@ -1889,25 +1889,30 @@ def recordings():
     starts = []
 
     for path in found_files:
-        json_file = path[:-3]+'.json'
-        info = json.loads(xbmcvfs.File(json_file).read())
-        programme = info["programme"]
+        try:
+            json_file = path[:-3]+'.json'
+            info = json.loads(xbmcvfs.File(json_file).read())
+            programme = info["programme"]
 
-        title = programme['title']
-        sub_title = programme['sub_title'] or ''
-        episode = programme['episode']
-        date = "(%s)" % programme['date'] or ''
-        start = programme['start']
-        starts.append(start)
+            title = programme['title']
+            sub_title = programme['sub_title'] or ''
+            episode = programme['episode']
+            date = "(%s)" % programme['date'] or ''
+            start = programme['start']
+            starts.append(start)
 
-        if episode and episode != "MOVIE":
-            label = "%s [COLOR grey]%s[/COLOR] %s" % (title, episode, sub_title)
-        elif episode == "MOVIE":
-            label = "%s %s" % (title,date)
-        else:
-            label = "%s %s" % (title, sub_title)
+            if episode and episode != "MOVIE":
+                label = "%s [COLOR grey]%s[/COLOR] %s" % (title, episode, sub_title)
+            elif episode == "MOVIE":
+                label = "%s %s" % (title,date)
+            else:
+                label = "%s %s" % (title, sub_title)
 
-        description = programme['description']
+            description = programme['description']
+        except:
+            label = os.path.splitext(os.path.basename(path))[0]
+            description = ""
+            starts.append("0")
 
         context_items = []
 
