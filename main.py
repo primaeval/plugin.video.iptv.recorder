@@ -1258,7 +1258,7 @@ def tv_show(title):
     cursor = conn.cursor()
 
     programmes = cursor.execute(
-    'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE title=?', (title, )).fetchall()
+    'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE title=? ORDER BY start, channelid, title', (title, )).fetchall()
 
     conn.commit()
     conn.close()
@@ -1274,7 +1274,7 @@ def other(title):
     cursor = conn.cursor()
 
     programmes = cursor.execute(
-    'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE title=?', (title, )).fetchall()
+    'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE title=? ORDER BY start, channelid, title', (title, )).fetchall()
 
     conn.commit()
     conn.close()
@@ -1290,7 +1290,7 @@ def category(title):
     cursor = conn.cursor()
 
     programmes = cursor.execute(
-    'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE categories LIKE ?', ("%"+title+"%", )).fetchall()
+    'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE categories LIKE ? ORDER BY start, channelid, title', ("%"+title+"%", )).fetchall()
 
     conn.commit()
     conn.close()
@@ -1307,10 +1307,10 @@ def movie(title, date):
 
     if date != "None":
         programmes = cursor.execute(
-        'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE title=? AND date=?', (title, date)).fetchall()
+        'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE title=? AND date=? ORDER BY start, channelid, title', (title, date)).fetchall()
     else:
         programmes = cursor.execute(
-        'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE title=?', (title, )).fetchall()
+        'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE title=? ORDER BY start, channelid, title', (title, )).fetchall()
 
     conn.commit()
     conn.close()
