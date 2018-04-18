@@ -1409,6 +1409,10 @@ def listing(programmes, scroll=False):
             if url:
                 context_items.append((_("Record Once"), 'XBMC.RunPlugin(%s)' %
                 (plugin.url_for(record_once, programmeid=uid))))
+                context_items.append((_("Watch Once"), 'XBMC.RunPlugin(%s)' %
+                (plugin.url_for(watch_once, programmeid=uid))))
+                context_items.append((_("Remind Once"), 'XBMC.RunPlugin(%s)' %
+                (plugin.url_for(remind_once, programmeid=uid))))
 
         if url:
             context_items.append((_("Play Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=echannelname))))
