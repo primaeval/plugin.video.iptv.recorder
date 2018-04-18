@@ -1282,6 +1282,22 @@ def other(title):
     return listing(programmes, scroll=True)
 
 
+@plugin.route('/category/<title>')
+def category(title):
+    title = title.decode("utf8")
+
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
+    programmes = cursor.execute(
+    'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE categories LIKE ?', ("%"+title+"%", )).fetchall()
+
+    conn.commit()
+    conn.close()
+
+    return listing(programmes, scroll=True)
+
+
 @plugin.route('/movie/<title>/<date>')
 def movie(title, date):
     title = title.decode("utf8")
@@ -1701,6 +1717,40 @@ def others():
         items.append({
             'label': label,
             'path': plugin.url_for(other, title=title.encode("utf8")),
+            'thumbnail': get_icon_path('folder'),
+        })
+
+    return items
+
+
+@plugin.route('/categories')
+def categories():
+    items = []
+
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
+    titles = cursor.execute('SELECT DISTINCT categories FROM programmes ORDER BY categories').fetchall()
+
+    cats = set()
+    for title in titles:
+        programme_categories = title[0]
+        cats.add(programme_categories)
+        programme_categories = programme_categories.split(', ')
+        for cat in programme_categories:
+            if cat:
+                cats.add(cat)
+    cats = sorted(list(cats))
+
+    for cat in cats:
+        if not cat:
+            continue
+        label = cat
+        title = cat.encode("utf8")
+
+        items.append({
+            'label': label,
+            'path': plugin.url_for(category, title=title),
             'thumbnail': get_icon_path('folder'),
         })
 
@@ -2260,6 +2310,15 @@ def index():
         'thumbnail':get_icon_path('folder'),
         'context_menu': context_items,
     })
+
+    items.append(
+    {
+        'label': _("Categories"),
+        'path': plugin.url_for('categories'),
+        'thumbnail':get_icon_path('folder'),
+        'context_menu': context_items,
+    })
+
 
     items.append(
     {
