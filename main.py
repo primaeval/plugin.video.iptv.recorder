@@ -128,7 +128,6 @@ def play_external(path):
 
     cmd.append(xbmc.translatePath(path))
 
-    #TODO shell?
     subprocess.Popen(cmd,shell=windows())
 
 
@@ -1668,6 +1667,7 @@ def delete_recording(label, path):
     if not (xbmcgui.Dialog().yesno("IPTV Recorder", "[COLOR red]" + _("Delete Recording?") + "[/COLOR]", label)):
         return
     xbmcvfs.delete(path)
+    xbmcvfs.delete(path[:-3]+'.json')
     refresh()
 
 
@@ -1682,7 +1682,7 @@ def delete_all_recordings():
     items = []
 
     for file in sorted(files):
-        if file.endswith('.ts'):
+        if file.endswith('.ts') or file.endswith('.json'):
             path = os.path.join(xbmc.translatePath(dir), file)
             xbmcvfs.delete(path)
 
@@ -1709,16 +1709,20 @@ def recordings():
     found_files = find_files(dir)
 
     items = []
+    starts = []
 
     for path in found_files:
         json_file = path[:-3]+'.json'
         info = json.loads(xbmcvfs.File(json_file).read())
         programme = info["programme"]
+
         title = programme['title']
         sub_title = programme['sub_title'] or ''
         episode = programme['episode']
         date = "(%s)" % programme['date'] or ''
         start = programme['start']
+        starts.append(start)
+
         if episode and episode != "MOVIE":
             label = "%s [COLOR grey]%s[/COLOR] %s" % (title, episode, sub_title)
         elif episode == "MOVIE":
@@ -1748,7 +1752,10 @@ def recordings():
     xbmcplugin.addSortMethod( handle=int( sys.argv[ 1 ] ), sortMethod=xbmcplugin.SORT_METHOD_LABEL )
     xbmcplugin.addSortMethod( handle=int( sys.argv[ 1 ] ), sortMethod=xbmcplugin.SORT_METHOD_DATE )
 
-    return sorted(items, key=lambda x: x["label"])
+    start_items = zip(starts,items)
+    start_items.sort(reverse=True)
+    items = [x for y, x in start_items]
+    return items
 
 
 def xml2utc(xml):
