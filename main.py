@@ -1250,6 +1250,42 @@ def channel(channelid):
     return listing(programmes, scroll=True)
 
 
+@plugin.route('/tv_show/<title>')
+def tv_show(title):
+    title = title.decode("utf8")
+
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
+    programmes = cursor.execute(
+    'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE title=?', (title, )).fetchall()
+
+    conn.commit()
+    conn.close()
+
+    return listing(programmes, scroll=True)
+
+
+@plugin.route('/movie/<title>/<date>')
+def movie(title, date):
+    title = title.decode("utf8")
+
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
+    if date != "None":
+        programmes = cursor.execute(
+        'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE title=? AND date=?', (title, date)).fetchall()
+    else:
+        programmes = cursor.execute(
+        'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE title=?', (title, )).fetchall()
+
+    conn.commit()
+    conn.close()
+
+    return listing(programmes, scroll=True)
+
+
 def listing(programmes, scroll=False):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
@@ -1584,6 +1620,54 @@ def groups():
         })
 
     return items
+
+
+@plugin.route('/tv')
+def tv():
+    items = []
+
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
+    titles = cursor.execute('SELECT DISTINCT title FROM programmes WHERE episode IS NOT null AND episode IS NOT "MOVIE" ORDER BY title').fetchall()
+
+    for title_row in titles:
+        title = title_row[0]
+
+        items.append({
+            'label': title.encode("utf8"),
+            'path': plugin.url_for(tv_show, title=title.encode("utf8")),
+            'thumbnail': get_icon_path('folder'),
+        })
+
+    return items
+
+@plugin.route('/movies')
+def movies():
+    items = []
+
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
+    titles = cursor.execute('SELECT DISTINCT title, date FROM programmes WHERE episode IS "MOVIE" ORDER BY title').fetchall()
+
+    for title_row in titles:
+        title = title_row[0]
+        date = title_row[1] or "None"
+
+        if date == "None":
+            label = title
+        else:
+            label = "%s (%s)" % (title, date)
+
+        items.append({
+            'label': label,
+            'path': plugin.url_for(movie, title=title.encode("utf8"), date=date.encode("utf8")),
+            'thumbnail': get_icon_path('folder'),
+        })
+
+    return items
+
 
 
 @plugin.route('/service')
@@ -2115,6 +2199,23 @@ def index():
         'thumbnail':get_icon_path('folder'),
         'context_menu': context_items,
     })
+
+    items.append(
+    {
+        'label': _("TV Shows"),
+        'path': plugin.url_for('tv'),
+        'thumbnail':get_icon_path('folder'),
+        'context_menu': context_items,
+    })
+
+    items.append(
+    {
+        'label': _("Movies"),
+        'path': plugin.url_for('movies'),
+        'thumbnail':get_icon_path('folder'),
+        'context_menu': context_items,
+    })
+
 
     items.append(
     {
