@@ -1665,7 +1665,7 @@ def tv():
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
-    titles = cursor.execute('SELECT DISTINCT title FROM programmes WHERE episode IS NOT null AND episode IS NOT "MOVIE" ORDER BY title').fetchall()
+    titles = cursor.execute('SELECT DISTINCT title FROM programmes WHERE episode IS NOT null AND episode IS NOT "MOVIE" AND start>? ORDER BY title', (datetime.utcnow(), )).fetchall()
 
     for title_row in titles:
         title = title_row[0]
@@ -1685,7 +1685,7 @@ def movies():
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
-    titles = cursor.execute('SELECT DISTINCT title, date FROM programmes WHERE episode IS "MOVIE" ORDER BY title').fetchall()
+    titles = cursor.execute('SELECT DISTINCT title, date FROM programmes WHERE episode IS "MOVIE" AND start>? ORDER BY title', (datetime.utcnow(), )).fetchall()
 
     for title_row in titles:
         title = title_row[0]
@@ -1711,7 +1711,7 @@ def others():
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
-    titles = cursor.execute('SELECT DISTINCT title FROM programmes WHERE episode IS null ORDER BY title').fetchall()
+    titles = cursor.execute('SELECT DISTINCT title FROM programmes WHERE episode IS null AND start>? ORDER BY title', (datetime.utcnow(), )).fetchall()
 
     for title_row in titles:
         title = title_row[0]
@@ -1734,7 +1734,8 @@ def categories():
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
-    titles = cursor.execute('SELECT DISTINCT categories FROM programmes ORDER BY categories').fetchall()
+
+    titles = cursor.execute('SELECT DISTINCT categories FROM programmes WHERE start>? ORDER BY categories', (datetime.utcnow(), )).fetchall()
 
     cats = set()
     for title in titles:
