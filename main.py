@@ -1743,7 +1743,7 @@ def categories():
     cats = sorted(list(cats))
 
     for cat in cats:
-        if not cat:
+        if not cat or ',' in cat:
             continue
         label = cat
         title = cat.encode("utf8")
