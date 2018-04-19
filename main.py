@@ -2248,7 +2248,9 @@ def xmltv():
             else:
                 xbmcvfs.copy(tmp, xml)
 
-            data = xbmcvfs.File(xml, 'rb').read()
+            f = xbmcvfs.File(xml, 'rb')
+            data = f.read()
+            f.close()
 
             match = re.search('<\?xml.*?encoding="(.*?)"',data,flags=(re.I|re.DOTALL))
             if match:
@@ -2313,105 +2315,138 @@ def xmltv():
 
     for x in ["1","2"]:
 
-        xml = os.path.join(profilePath, 'xmltv'+x+'.xml')
-        data = xbmcvfs.File(xml, 'rb').read()
+        mode = plugin.get_setting('external.xmltv.'+x)
+        if mode == "0":
+            if x == "1":
+                try:
+                    epgPathType = xbmcaddon.Addon('pvr.iptvsimple').getSetting('epgPathType')
+                    if epgPathType == "0":
+                        path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('epgPath')
+                    else:
+                        path = xbmcaddon.Addon('pvr.iptvsimple').getSetting('epgUrl')
+                except:
+                    path = ""
+            else:
+                path = ""
+        elif mode == "1":
+            path = plugin.get_setting('external.xmltv.file.'+x)
+        else:
+            path = plugin.get_setting('external.xmltv.url.'+x)
 
-        dialog.update(0, message=_("Finding programmes"))
-        match = re.findall('<programme(.*?)</programme>', data, flags=(re.I|re.DOTALL))
-        if match:
-            total = len(match)
-            i = 0
-            for m in match:
-                xml = "" #'<programme%s</programme>' % m
+        if path:
 
-                channel = re.search('channel="(.*?)"', m)
-                if channel:
-                    channel = htmlparser.unescape(channel.group(1))
-                    if load_all == False and channel not in load_channels:
-                        continue
+            xml = os.path.join(profilePath, 'xmltv'+x+'.xml')
 
-                if channel in shifts:
-                    shift = int(shifts[channel])
-                else:
-                    shift = None
+            f = xbmcvfs.File(xml, 'rb')
+            data = f.read()
+            f.close()
 
-                start = re.search('start="(.*?)"', m)
-                if start:
-                    start = start.group(1)
-                    start = xml2utc(start)
-                    if shift:
-                        start = start + timedelta(hours=shift)
+            match = re.search('<\?xml.*?encoding="(.*?)"',data,flags=(re.I|re.DOTALL))
+            if match:
+                encoding = match.group(1)
+            else:
+                chardet_encoding = chardet.detect(data)
+                encoding = chardet_encoding['encoding']
+            data = data.decode(encoding)
 
-                stop = re.search('stop="(.*?)"', m)
-                if stop:
-                    stop = stop.group(1)
-                    stop = xml2utc(stop)
-                    if shift:
-                        stop = stop + timedelta(hours=shift)
+            htmlparser = HTMLParser()
 
-                title = re.search('<title.*?>(.*?)</title', m, flags=(re.I|re.DOTALL))
-                if title:
-                    title = htmlparser.unescape(title.group(1))
-                search = plugin.get_setting('xmltv.title.regex.search')
-                replace = plugin.get_setting('xmltv.title.regex.replace')
-                if search:
-                    title = re.sub(search, replace, title)
-                if title:
-                    title = title.strip()
+            dialog.update(0, message=_("Finding programmes"))
+            match = re.findall('<programme(.*?)</programme>', data, flags=(re.I|re.DOTALL))
+            if match:
+                total = len(match)
+                i = 0
+                for m in match:
+                    xml = "" #'<programme%s</programme>' % m
 
-                sub_title = re.search('<sub-title.*?>(.*?)</sub-title', m, flags=(re.I|re.DOTALL))
-                if sub_title:
-                    sub_title = htmlparser.unescape(sub_title.group(1))
+                    channel = re.search('channel="(.*?)"', m)
+                    if channel:
+                        channel = htmlparser.unescape(channel.group(1))
+                        if load_all == False and channel not in load_channels:
+                            continue
 
-                description = re.search('<desc.*?>(.*?)</desc', m, flags=(re.I|re.DOTALL))
-                if description:
-                    description = htmlparser.unescape(description.group(1))
+                    if channel in shifts:
+                        shift = int(shifts[channel])
+                    else:
+                        shift = None
 
-                date = re.search('<date.*?>(.*?)</date', m)
-                if date:
-                    date = date.group(1)
+                    start = re.search('start="(.*?)"', m)
+                    if start:
+                        start = start.group(1)
+                        start = xml2utc(start)
+                        if shift:
+                            start = start + timedelta(hours=shift)
 
-                cats = re.findall('<category.*?>(.*?)</category>', m, flags=(re.I|re.DOTALL))
-                if cats:
-                    categories = htmlparser.unescape((', '.join(cats)))
-                else:
-                    categories = ''
-                cats = categories.lower()
-                film_movie = ("movie" in cats) or ("film" in cats)
+                    stop = re.search('stop="(.*?)"', m)
+                    if stop:
+                        stop = stop.group(1)
+                        stop = xml2utc(stop)
+                        if shift:
+                            stop = stop + timedelta(hours=shift)
 
-                #TODO other systems
-                episode = re.findall('<episode-num system="(.*?)">(.*?)<', m, flags=(re.I|re.DOTALL))
-                episode = {x[0]:x[1] for x in episode}
+                    title = re.search('<title.*?>(.*?)</title', m, flags=(re.I|re.DOTALL))
+                    if title:
+                        title = htmlparser.unescape(title.group(1))
+                    search = plugin.get_setting('xmltv.title.regex.search')
+                    replace = plugin.get_setting('xmltv.title.regex.replace')
+                    if search:
+                        title = re.sub(search, replace, title)
+                    if title:
+                        title = title.strip()
 
-                SE = None
-                if episode:
-                    if episode.get('xmltv_ns'):
-                        num = episode.get('xmltv_ns')
-                        parts = num.split('.')
-                        if len(parts) >= 2:
-                            S = parts[0]
-                            E = parts[1].split('/')[0]
-                            S = int(S if S else 0) + 1
-                            E = int(E if E else 0) + 1
-                        SE = "S%02dE%02d" % (S,E)
-                    elif episode.get('common'):
-                        SE = episode.get('common')
-                    elif episode.get('dd_progid'):
-                        num = episode.get('dd_progid')
-                        if num.startswith('EP') and date and len(date) == 8:
-                            SE = "%s-%s-%s" % (date[0:4], date[4:6], date[6:8])
-                        elif num.startswith('MV'):
-                            SE = "MOVIE"
-                elif film_movie:
-                    SE = "MOVIE"
-                episode = SE
+                    sub_title = re.search('<sub-title.*?>(.*?)</sub-title', m, flags=(re.I|re.DOTALL))
+                    if sub_title:
+                        sub_title = htmlparser.unescape(sub_title.group(1))
 
-                conn.execute("INSERT OR IGNORE INTO programmes(channelid, title, sub_title, start, stop, date, description, episode, categories, xml) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                [channel, title, sub_title, start, stop, date, description, episode, categories, xml])
+                    description = re.search('<desc.*?>(.*?)</desc', m, flags=(re.I|re.DOTALL))
+                    if description:
+                        description = htmlparser.unescape(description.group(1))
 
-                i += 1
-                percent = 0 + int(100.0 * i / total)
-                dialog.update(percent, message=_("Finding programmes"))
+                    date = re.search('<date.*?>(.*?)</date', m)
+                    if date:
+                        date = date.group(1)
+
+                    cats = re.findall('<category.*?>(.*?)</category>', m, flags=(re.I|re.DOTALL))
+                    if cats:
+                        categories = htmlparser.unescape((', '.join(cats)))
+                    else:
+                        categories = ''
+                    cats = categories.lower()
+                    film_movie = ("movie" in cats) or ("film" in cats)
+
+                    #TODO other systems
+                    episode = re.findall('<episode-num system="(.*?)">(.*?)<', m, flags=(re.I|re.DOTALL))
+                    episode = {x[0]:x[1] for x in episode}
+
+                    SE = None
+                    if episode:
+                        if episode.get('xmltv_ns'):
+                            num = episode.get('xmltv_ns')
+                            parts = num.split('.')
+                            if len(parts) >= 2:
+                                S = parts[0]
+                                E = parts[1].split('/')[0]
+                                S = int(S if S else 0) + 1
+                                E = int(E if E else 0) + 1
+                            SE = "S%02dE%02d" % (S,E)
+                        elif episode.get('common'):
+                            SE = episode.get('common')
+                        elif episode.get('dd_progid'):
+                            num = episode.get('dd_progid')
+                            if num.startswith('EP') and date and len(date) == 8:
+                                SE = "%s-%s-%s" % (date[0:4], date[4:6], date[6:8])
+                            elif num.startswith('MV'):
+                                SE = "MOVIE"
+                    elif film_movie:
+                        SE = "MOVIE"
+                    episode = SE
+
+                    conn.execute("INSERT OR IGNORE INTO programmes(channelid, title, sub_title, start, stop, date, description, episode, categories, xml) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    [channel, title, sub_title, start, stop, date, description, episode, categories, xml])
+
+                    i += 1
+                    percent = 0 + int(100.0 * i / total)
+                    dialog.update(percent, message=_("Finding programmes"))
 
     conn.commit()
     conn.close()
