@@ -586,6 +586,39 @@ def refresh():
     if (containerAddonName == AddonName) and (plugin.get_setting('refresh') == 'true') :
         xbmc.executebuiltin('Container.Refresh')
 
+@plugin.route('/record_daily_time/<channelid>/<channelname>')
+def record_daily_time(channelid, channelname):
+    channelid = channelid.decode("utf8")
+    channelname = channelname.decode("utf8")
+
+    utcnow = datetime.utcnow()
+    ts = time.time()
+    utc_offset = (datetime.fromtimestamp(ts) - datetime.utcfromtimestamp(ts)).total_seconds()
+
+    start = xbmcgui.Dialog().input("Start Time",type=xbmcgui.INPUT_TIME)
+    hour, min = start.split(':')
+    start = utcnow.replace(hour=int(hour),minute=int(min),second=0,microsecond=0) - timedelta(seconds=utc_offset)
+
+    stop = xbmcgui.Dialog().input("Stop",type=xbmcgui.INPUT_TIME)
+    hour, min = stop.split(':')
+    stop = utcnow.replace(hour=int(hour),minute=int(min),second=0,microsecond=0) - timedelta(seconds=utc_offset)
+    if stop < start:
+        stop = stop + timedelta(days=1)
+
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
+    #TODO problem with PRIMARY KEYS, UNIQUE and TIMESTAMP
+    rule = cursor.execute('SELECT * FROM rules WHERE channelid=? AND channelname=? AND title=null AND start=? AND stop =? AND type=?', (channelid, channelname, start, stop, "DAILY")).fetchone()
+
+    if not rule:
+        conn.execute("INSERT OR REPLACE INTO rules(channelid, channelname, start, stop, type) VALUES(?, ?, ?, ?, ?)",
+        [channelid, channelname, start, stop, "DAILY"])
+
+    conn.commit()
+    conn.close()
+
+    service()
 
 @plugin.route('/record_daily/<channelid>/<channelname>/<title>/<start>/<stop>')
 def record_daily(channelid, channelname, title, start, stop):
@@ -1625,6 +1658,8 @@ def group(channelgroup=None,section=None):
         channelname = channelname.encode("utf8")
         channelid =channelid.encode("utf8")
 
+        #context_items.append((_("Add One Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_one_time, channelid=channelid, channelname=channelname))))
+        context_items.append((_("Add Daily Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_daily_time, channelid=channelid, channelname=channelname))))
         context_items.append((_("Add Title Search Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search, channelid=channelid, channelname=channelname))))
         context_items.append((_("Add Plot Search Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search_plot, channelid=channelid, channelname=channelname))))
         context_items.append((_("Play Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=channelname))))
