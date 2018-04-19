@@ -388,6 +388,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
 
         nfo = {"programme":{"channelid":channelid, "title":title, "sub_title":sub_title, "start":datetime2timestamp(start), "stop":datetime2timestamp(stop), "date":date, "description":description, "episode":episode, "categories":categories}}
     else:
+        title = None
         nfo = {}
 
     channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
