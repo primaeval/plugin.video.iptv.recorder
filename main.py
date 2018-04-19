@@ -371,6 +371,28 @@ def watch_once(programmeid, do_refresh=True, watch=True, remind=False):
 def remind_once(programmeid, do_refresh=True, watch=False, remind=True):
     threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind]).start()
 
+@plugin.route('/record_one_time/<channelid>')
+def record_one_time(channelid):
+    utcnow = datetime.utcnow()
+    ts = time.time()
+    utc_offset = (datetime.fromtimestamp(ts) - datetime.utcfromtimestamp(ts)).total_seconds()
+
+    start = xbmcgui.Dialog().input("Start Time",type=xbmcgui.INPUT_TIME)
+    hour, min = start.split(':')
+    start = utcnow.replace(hour=int(hour),minute=int(min),second=0,microsecond=0) - timedelta(seconds=utc_offset)
+
+    stop = xbmcgui.Dialog().input("Stop",type=xbmcgui.INPUT_TIME)
+    hour, min = stop.split(':')
+    stop = utcnow.replace(hour=int(hour),minute=int(min),second=0,microsecond=0) - timedelta(seconds=utc_offset)
+    if stop < start:
+        stop = stop + timedelta(days=1)
+
+    do_refresh = False
+    watch = False
+    remind = False
+    threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, start, stop]).start()
+
+
 @plugin.route('/record_once_time/<channelid>/<start>/<stop>')
 def record_once_time(channelid, start, stop, do_refresh=True, watch=False, remind=True):
     threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, start, stop]).start()
@@ -1677,7 +1699,7 @@ def group(channelgroup=None,section=None):
         channelname = channelname.encode("utf8")
         channelid =channelid.encode("utf8")
 
-        #context_items.append((_("Add One Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_one_time, channelid=channelid, channelname=channelname))))
+        context_items.append((_("Add One Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_one_time, channelid=channelid, channelname=channelname))))
         context_items.append((_("Add Daily Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_daily_time, channelid=channelid, channelname=channelname))))
         context_items.append((_("Add Title Search Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search, channelid=channelid, channelname=channelname))))
         context_items.append((_("Add Plot Search Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search_plot, channelid=channelid, channelname=channelname))))
