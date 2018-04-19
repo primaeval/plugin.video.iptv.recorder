@@ -570,6 +570,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
     if do_refresh:
         refresh()
 
+
 def sane_name(name):
     if windows():
         name = urllib.quote(name.encode("utf8"))
@@ -580,11 +581,13 @@ def sane_name(name):
             name = name.replace(char, quote[char])
     return name
 
+
 def refresh():
     containerAddonName = xbmc.getInfoLabel('Container.PluginName')
     AddonName = xbmcaddon.Addon().getAddonInfo('id')
     if (containerAddonName == AddonName) and (plugin.get_setting('refresh') == 'true') :
         xbmc.executebuiltin('Container.Refresh')
+
 
 @plugin.route('/record_daily_time/<channelid>/<channelname>')
 def record_daily_time(channelid, channelname):
@@ -619,6 +622,7 @@ def record_daily_time(channelid, channelname):
     conn.close()
 
     service()
+
 
 @plugin.route('/record_daily/<channelid>/<channelname>/<title>/<start>/<stop>')
 def record_daily(channelid, channelname, title, start, stop):
@@ -1856,19 +1860,24 @@ def service_thread():
                 record_once(programmeid=uid, do_refresh=False, watch=watch, remind=remind)
 
         elif type == "DAILY":
-            tjstart = jstart.time()
-            tjstop = jstop.time()
+            if title:
+                tjstart = jstart.time()
+                tjstop = jstop.time()
 
-            programmes = cursor.execute(
-            'SELECT uid, start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]" FROM programmes WHERE channelid=? AND title %s ?' % compare,
-            (jchannelid, jtitle)).fetchall()
+                programmes = cursor.execute(
+                'SELECT uid, start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]" FROM programmes WHERE channelid=? AND title %s ?' % compare,
+                (jchannelid, jtitle)).fetchall()
 
-            for p in programmes:
-                uid, start, stop = p
-                tstart = start.time()
-                tstop = stop.time()
-                if tjstart == tstart and tjstop == tstop:
-                    record_once(programmeid=uid, do_refresh=False, watch=watch, remind=remind)
+                for p in programmes:
+                    uid, start, stop = p
+                    tstart = start.time()
+                    tstop = stop.time()
+                    if tjstart == tstart and tjstop == tstop:
+                        record_once(programmeid=uid, do_refresh=False, watch=watch, remind=remind)
+            else:
+                tjstart = jstart.time()
+                tjstop = jstop.time()
+                #record_once_time(tjstart, tjstop, do_refresh=False, watch=watch, remind=remind)
 
         elif type == "SEARCH":
             programmes = cursor.execute("SELECT uid FROM programmes WHERE channelid=? AND title LIKE ?", (jchannelid, "%"+jtitle+"%")).fetchall()
