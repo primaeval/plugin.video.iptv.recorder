@@ -1582,20 +1582,20 @@ def add_favourite_channel(channelname, channelid, thumbnail):
     refresh()
 
 
-@plugin.route('/remove_hidden_group/<channelgroup>')
-def remove_hidden_group(channelgroup):
-    hidden_groups = plugin.get_storage('hidden_groups')
-    if channelgroup in hidden_groups:
-        del hidden_groups[channelgroup]
+@plugin.route('/remove_load_group/<channelgroup>')
+def remove_load_group(channelgroup):
+    load_groups = plugin.get_storage('load_groups')
+    if channelgroup in load_groups:
+        del load_groups[channelgroup]
 
     if xbmcgui.Dialog().yesno("IPTV Recorder","Reload xmltv data now?"):
         full_service()
 
 
-@plugin.route('/add_hidden_group/<channelgroup>')
-def add_hidden_group(channelgroup):
-    hidden_groups = plugin.get_storage('hidden_groups')
-    hidden_groups[channelgroup] = ""
+@plugin.route('/add_load_group/<channelgroup>')
+def add_load_group(channelgroup):
+    load_groups = plugin.get_storage('load_groups')
+    load_groups[channelgroup] = ""
 
     if xbmcgui.Dialog().yesno("IPTV Recorder","Reload xmltv data now?"):
         full_service()
@@ -1745,7 +1745,7 @@ def group(channelgroup=None,section=None):
 @plugin.route('/groups')
 def groups():
     items = []
-    hidden_groups = plugin.get_storage('hidden_groups')
+    load_groups = plugin.get_storage('load_groups')
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
@@ -1759,10 +1759,10 @@ def groups():
             continue
 
         context_items = []
-        if channelgroup not in hidden_groups:
-            context_items.append((_("Do Not Load Group"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(add_hidden_group, channelgroup=channelgroup))))
+        if channelgroup not in load_groups:
+            context_items.append((_("Load Group"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(add_load_group, channelgroup=channelgroup))))
         else:
-            context_items.append((_("Load Group"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_hidden_group, channelgroup=channelgroup))))
+            context_items.append((_("Do Not Load Group"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_load_group, channelgroup=channelgroup))))
 
         items.append({
             'label': channelgroup,
@@ -2095,8 +2095,8 @@ def xml2utc(xml):
 
 @plugin.route('/xmltv')
 def xmltv():
-    hidden_groups = plugin.get_storage('hidden_groups')
-    hidden_channels = {}
+    load_groups = plugin.get_storage('load_groups')
+    load_channels = {}
 
     dialog = xbmcgui.DialogProgressBG()
     dialog.create("IPTV Recorder", _("Loading data..."))
@@ -2298,10 +2298,15 @@ def xmltv():
             tvg_id = lower_channels[name.lower()]
             conn.execute("UPDATE streams SET tvg_id=? WHERE name=?", (tvg_id, name))
 
+    if len(load_groups.keys()) == 0:
+        load_all = True
+    else:
+        load_all = False
+
     channels = conn.execute("SELECT tvg_id, groups FROM streams").fetchall()
     for tvg_id, groups in channels:
-        if groups in hidden_groups:
-            hidden_channels[tvg_id] = ""
+        if groups in load_groups:
+            load_channels[tvg_id] = ""
 
     for x in ["1","2"]:
 
@@ -2319,7 +2324,7 @@ def xmltv():
                 channel = re.search('channel="(.*?)"', m)
                 if channel:
                     channel = htmlparser.unescape(channel.group(1))
-                    if channel in hidden_channels:
+                    if load_all == False and channel not in load_channels:
                         continue
 
                 if channel in shifts:
@@ -2546,24 +2551,22 @@ def maintenance_index():
 
 @plugin.route('/select_groups')
 def select_groups():
-    hidden_groups = plugin.get_storage('hidden_groups')
-    hidden_groups.clear()
+    load_groups = plugin.get_storage('load_groups')
+    load_groups.clear()
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
     channelgroups = cursor.execute("SELECT DISTINCT groups FROM streams ORDER BY groups").fetchall()
     channelgroups = [x[0] for x in channelgroups]
-    for group in channelgroups:
-        hidden_groups[group] = ""
 
     selection = xbmcgui.Dialog().multiselect('Do Not Load Groups',channelgroups)
     if selection:
         for index in selection:
             group = channelgroups[index]
-            del hidden_groups[group]
+            load_groups[group] = ""
 
-    hidden_groups.sync()
+    load_groups.sync()
 
     if xbmcgui.Dialog().yesno("IPTV Recorder","Reload xmltv data now?"):
         full_service()
