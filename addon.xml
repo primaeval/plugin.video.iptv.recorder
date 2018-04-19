@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <addon id="plugin.video.iptv.recorder"
-version="0.0.38"
+version="0.0.39"
 name="IPTV Recorder"
 provider-name="primaeval, Chychy">
 <requires>
@@ -26,7 +26,7 @@ ffmpeg simply copies the stream into a transport stream container.
 <source>https://github.com/primaeval/plugin.video.iptv.recorder</source>
 <forum>https://forum.kodi.tv/showthread.php?tid=329991</forum>
 <language>en fr</language>
-<news>xmltv Title regex search/replace</news>
+<news>Channel Once/Daily Time Record</news>
 <assets>
   <icon>icon.png</icon>
   <screenshot>resources/screenshots/screenshot-00.jpg</screenshot>
