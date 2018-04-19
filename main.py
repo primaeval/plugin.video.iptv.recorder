@@ -1763,9 +1763,9 @@ def groups():
 
         context_items = []
         if channelgroup not in load_groups:
-            context_items.append((_("Load Group"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(add_load_group, channelgroup=channelgroup))))
+            context_items.append((_("Load Group"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(add_load_group, channelgroup=channelgroup.encode("utf8")))))
         else:
-            context_items.append((_("Do Not Load Group"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_load_group, channelgroup=channelgroup))))
+            context_items.append((_("Do Not Load Group"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_load_group, channelgroup=channelgroup.encode("utf8")))))
 
         items.append({
             'label': channelgroup,
