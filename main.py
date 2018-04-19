@@ -371,17 +371,24 @@ def watch_once(programmeid, do_refresh=True, watch=True, remind=False):
 def remind_once(programmeid, do_refresh=True, watch=False, remind=True):
     threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind]).start()
 
+@plugin.route('/record_once_time/<channelid>/<start>/<stop>')
+def record_once_time(channelid, start, stop, do_refresh=True, watch=False, remind=True):
+    threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, start, stop]).start()
 
-def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
+
+def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, channelid=None, start=None,stop=None):
     #TODO check for ffmpeg process already recording if job is re-added
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
-    programme = cursor.execute('SELECT channelid, title, sub_title, start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date, description, episode, categories FROM programmes WHERE uid=? LIMIT 1', (programmeid, )).fetchone()
-    channelid, title, sub_title, start, stop, date, description, episode, categories = programme
+    if programmeid:
+        programme = cursor.execute('SELECT channelid, title, sub_title, start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date, description, episode, categories FROM programmes WHERE uid=? LIMIT 1', (programmeid, )).fetchone()
+        channelid, title, sub_title, start, stop, date, description, episode, categories = programme
 
-    nfo = {"programme":{"channelid":channelid, "title":title, "sub_title":sub_title, "start":datetime2timestamp(start), "stop":datetime2timestamp(stop), "date":date, "description":description, "episode":episode, "categories":categories}}
+        nfo = {"programme":{"channelid":channelid, "title":title, "sub_title":sub_title, "start":datetime2timestamp(start), "stop":datetime2timestamp(stop), "date":date, "description":description, "episode":episode, "categories":categories}}
+    else:
+        nfo = {}
 
     channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
     if not channel:
@@ -412,32 +419,39 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
     local_starttime = utc2local(start)
     local_endtime = utc2local(stop)
 
-    ftitle = sane_name(title)
-    if sub_title:
-        fsub_title = sane_name(sub_title)
+    if programmeid:
+        ftitle = sane_name(title)
+        if sub_title:
+            fsub_title = sane_name(sub_title)
+    else:
+        ftitle = None
     fchannelname = sane_name(channelname)
 
     folder = ""
     movie = False
     series = False
-    if episode:
-        if episode == "MOVIE":
-            movie = True
-            if date and len(date) == 4:
-                filename = "%s (%s)" % (ftitle, date)
-                folder = "%s (%s) - %s - %s" % (ftitle, date, fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
+    if programmeid:
+        if episode:
+            if episode == "MOVIE":
+                movie = True
+                if date and len(date) == 4:
+                    filename = "%s (%s)" % (ftitle, date)
+                    folder = "%s (%s) - %s - %s" % (ftitle, date, fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
+                else:
+                    folder = ftitle
+                    filename = "%s - %s - %s" % (ftitle, fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
             else:
+                series = True
                 folder = ftitle
+                filename = "%s %s - %s - %s" % (ftitle, episode, fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
+        else:
+            if sub_title:
+                filename = "%s %s - %s - %s" % (ftitle, fsub_title, fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
+            else:
                 filename = "%s - %s - %s" % (ftitle, fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
-        else:
-            series = True
-            folder = ftitle
-            filename = "%s %s - %s - %s" % (ftitle, episode, fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
     else:
-        if sub_title:
-            filename = "%s %s - %s - %s" % (ftitle, fsub_title, fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
-        else:
-            filename = "%s - %s - %s" % (ftitle, fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
+        folder = fchannelname
+        filename = "%s - %s" % (fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
 
     if watch:
         type = "WATCH"
@@ -474,8 +488,8 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False):
         dir = os.path.join(kodi_recordings, "Movies", folder)
         ffmpeg_dir = os.path.join(ffmpeg_recordings, "Movies", folder)
     else:
-        dir = os.path.join(kodi_recordings, "Movies", folder)
-        ffmpeg_dir = os.path.join(ffmpeg_recordings, "Movies", folder)
+        dir = os.path.join(kodi_recordings, "Other", folder)
+        ffmpeg_dir = os.path.join(ffmpeg_recordings, "Other", folder)
     xbmcvfs.mkdirs(dir)
     path = os.path.join(dir, filename)
     json_path = path + '.json'
@@ -1832,23 +1846,23 @@ def service_thread():
 
     rules = cursor.execute('SELECT uid, channelid, channelname, title, start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", description, type FROM rules ORDER by channelname, title, start, stop').fetchall()
 
-    for uid, jchannelid, jchannelname, jtitle, jstart, jstop, jdescription, type  in rules:
+    for uid, jchannelid, jchannelname, jtitle, jstart, jstop, jdescription, jtype  in rules:
 
-        if '%' in jtitle:
+        if jtitle and '%' in jtitle:
             compare='LIKE'
         else:
             compare='='
 
         watch = False
         remind = False
-        if type.startswith("WATCH"):
-            type = type.replace("WATCH ","")
+        if jtype.startswith("WATCH"):
+            jtype = jtype.replace("WATCH ","")
             watch = True
-        elif type.startswith("REMIND"):
-            type = type.replace("REMIND ","")
+        elif jtype.startswith("REMIND"):
+            jtype = jtype.replace("REMIND ","")
             remind = True
 
-        if type == "ALWAYS":
+        if jtype == "ALWAYS":
             #TODO scrub [] from title
 
             programmes = cursor.execute(
@@ -1859,8 +1873,8 @@ def service_thread():
                 uid, channel , title , sub_title , date , description , episode, categories = p
                 record_once(programmeid=uid, do_refresh=False, watch=watch, remind=remind)
 
-        elif type == "DAILY":
-            if title:
+        elif jtype == "DAILY":
+            if jtitle:
                 tjstart = jstart.time()
                 tjstop = jstop.time()
 
@@ -1877,15 +1891,26 @@ def service_thread():
             else:
                 tjstart = jstart.time()
                 tjstop = jstop.time()
-                #record_once_time(tjstart, tjstop, do_refresh=False, watch=watch, remind=remind)
 
-        elif type == "SEARCH":
+                utcnow = datetime.utcnow()
+                start = utcnow.replace(hour=tjstart.hour, minute=tjstart.minute, second=0, microsecond=0)
+                stop = utcnow.replace(hour=tjstop.hour, minute=tjstop.minute, second=0, microsecond=0)
+                if stop < start:
+                    stop = stop + timedelta(days=1)
+
+                for days in range(0,2):
+                    start = start + timedelta(days=days)
+                    stop = stop + timedelta(days=days)
+                    if stop > start:
+                        record_once_time(jchannelid, start, stop, do_refresh=False, watch=watch, remind=remind)
+
+        elif jtype == "SEARCH":
             programmes = cursor.execute("SELECT uid FROM programmes WHERE channelid=? AND title LIKE ?", (jchannelid, "%"+jtitle+"%")).fetchall()
             for p in programmes:
                 uid = p[0]
                 record_once(programmeid=uid, do_refresh=False, watch=watch, remind=remind)
 
-        elif type == "PLOT":
+        elif jtype == "PLOT":
             programmes = cursor.execute("SELECT uid FROM programmes WHERE channelid=? AND description LIKE ?", (jchannelid, "%"+jdescription+"%")).fetchall()
             for p in programmes:
                 uid = p[0]
