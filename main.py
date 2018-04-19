@@ -1582,6 +1582,25 @@ def add_favourite_channel(channelname, channelid, thumbnail):
     refresh()
 
 
+@plugin.route('/remove_hidden_group/<channelgroup>')
+def remove_hidden_group(channelgroup):
+    hidden_groups = plugin.get_storage('hidden_groups')
+    if channelgroup in hidden_groups:
+        del hidden_groups[channelgroup]
+
+    if xbmcgui.Dialog().yesno("IPTV Recorder","Reload xmltv data now?"):
+        full_service()
+
+
+@plugin.route('/add_hidden_group/<channelgroup>')
+def add_hidden_group(channelgroup):
+    hidden_groups = plugin.get_storage('hidden_groups')
+    hidden_groups[channelgroup] = ""
+
+    if xbmcgui.Dialog().yesno("IPTV Recorder","Reload xmltv data now?"):
+        full_service()
+
+
 @plugin.route('/favourite_channels')
 def favourite_channels():
     return group(section="FAVOURITES")
@@ -1726,6 +1745,7 @@ def group(channelgroup=None,section=None):
 @plugin.route('/groups')
 def groups():
     items = []
+    hidden_groups = plugin.get_storage('hidden_groups')
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
@@ -1738,10 +1758,17 @@ def groups():
         if not channelgroup:
             continue
 
+        context_items = []
+        if channelgroup not in hidden_groups:
+            context_items.append((_("Do Not Load Group"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(add_hidden_group, channelgroup=channelgroup))))
+        else:
+            context_items.append((_("Load Group"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_hidden_group, channelgroup=channelgroup))))
+
         items.append({
             'label': channelgroup,
             'path': plugin.url_for(group, channelgroup=channelgroup.encode("utf8")),
             'thumbnail': get_icon_path('folder'),
+            'context_menu': context_items,
         })
 
     return items
@@ -2068,6 +2095,9 @@ def xml2utc(xml):
 
 @plugin.route('/xmltv')
 def xmltv():
+    hidden_groups = plugin.get_storage('hidden_groups')
+    hidden_channels = {}
+
     dialog = xbmcgui.DialogProgressBG()
     dialog.create("IPTV Recorder", _("Loading data..."))
 
@@ -2253,100 +2283,6 @@ def xmltv():
                     percent = 0 + int(100.0 * i / total)
                     dialog.update(percent, message=_("Finding channels"))
 
-            dialog.update(0, message=_("Finding programmes"))
-            match = re.findall('<programme(.*?)</programme>', data, flags=(re.I|re.DOTALL))
-            if match:
-                total = len(match)
-                i = 0
-                for m in match:
-                    xml = "" #'<programme%s</programme>' % m
-
-                    channel = re.search('channel="(.*?)"', m)
-                    if channel:
-                        channel = htmlparser.unescape(channel.group(1))
-
-                    if channel in shifts:
-                        shift = int(shifts[channel])
-                    else:
-                        shift = None
-
-                    start = re.search('start="(.*?)"', m)
-                    if start:
-                        start = start.group(1)
-                        start = xml2utc(start)
-                        if shift:
-                            start = start + timedelta(hours=shift)
-
-                    stop = re.search('stop="(.*?)"', m)
-                    if stop:
-                        stop = stop.group(1)
-                        stop = xml2utc(stop)
-                        if shift:
-                            stop = stop + timedelta(hours=shift)
-
-                    title = re.search('<title.*?>(.*?)</title', m, flags=(re.I|re.DOTALL))
-                    if title:
-                        title = htmlparser.unescape(title.group(1))
-                    search = plugin.get_setting('xmltv.title.regex.search')
-                    replace = plugin.get_setting('xmltv.title.regex.replace')
-                    if search:
-                        title = re.sub(search, replace, title)
-                    if title:
-                        title = title.strip()
-
-                    sub_title = re.search('<sub-title.*?>(.*?)</sub-title', m, flags=(re.I|re.DOTALL))
-                    if sub_title:
-                        sub_title = htmlparser.unescape(sub_title.group(1))
-
-                    description = re.search('<desc.*?>(.*?)</desc', m, flags=(re.I|re.DOTALL))
-                    if description:
-                        description = htmlparser.unescape(description.group(1))
-
-                    date = re.search('<date.*?>(.*?)</date', m)
-                    if date:
-                        date = date.group(1)
-
-                    cats = re.findall('<category.*?>(.*?)</category>', m, flags=(re.I|re.DOTALL))
-                    if cats:
-                        categories = htmlparser.unescape((', '.join(cats)))
-                    else:
-                        categories = ''
-                    cats = categories.lower()
-                    film_movie = ("movie" in cats) or ("film" in cats)
-
-                    #TODO other systems
-                    episode = re.findall('<episode-num system="(.*?)">(.*?)<', m, flags=(re.I|re.DOTALL))
-                    episode = {x[0]:x[1] for x in episode}
-
-                    SE = None
-                    if episode:
-                        if episode.get('xmltv_ns'):
-                            num = episode.get('xmltv_ns')
-                            parts = num.split('.')
-                            if len(parts) >= 2:
-                                S = parts[0]
-                                E = parts[1].split('/')[0]
-                                S = int(S if S else 0) + 1
-                                E = int(E if E else 0) + 1
-                            SE = "S%02dE%02d" % (S,E)
-                        elif episode.get('common'):
-                            SE = episode.get('common')
-                        elif episode.get('dd_progid'):
-                            num = episode.get('dd_progid')
-                            if num.startswith('EP') and date and len(date) == 8:
-                                SE = "%s-%s-%s" % (date[0:4], date[4:6], date[6:8])
-                            elif num.startswith('MV'):
-                                SE = "MOVIE"
-                    elif film_movie:
-                        SE = "MOVIE"
-                    episode = SE
-
-                    conn.execute("INSERT OR IGNORE INTO programmes(channelid, title, sub_title, start, stop, date, description, episode, categories, xml) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    [channel, title, sub_title, start, stop, date, description, episode, categories, xml])
-
-                    i += 1
-                    percent = 0 + int(100.0 * i / total)
-                    dialog.update(percent, message=_("Finding programmes"))
 
     missing_streams = conn.execute('SELECT name, tvg_name FROM streams WHERE tvg_id IS null OR tvg_id IS ""').fetchall()
     sql_channels = conn.execute('SELECT id, name FROM channels').fetchall()
@@ -2361,6 +2297,113 @@ def xmltv():
         elif name.lower() in lower_channels:
             tvg_id = lower_channels[name.lower()]
             conn.execute("UPDATE streams SET tvg_id=? WHERE name=?", (tvg_id, name))
+
+    channels = conn.execute("SELECT tvg_id, groups FROM streams").fetchall()
+    for tvg_id, groups in channels:
+        if groups in hidden_groups:
+            hidden_channels[tvg_id] = ""
+
+    for x in ["1","2"]:
+
+        xml = os.path.join(profilePath, 'xmltv'+x+'.xml')
+        data = xbmcvfs.File(xml, 'rb').read()
+
+        dialog.update(0, message=_("Finding programmes"))
+        match = re.findall('<programme(.*?)</programme>', data, flags=(re.I|re.DOTALL))
+        if match:
+            total = len(match)
+            i = 0
+            for m in match:
+                xml = "" #'<programme%s</programme>' % m
+
+                channel = re.search('channel="(.*?)"', m)
+                if channel:
+                    channel = htmlparser.unescape(channel.group(1))
+                    if channel in hidden_channels:
+                        continue
+
+                if channel in shifts:
+                    shift = int(shifts[channel])
+                else:
+                    shift = None
+
+                start = re.search('start="(.*?)"', m)
+                if start:
+                    start = start.group(1)
+                    start = xml2utc(start)
+                    if shift:
+                        start = start + timedelta(hours=shift)
+
+                stop = re.search('stop="(.*?)"', m)
+                if stop:
+                    stop = stop.group(1)
+                    stop = xml2utc(stop)
+                    if shift:
+                        stop = stop + timedelta(hours=shift)
+
+                title = re.search('<title.*?>(.*?)</title', m, flags=(re.I|re.DOTALL))
+                if title:
+                    title = htmlparser.unescape(title.group(1))
+                search = plugin.get_setting('xmltv.title.regex.search')
+                replace = plugin.get_setting('xmltv.title.regex.replace')
+                if search:
+                    title = re.sub(search, replace, title)
+                if title:
+                    title = title.strip()
+
+                sub_title = re.search('<sub-title.*?>(.*?)</sub-title', m, flags=(re.I|re.DOTALL))
+                if sub_title:
+                    sub_title = htmlparser.unescape(sub_title.group(1))
+
+                description = re.search('<desc.*?>(.*?)</desc', m, flags=(re.I|re.DOTALL))
+                if description:
+                    description = htmlparser.unescape(description.group(1))
+
+                date = re.search('<date.*?>(.*?)</date', m)
+                if date:
+                    date = date.group(1)
+
+                cats = re.findall('<category.*?>(.*?)</category>', m, flags=(re.I|re.DOTALL))
+                if cats:
+                    categories = htmlparser.unescape((', '.join(cats)))
+                else:
+                    categories = ''
+                cats = categories.lower()
+                film_movie = ("movie" in cats) or ("film" in cats)
+
+                #TODO other systems
+                episode = re.findall('<episode-num system="(.*?)">(.*?)<', m, flags=(re.I|re.DOTALL))
+                episode = {x[0]:x[1] for x in episode}
+
+                SE = None
+                if episode:
+                    if episode.get('xmltv_ns'):
+                        num = episode.get('xmltv_ns')
+                        parts = num.split('.')
+                        if len(parts) >= 2:
+                            S = parts[0]
+                            E = parts[1].split('/')[0]
+                            S = int(S if S else 0) + 1
+                            E = int(E if E else 0) + 1
+                        SE = "S%02dE%02d" % (S,E)
+                    elif episode.get('common'):
+                        SE = episode.get('common')
+                    elif episode.get('dd_progid'):
+                        num = episode.get('dd_progid')
+                        if num.startswith('EP') and date and len(date) == 8:
+                            SE = "%s-%s-%s" % (date[0:4], date[4:6], date[6:8])
+                        elif num.startswith('MV'):
+                            SE = "MOVIE"
+                elif film_movie:
+                    SE = "MOVIE"
+                episode = SE
+
+                conn.execute("INSERT OR IGNORE INTO programmes(channelid, title, sub_title, start, stop, date, description, episode, categories, xml) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                [channel, title, sub_title, start, stop, date, description, episode, categories, xml])
+
+                i += 1
+                percent = 0 + int(100.0 * i / total)
+                dialog.update(percent, message=_("Finding programmes"))
 
     conn.commit()
     conn.close()
@@ -2501,6 +2544,30 @@ def maintenance_index():
 
     return items
 
+@plugin.route('/select_groups')
+def select_groups():
+    hidden_groups = plugin.get_storage('hidden_groups')
+    hidden_groups.clear()
+
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
+    channelgroups = cursor.execute("SELECT DISTINCT groups FROM streams ORDER BY groups").fetchall()
+    channelgroups = [x[0] for x in channelgroups]
+    for group in channelgroups:
+        hidden_groups[group] = ""
+
+    selection = xbmcgui.Dialog().multiselect('Do Not Load Groups',channelgroups)
+    if selection:
+        for index in selection:
+            group = channelgroups[index]
+            del hidden_groups[group]
+
+    hidden_groups.sync()
+
+    if xbmcgui.Dialog().yesno("IPTV Recorder","Reload xmltv data now?"):
+        full_service()
+
 
 @plugin.route('/')
 def index():
@@ -2515,6 +2582,8 @@ def index():
         'context_menu': context_items,
     })
 
+    context_items = []
+    context_items.append((_("Select Groups To Load"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(select_groups))))
     items.append(
     {
         'label': _("Channel Groups"),
@@ -2522,6 +2591,8 @@ def index():
         'thumbnail':get_icon_path('folder'),
         'context_menu': context_items,
     })
+
+    context_items = []
 
     items.append(
     {
