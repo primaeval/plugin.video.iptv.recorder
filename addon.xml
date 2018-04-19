@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <addon id="plugin.video.iptv.recorder"
-version="0.0.42"
+version="0.0.43"
 name="IPTV Recorder"
 provider-name="primaeval, Chychy">
 <requires>
