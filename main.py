@@ -377,13 +377,22 @@ def record_one_time(channelid):
     ts = time.time()
     utc_offset = (datetime.fromtimestamp(ts) - datetime.utcfromtimestamp(ts)).total_seconds()
 
+    date = xbmcgui.Dialog().input("Start Date",type=xbmcgui.INPUT_DATE)
+    if not date:
+        return
+    day, month, year = date.split('/')
+
     start = xbmcgui.Dialog().input("Start Time",type=xbmcgui.INPUT_TIME)
+    if not start:
+        return
     hour, min = start.split(':')
-    start = utcnow.replace(hour=int(hour),minute=int(min),second=0,microsecond=0) - timedelta(seconds=utc_offset)
+    start = utcnow.replace(day=int(day), month=int(month), year=int(year), hour=int(hour), minute=int(min), second=0, microsecond=0) - timedelta(seconds=utc_offset)
 
     stop = xbmcgui.Dialog().input("Stop",type=xbmcgui.INPUT_TIME)
+    if not stop:
+        return
     hour, min = stop.split(':')
-    stop = utcnow.replace(hour=int(hour),minute=int(min),second=0,microsecond=0) - timedelta(seconds=utc_offset)
+    stop = utcnow.replace(day=int(day), month=int(month), year=int(year), hour=int(hour), minute=int(min), second=0, microsecond=0) - timedelta(seconds=utc_offset)
     if stop < start:
         stop = stop + timedelta(days=1)
 
