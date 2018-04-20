@@ -35,6 +35,7 @@ def log(v):
     xbmc.log(repr(v), xbmc.LOGERROR)
 
 
+
 plugin = Plugin()
 big_list_view = True
 
@@ -1639,6 +1640,7 @@ def group(channelgroup=None,section=None):
         show_now_next = plugin.get_setting('show.now.next.all') == "true"
     elif section == "FAVOURITES":
         favourite_channels = cursor.execute("SELECT * FROM favourites ORDER BY channelname").fetchall()
+        streams = cursor.execute("SELECT * FROM streams ORDER BY name").fetchall()
         collection = favourite_channels
         show_now_next = plugin.get_setting('show.now.next.favourites') == "true"
     else:
@@ -1654,6 +1656,9 @@ def group(channelgroup=None,section=None):
     favourites = cursor.execute("SELECT channelname FROM favourites").fetchall()
     favourites = [x[0] for x in favourites]
 
+    all_streams = cursor.execute("SELECT * FROM streams ORDER BY name").fetchall()
+    stream_urls = {x[3]:x[6] for x in all_streams if x}
+
     items = []
 
     now = datetime.utcnow()
@@ -1667,14 +1672,17 @@ def group(channelgroup=None,section=None):
 
     for stream_channel in collection:
 
+        url = ""
         if section == "EPG":
             uid, id, name, icon = stream_channel
             channelname = name
             channelid = id
+            url = stream_urls.get(channelid)
             thumbnail = logos.get(channelid) or icon or get_icon_path('tv')
             logo = icon
         elif section == "FAVOURITES":
             channelname, channelid, thumbnail = stream_channel
+            url = stream_urls.get(channelid)
             logo = thumbnail
         else:
             uid, name, tvg_name, tvg_id, tvg_logo, groups, url = stream_channel
@@ -1730,22 +1738,28 @@ def group(channelgroup=None,section=None):
         channelname = channelname.encode("utf8")
         channelid =channelid.encode("utf8")
 
-        context_items.append((_("Add One Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_one_time, channelid=channelid, channelname=channelname))))
-        context_items.append((_("Add Daily Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_daily_time, channelid=channelid, channelname=channelname))))
-        context_items.append((_("Add Title Search Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search, channelid=channelid, channelname=channelname))))
-        context_items.append((_("Add Plot Search Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search_plot, channelid=channelid, channelname=channelname))))
-        context_items.append((_("Play Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=channelname))))
-        if plugin.get_setting('external.player'):
-            context_items.append((_("Play Channel External"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external, channelname=channelname))))
+        if url:
+            context_items.append((_("Add One Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_one_time, channelid=channelid, channelname=channelname))))
+            context_items.append((_("Add Daily Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_daily_time, channelid=channelid, channelname=channelname))))
+            context_items.append((_("Add Title Search Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search, channelid=channelid, channelname=channelname))))
+            context_items.append((_("Add Plot Search Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search_plot, channelid=channelid, channelname=channelname))))
+            context_items.append((_("Play Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=channelname))))
+            if plugin.get_setting('external.player'):
+                context_items.append((_("Play Channel External"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external, channelname=channelname))))
 
         if channelname not in favourites:
             context_items.append((_("Add Favourite Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(add_favourite_channel, channelname=channelname, channelid=channelid, thumbnail=thumbnail))))
         else:
             context_items.append((_("Remove Favourite Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_favourite_channel, channelname=channelname))))
 
+        if url:
+            path = plugin.url_for(channel, channelid=channelid)
+        else:
+            path = sys.argv[0]
+
         items.append({
             'label': label,
-            'path': plugin.url_for(channel, channelid=channelid),
+            'path': path,
             'context_menu': context_items,
             'thumbnail': thumbnail,
             'info':{"plot":description, "genre":categories}
