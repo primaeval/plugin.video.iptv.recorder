@@ -558,7 +558,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
 
     if watch == False and remind == False:
         f.write("cmd = %s\n" % repr(cmd))
-        f.write("for trial in range(2):\n")
+        f.write("for trial in range(6):\n")
         f.write("  p = subprocess.Popen(cmd, shell=%s)\n" % windows())
         f.write("  f = open(r'%s', 'w+')\n" % xbmc.translatePath(pyjob+'.pid'))
         f.write("  f.write(repr(p.pid))\n")
