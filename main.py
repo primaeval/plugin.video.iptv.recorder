@@ -559,7 +559,9 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     if watch == False and remind == False:
         f.write("cmd = %s\n" % repr(cmd))
         f.write("for trial in range(6):\n")
-        f.write("  p = subprocess.Popen(cmd, shell=%s)\n" % windows())
+        f.write("  stdout = open(r'%s','w+')\n" % xbmc.translatePath(pyjob+'.stdout.txt'))
+        f.write("  stderr = open(r'%s','w+')\n" % xbmc.translatePath(pyjob+'.stderr.txt'))
+        f.write("  p = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, shell=%s)\n" % windows())
         f.write("  f = open(r'%s', 'w+')\n" % xbmc.translatePath(pyjob+'.pid'))
         f.write("  f.write(repr(p.pid))\n")
         f.write("  f.close()\n")
@@ -567,6 +569,8 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
         f.write("  time.sleep(1)\n")
         f.write("  if result == 0 or os.path.exists(r'%s') == False:\n" % xbmc.translatePath(pyjob))
         f.write("    break\n")
+        f.write("  stderr.close()\n")
+        f.write("  stdout.close()\n")
         f.write("  time.sleep(5)\n")
         #TODO copy file somewhere else
     elif remind == True:
