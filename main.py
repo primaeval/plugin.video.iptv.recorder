@@ -167,10 +167,22 @@ def jobs():
 
     for uid, uuid, channelid, channelname, title, start, stop, type in jobs:
 
+        url = ""
+        channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
+        if channel:
+            uid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
+            echannelname=name.encode("utf8")
+
         context_items = []
 
         context_items.append((_("Delete Job"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_job, job=uuid))))
         context_items.append((_("Delete All Jobs"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_all_jobs))))
+
+        if url:
+            context_items.append((_("Play Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=echannelname))))
+            if plugin.get_setting('external.player'):
+                context_items.append((_("Play Channel External"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external, channelname=echannelname))))
+
 
         label = "%s [COLOR yellow]%s[/COLOR] %s[COLOR grey]%s - %s[/COLOR] %s" % (channelname, title, CR, utc2local(start), utc2local(stop), type)
 
@@ -195,9 +207,20 @@ def rules():
 
     for uid, channelid, channelname, title, start, stop, description, type  in rules:
 
+        url = ""
+        channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
+        if channel:
+            uid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
+            echannelname=name.encode("utf8")
+
         context_items = []
         context_items.append((_("Delete Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_rule, uid=uid))))
         context_items.append((_("Delete All Rules"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_all_rules))))
+
+        if url:
+            context_items.append((_("Play Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=echannelname))))
+            if plugin.get_setting('external.player'):
+                context_items.append((_("Play Channel External"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external, channelname=echannelname))))
 
         if type.startswith("WATCH"):
             type = type.replace("WATCH ","")
@@ -556,12 +579,16 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     f = xbmcvfs.File(pyjob, 'wb')
     f.write("import os, subprocess, time\n")
 
+    debug = False
     if watch == False and remind == False:
         f.write("cmd = %s\n" % repr(cmd))
         f.write("for trial in range(6):\n")
-        f.write("  stdout = open(r'%s','w+')\n" % xbmc.translatePath(pyjob+'.stdout.txt'))
-        f.write("  stderr = open(r'%s','w+')\n" % xbmc.translatePath(pyjob+'.stderr.txt'))
-        f.write("  p = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, shell=%s)\n" % windows())
+        if debug:
+            f.write("  stdout = open(r'%s','w+')\n" % xbmc.translatePath(pyjob+'.stdout.txt'))
+            f.write("  stderr = open(r'%s','w+')\n" % xbmc.translatePath(pyjob+'.stderr.txt'))
+            f.write("  p = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, shell=%s)\n" % windows())
+        else:
+            f.write("  p = subprocess.Popen(cmd, shell=%s)\n" % windows())
         f.write("  f = open(r'%s', 'w+')\n" % xbmc.translatePath(pyjob+'.pid'))
         f.write("  f.write(repr(p.pid))\n")
         f.write("  f.close()\n")
@@ -569,8 +596,9 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
         f.write("  time.sleep(1)\n")
         f.write("  if result == 0 or os.path.exists(r'%s') == False:\n" % xbmc.translatePath(pyjob))
         f.write("    break\n")
-        f.write("  stderr.close()\n")
-        f.write("  stdout.close()\n")
+        if debug:
+            f.write("  stderr.close()\n")
+            f.write("  stdout.close()\n")
         f.write("  time.sleep(5)\n")
         #TODO copy file somewhere else
     elif remind == True:
