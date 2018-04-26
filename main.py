@@ -569,7 +569,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
 
     ffmpeg_recording_path = os.path.join(ffmpeg_dir, filename+'.ts')
 
-    cmd = probe_cmd + ["-y", "-t", str(seconds), "-c", "copy", ffmpeg_recording_path.encode('utf8')]
+    cmd = probe_cmd + ["-fflags", "+genpts", "-copytb", "1", "-reconnect", "1", "-reconnect_at_eof", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "300", "-y", "-t", str(seconds), "-c", "copy", ffmpeg_recording_path.encode('utf8')]
 
     directory = "special://profile/addon_data/plugin.video.iptv.recorder/jobs/"
     xbmcvfs.mkdirs(directory)
