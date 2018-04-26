@@ -579,7 +579,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     f = xbmcvfs.File(pyjob, 'wb')
     f.write("import os, subprocess, time\n")
 
-    debug = False
+    debug = plugin.get_setting('debug.ffmpeg') == 'true'
     if watch == False and remind == False:
         f.write("cmd = %s\n" % repr(cmd))
         f.write("for trial in range(6):\n")
