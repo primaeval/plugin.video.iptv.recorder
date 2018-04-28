@@ -647,6 +647,41 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
             sd = "%02d/%02d/%04d" % (local_starttime.day, local_starttime.month, local_starttime.year)
             cmd = ["schtasks", "/create", "/f", "/tn", job, "/sc", "once", "/st", st, "/sd", sd, "/tr", "%s %s" % (xbmc.translatePath(plugin.get_setting('python')), xbmc.translatePath(pyjob))]
             subprocess.Popen(cmd, shell=True)
+    elif True: #TODO
+        pyjob_path = xbmc.translatePath(pyjob)
+        service = "/storage/.config/system.d/record-%s.service" % job
+        f = open(service, "w")
+        f.write(
+        """[Unit]
+Description=%s
+[Service]
+ExecStart="%s" "%s"
+[Install]
+WantedBy=multi-user.target
+        """ % ("ffmpeg record", xbmc.translatePath(plugin.get_setting('python')), xbmc.translatePath(pyjob))
+        )
+        f.close()
+        timer = "/storage/.config/system.d/record-%s.timer" % job
+        f = open(timer, "w")
+        date = "%04d-%02d-%02d %02d:%02d:00" % (local_starttime.year, local_starttime.month, local_starttime.day, local_starttime.hour, local_starttime.minute)
+        f.write(
+        """[Unit]
+Description=%s
+[Timer]
+RemainAfterElapse=no
+[Timer]
+OnCalendar=%s
+[Install]
+WantedBy=multi-user.target
+        """ % ("ffmpeg record timer", date)
+        )
+        f.close()
+        if immediate:
+            subprocess.call(["systemctl","enable","record-%s.service" % job])
+            subprocess.call(["systemctl","start","record-%s.service" % job])
+        else:
+            subprocess.call(["systemctl","enable","record-%s.timer" % job])
+            subprocess.call(["systemctl","start","record-%s.timer" % job])
     else:
         now = datetime.now()
         diff = local_starttime - now
