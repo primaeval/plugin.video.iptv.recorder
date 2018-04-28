@@ -20,6 +20,8 @@ if __name__ == '__main__':
     #TODO enable Web Server, startServer does not enable it
     ADDON = xbmcaddon.Addon('plugin.video.iptv.recorder')
 
+    xbmc.executebuiltin('XBMC.RunPlugin(plugin://plugin.video.iptv.recorder/renew_jobs)')
+
     version = ADDON.getAddonInfo('version')
     if ADDON.getSetting('version') != version:
         ADDON.setSetting('version', version)

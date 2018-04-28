@@ -677,6 +677,60 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     if do_refresh:
         refresh()
 
+@plugin.route('/renew_jobs')
+def renew_jobs():
+    #TODO check for ffmpeg process already recording if job is re-added
+
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
+    jobs = cursor.execute("SELECT * FROM jobs").fetchall()
+
+    for uid, uuid, channelid, channelname, title, start, stop, type in jobs:
+        local_starttime = utc2local(start)
+        local_endtime = utc2local(stop)
+
+        before = int(plugin.get_setting('minutes.before') or "0")
+        after = int(plugin.get_setting('minutes.after') or "0")
+        local_starttime = local_starttime - timedelta(minutes=before)
+        local_endtime = local_endtime + timedelta(minutes=after)
+
+        now = datetime.now()
+        if (local_starttime < now) and (local_endtime > now):
+            local_starttime = now
+            immediate = True
+        else:
+            immediate = False
+
+        directory = "special://profile/addon_data/plugin.video.iptv.recorder/jobs/"
+        xbmcvfs.mkdirs(directory)
+        job = uuid
+        pyjob = directory + job + ".py"
+
+        if windows() and (plugin.get_setting('task.scheduler') == 'true'):
+            if immediate:
+                cmd = 'RunScript(%s)' % (pyjob)
+                xbmc.executebuiltin(cmd)
+            else:
+                pass
+        else:
+            now = datetime.now()
+            diff = local_starttime - now
+            minutes = ((diff.days * 86400) + diff.seconds) / 60
+            #minutes = 1
+            if minutes < 1:
+                if local_endtime > now:
+                    cmd = 'RunScript(%s)' % (pyjob)
+                    xbmc.executebuiltin(cmd)
+                else:
+                    xbmcvfs.delete(pyjob)
+                    return
+            else:
+                cmd = 'AlarmClock(%s, RunScript(%s), %d, True)' % (job, pyjob, minutes)
+                xbmc.executebuiltin(cmd)
+
+    conn.close()
+
 
 def sane_name(name):
     if windows():
