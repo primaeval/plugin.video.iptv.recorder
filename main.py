@@ -80,6 +80,34 @@ def delete(path):
         delete(path + dir + '/')
     xbmcvfs.rmdir(path)
 
+def rmdirs(path):
+    path = xbmc.translatePath(path)
+    dirs, files = xbmcvfs.listdir(path)
+    for dir in dirs:
+        rmdirs(os.path.join(path,dir))
+    xbmcvfs.rmdir(path)
+
+
+def find(path):
+    path = xbmc.translatePath(path)
+    all_dirs = []
+    all_files = []
+    dirs, files = xbmcvfs.listdir(path)
+    for file in files:
+        file_path = os.path.join(path,file)
+        all_files.append(file_path)
+    for dir in dirs:
+        dir_path = os.path.join(path,dir)
+        all_dirs.append(dir_path)
+        new_dirs, new_files = find(os.path.join(path, dir))
+        for new_dir in new_dirs:
+            new_dir_path = os.path.join(path,dir,new_dir)
+            all_dirs.append(new_dir_path)
+        for new_file in new_files:
+            new_file = os.path.join(path,dir,new_file)
+            all_files.append(new_file)
+    return all_dirs, all_files
+
 
 @plugin.route('/play_channel/<channelname>')
 def play_channel(channelname):
@@ -2039,19 +2067,20 @@ def delete_recording(label, path):
 
 @plugin.route('/delete_all_recordings')
 def delete_all_recordings():
-    if not (xbmcgui.Dialog().yesno("IPTV Recorder", "[COLOR red]" + _("Delete All Recordings?") + "[/COLOR]")):
+    result = xbmcgui.Dialog().yesno("IPTV Recorder", "[COLOR red]" + _("Delete All Recordings?") + "[/COLOR]")
+    if not result:
         return
 
     dir = plugin.get_setting('recordings')
-    dirs, files = xbmcvfs.listdir(dir)
-
-    items = []
-
+    dirs, files = find(dir)
     for file in sorted(files):
-        if file.endswith('.ts') or file.endswith('.json'):
-            path = os.path.join(xbmc.translatePath(dir), file)
-            xbmcvfs.delete(path)
+        if file.endswith('.ts'):
+            success = xbmcvfs.delete(file)
+            if success:
+                json_file = file[:-3]+'.json'
+                xbmcvfs.delete(json_file)
 
+    rmdirs(dir)
     refresh()
 
 
