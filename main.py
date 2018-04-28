@@ -701,6 +701,8 @@ def renew_jobs():
         job = uuid
         pyjob = directory + job + ".py"
 
+        #TODO reduce time of job if already started
+
         if windows() and (plugin.get_setting('task.scheduler') == 'true'):
             if immediate:
                 cmd = 'RunScript(%s)' % (pyjob)
@@ -718,7 +720,6 @@ def renew_jobs():
                     xbmc.executebuiltin(cmd)
                 else:
                     xbmcvfs.delete(pyjob)
-                    return
             else:
                 cmd = 'AlarmClock(%s, RunScript(%s), %d, True)' % (job, pyjob, minutes)
                 xbmc.executebuiltin(cmd)
