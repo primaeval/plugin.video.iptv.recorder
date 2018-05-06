@@ -577,7 +577,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     xbmcvfs.mkdirs(dir)
     path = os.path.join(dir, filename)
     json_path = path + '.json'
-    path = path + '.ts'
+    path = path + '.' + plugin.get_setting("ffmpeg.ext")
     ffmpeg = ffmpeg_location()
     if not ffmpeg:
         return
@@ -595,9 +595,17 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     cmd.append(url)
     probe_cmd = cmd
 
-    ffmpeg_recording_path = os.path.join(ffmpeg_dir, filename+'.ts')
+    ffmpeg_recording_path = os.path.join(ffmpeg_dir, filename + '.' + plugin.get_setting("ffmpeg.ext"))
 
-    cmd = probe_cmd + ["-reconnect", "1", "-reconnect_at_eof", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "300", "-y", "-t", str(seconds), "-c", "copy", ffmpeg_recording_path.encode('utf8')]
+    cmd = probe_cmd + ["-reconnect", "1", "-reconnect_at_eof", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "300", "-y", "-t", str(seconds), "-c", "copy"]
+    ffmpeg_args = plugin.get_setting('ffmpeg.args')
+    if ffmpeg_args:
+        cmd = cmd + ffmpeg_args.split(' ')
+    cmd.append(ffmpeg_recording_path.encode('utf8'))
+
+    post_command = plugin.get_setting('post.command')
+    post_cmd = post_command.split(' ')
+    post_cmd = [s.replace("$p",ffmpeg_recording_path.encode('utf8')).replace("$d",ffmpeg_dir.encode('utf8')).replace("$f",filename.encode('utf8') + '.' + plugin.get_setting("ffmpeg.ext")) for s in post_cmd]
 
     directory = "special://profile/addon_data/plugin.video.iptv.recorder/jobs/"
     xbmcvfs.mkdirs(directory)
@@ -622,6 +630,9 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
         if debug:
             f.write("stderr.close()\n")
             f.write("stdout.close()\n")
+        if post_command:
+            f.write("post_cmd = %s\n" % repr(post_cmd))
+            f.write("p = subprocess.Popen(post_cmd, shell=%s)\n" % windows())
         #TODO copy file somewhere else
     elif remind == True:
         cmd = 'xbmcgui.Dialog().notification("%s", "%s", sound=%s)\n' % (channelname, title, plugin.get_setting('silent')=="false")
@@ -2110,7 +2121,8 @@ def delete_recording(label, path):
     if not (xbmcgui.Dialog().yesno("IPTV Recorder", "[COLOR red]" + _("Delete Recording?") + "[/COLOR]", label)):
         return
     xbmcvfs.delete(path)
-    xbmcvfs.delete(path[:-3]+'.json')
+    length = int(len('.' + plugin.get_setting("ffmpeg.ext")))
+    xbmcvfs.delete(path[:-length]+'.json')
     refresh()
 
 
@@ -2123,10 +2135,11 @@ def delete_all_recordings():
     dir = plugin.get_setting('recordings')
     dirs, files = find(dir)
     for file in sorted(files):
-        if file.endswith('.ts'):
+        if file.endswith('.' + plugin.get_setting("ffmpeg.ext")):
             success = xbmcvfs.delete(file)
             if success:
-                json_file = file[:-3]+'.json'
+                length = int(len('.' + plugin.get_setting("ffmpeg.ext")))
+                json_file = file[:-length]+'.json'
                 xbmcvfs.delete(json_file)
 
     rmdirs(dir)
@@ -2141,7 +2154,7 @@ def find_files(root):
         found_files = found_files + find_files(path)
     file_list = []
     for file in files:
-        if file.endswith('.ts'):
+        if file.endswith('.' + plugin.get_setting("ffmpeg.ext")):
             file = os.path.join(xbmc.translatePath(root), file)
             file_list.append(file)
     return found_files + file_list
