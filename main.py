@@ -689,7 +689,10 @@ def renew_jobs():
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
-    jobs = cursor.execute("SELECT * FROM jobs").fetchall()
+    try:
+        jobs = cursor.execute("SELECT * FROM jobs").fetchall()
+    except:
+        return
 
     for uid, uuid, channelid, channelname, title, start, stop, type in jobs:
         local_starttime = utc2local(start)
