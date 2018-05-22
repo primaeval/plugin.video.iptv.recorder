@@ -1754,32 +1754,37 @@ def group(channelgroup=None,section=None):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
+    if plugin.get_setting('sort.channels') == 'true':
+        order = " ORDER by name"
+    else:
+        order = ""
+
     logos = {}
     if section == "EPG":
-        channels = cursor.execute("SELECT * FROM channels ORDER BY name").fetchall()
+        channels = cursor.execute("SELECT * FROM channels" + order).fetchall()
         streams = cursor.execute("SELECT tvg_id, tvg_logo FROM streams").fetchall()
         logos = {x[0]:x[1] for x in streams}
         collection = channels
         show_now_next = plugin.get_setting('show.now.next.all') == "true"
     elif section == "FAVOURITES":
         favourite_channels = cursor.execute("SELECT * FROM favourites ORDER BY channelname").fetchall()
-        streams = cursor.execute("SELECT * FROM streams ORDER BY name").fetchall()
+        streams = cursor.execute("SELECT * FROM streams" + order).fetchall()
         collection = favourite_channels
         show_now_next = plugin.get_setting('show.now.next.favourites') == "true"
     else:
         if channelgroup == "All Channels":
-            streams = cursor.execute("SELECT * FROM streams ORDER BY name").fetchall()
-            channels = cursor.execute("SELECT * FROM channels ORDER BY name").fetchall()
+            streams = cursor.execute("SELECT * FROM streams" + order).fetchall()
+            channels = cursor.execute("SELECT * FROM channels" + order).fetchall()
             show_now_next = plugin.get_setting('show.now.next.all') == "true"
         else:
-            streams = cursor.execute("SELECT * FROM streams WHERE groups=? ORDER BY name", (channelgroup, )).fetchall()
+            streams = cursor.execute("SELECT * FROM streams WHERE groups=?" + order, (channelgroup, )).fetchall()
             show_now_next = plugin.get_setting('show.now.next.lists') == "true"
         collection = streams
 
     favourites = cursor.execute("SELECT channelname FROM favourites").fetchall()
     favourites = [x[0] for x in favourites]
 
-    all_streams = cursor.execute("SELECT * FROM streams ORDER BY name").fetchall()
+    all_streams = cursor.execute("SELECT * FROM streams" + order).fetchall()
     stream_urls = {x[3]:x[6] for x in all_streams if x}
 
     items = []
