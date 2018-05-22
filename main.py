@@ -2224,6 +2224,8 @@ def recordings():
 
 
 def xml2utc(xml):
+    if len(xml) == 14:
+        xml = xml + " +0000"
     match = re.search(r'([0-9]{4})([0-9]{2})([0-9]{2})([0-9]{2})([0-9]{2})([0-9]{2}) ([+-])([0-9]{2})([0-9]{2})', xml)
     if match:
         year = int(match.group(1))
