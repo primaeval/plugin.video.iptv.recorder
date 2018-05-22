@@ -2223,6 +2223,7 @@ def recordings():
             label = os.path.splitext(os.path.basename(path))[0]
             description = ""
             starts.append("0")
+        label = urllib.unquote(label)
 
         context_items = []
 
