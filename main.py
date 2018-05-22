@@ -409,22 +409,31 @@ def ffmpeg_location():
         xbmcgui.Dialog().notification("IPTV Recorder", _("ffmpeg exe not found!"))
 
 
-@plugin.route('/record_once/<programmeid>')
-def record_once(programmeid, do_refresh=True, watch=False, remind=False):
-    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind]).start()
+@plugin.route('/record_once/<programmeid>/<channelid>/<channelname>')
+def record_once(programmeid, channelid, channelname, do_refresh=True, watch=False, remind=False):
+    start = None
+    stop = None
+    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind, channelid, channelname, start, stop]).start()
 
 
-@plugin.route('/watch_once/<programmeid>')
-def watch_once(programmeid, do_refresh=True, watch=True, remind=False):
-    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind]).start()
+@plugin.route('/watch_once/<programmeid>/<channelid>/<channelname>')
+def watch_once(programmeid, channelid, channelname, do_refresh=True, watch=True, remind=False):
+    start = None
+    stop = None
+    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind, channelid, channelname, start, stop]).start()
 
 
-@plugin.route('/remind_once/<programmeid>')
-def remind_once(programmeid, do_refresh=True, watch=False, remind=True):
-    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind]).start()
+@plugin.route('/remind_once/<programmeid>/<channelid>/<channelname>')
+def remind_once(programmeid, channelid, channelname, do_refresh=True, watch=False, remind=True):
+    start = None
+    stop = None
+    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind, channelid, channelname, start, stop]).start()
 
-@plugin.route('/record_one_time/<channelid>')
-def record_one_time(channelid):
+
+@plugin.route('/record_one_time/<channelid>/<channelname>')
+def record_one_time(channelid, channelname):
+    channelname = channelname.decode("utf8")
+
     utcnow = datetime.utcnow()
     ts = time.time()
     utc_offset = (datetime.fromtimestamp(ts) - datetime.utcfromtimestamp(ts)).total_seconds()
@@ -451,15 +460,17 @@ def record_one_time(channelid):
     do_refresh = False
     watch = False
     remind = False
-    threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, start, stop]).start()
+    threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, channelname, start, stop]).start()
 
 
-@plugin.route('/record_once_time/<channelid>/<start>/<stop>')
-def record_once_time(channelid, start, stop, do_refresh=True, watch=False, remind=True):
-    threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, start, stop]).start()
+@plugin.route('/record_once_time/<channelid>/<channelname>/<start>/<stop>')
+def record_once_time(channelid, channelname, start, stop, do_refresh=True, watch=False, remind=True):
+    channelname = channelname.decode("utf8")
+    threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, channelname, start, stop]).start()
 
 
-def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, channelid=None, start=None,stop=None):
+def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, channelid=None, channelname=None, start=None,stop=None):
+
     #TODO check for ffmpeg process already recording if job is re-added
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
@@ -474,7 +485,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
         title = None
         nfo = {}
 
-    channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
+    channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=? AND tvg_name=?", (channelid, channelname)).fetchone()
     if not channel:
         channel = cursor.execute("SELECT * FROM channels WHERE id=?", (channelid, )).fetchone()
         uid, tvg_id, name, tvg_logo = channel
@@ -482,7 +493,8 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     else:
         uid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
     thumbnail = tvg_logo
-    channelname = name
+    if not channelname:
+        channelname = name
     nfo["channel"] = {"channelname":channelname, "thumbnail":thumbnail, "channelid":tvg_id}
 
     if not url:
@@ -544,7 +556,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     else:
         type = "RECORD"
 
-    job = cursor.execute("SELECT * FROM jobs WHERE channelid=? AND start=? AND stop=? AND type=?", (channelid, start, stop, type)).fetchone()
+    job = cursor.execute("SELECT * FROM jobs WHERE channelid=? AND channelname=? AND start=? AND stop=? AND type=?", (channelid, channelname, start, stop, type)).fetchone()
     if job:
         return
 
@@ -1082,8 +1094,9 @@ def remind_always_search_plot(channelid, channelname):
     service()
 
 
-@plugin.route('/broadcast/<programmeid>')
-def broadcast(programmeid):
+@plugin.route('/broadcast/<programmeid>/<channelname>')
+def broadcast(programmeid, channelname):
+    channelname = channelname.decode("utf8")
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
@@ -1091,7 +1104,7 @@ def broadcast(programmeid):
     programme = cursor.execute('SELECT channelid, title, start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]" FROM programmes WHERE uid=? LIMIT 1', (programmeid, )).fetchone()
     channelid, title, start, stop = programme
 
-    channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
+    channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=? AND tvg_name=?", (channelid, channelname)).fetchone()
     if not channel:
         channel = cursor.execute("SELECT * FROM channels WHERE id=?", (channelid, )).fetchone()
         uid, tvg_id, name, tvg_logo = channel
@@ -1099,7 +1112,8 @@ def broadcast(programmeid):
     else:
         uid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
     thumbnail = tvg_logo
-    channelname = name
+    if not channelname:
+        channelname = name
 
     echannelid = channelid.encode("utf8")
     echannelname = channelname.encode("utf8")
@@ -1109,7 +1123,7 @@ def broadcast(programmeid):
 
     items.append({
         'label': _("Record Once") + " - %s - %s %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, utc2local(start), utc2local(stop)),
-        'path': plugin.url_for(record_once, programmeid=programmeid),
+        'path': plugin.url_for(record_once, programmeid=programmeid, channelid=echannelid, channelname=echannelname),
         'thumbnail': thumbnail or get_icon_path('recordings'),
     })
 
@@ -1129,7 +1143,7 @@ def broadcast(programmeid):
 
     items.append({
         'label': _("Watch Once") + " - %s - %s %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, utc2local(start), utc2local(stop)),
-        'path': plugin.url_for(watch_once, programmeid=programmeid),
+        'path': plugin.url_for(watch_once, programmeid=programmeid, channelid=echannelid, channelname=echannelname),
         'thumbnail': thumbnail or get_icon_path('recordings'),
     })
 
@@ -1149,7 +1163,7 @@ def broadcast(programmeid):
 
     items.append({
         'label': _("Remind Once") + " - %s - %s %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, utc2local(start), utc2local(stop)),
-        'path': plugin.url_for(remind_once, programmeid=programmeid),
+        'path': plugin.url_for(remind_once, programmeid=programmeid, channelid=echannelid, channelname=echannelname),
         'thumbnail': thumbnail or get_icon_path('recordings'),
     })
 
@@ -1436,9 +1450,11 @@ def search_categories(categories):
     return listing(programmes, scroll=True)
 
 
-@plugin.route('/channel/<channelid>')
-def channel(channelid):
+@plugin.route('/channel/<channelid>/<channelname>')
+def channel(channelid,channelname):
     channelid = channelid.decode("utf8")
+    echannelname = channelname
+    channelname = channelname.decode("utf8")
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
@@ -1451,7 +1467,7 @@ def channel(channelid):
     else:
         uid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
     thumbnail = tvg_logo
-    channelname = name
+    #channelname = name
 
     programmes = cursor.execute(
     'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE channelid=?', (channelid, )).fetchall()
@@ -1462,7 +1478,7 @@ def channel(channelid):
     if plugin.get_setting('add.favourite.channel') == 'true':
         add_favourite_channel(channelname, channelid, thumbnail)
 
-    return listing(programmes, scroll=True)
+    return listing(programmes, scroll=True, channelname=echannelname)
 
 
 @plugin.route('/tv_show/<title>')
@@ -1533,7 +1549,9 @@ def movie(title, date):
     return listing(programmes, scroll=True)
 
 
-def listing(programmes, scroll=False):
+def listing(programmes, scroll=False, channelname=None):
+    channelname = channelname.decode("utf8")
+
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
@@ -1555,17 +1573,21 @@ def listing(programmes, scroll=False):
         stream = streams.get(channelid) #cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
         channel = channels.get(channelid)
         if stream:
-            cuid, channelname, tvg_name, tvg_id, tvg_logo, groups, url = stream
+            cuid, schannelname, tvg_name, tvg_id, tvg_logo, groups, url = stream
             thumbnail = tvg_logo
+            if not channelname:
+                channelname = schannelname
         elif channel:
-            uid, tvg_id, channelname, tvg_logo = channel
+            uid, tvg_id, cchannelname, tvg_logo = channel
             url = ""
             thumbnail = tvg_logo
+            if not channelname:
+                channelname = cchannelname
         else:
             continue
 
 
-        jobs = cursor.execute("SELECT uuid, type FROM jobs WHERE channelid=? AND start=? AND stop=?", (channelid, start, stop)).fetchall()
+        jobs = cursor.execute("SELECT uuid, type FROM jobs WHERE channelid=? AND channelname=? AND start=? AND stop=?", (channelid, channelname, start, stop)).fetchall()
         if jobs:
             types = []
             for uuid, type in jobs:
@@ -1628,26 +1650,26 @@ def listing(programmes, scroll=False):
         else:
             if url:
                 context_items.append((_("Record Once"), 'XBMC.RunPlugin(%s)' %
-                (plugin.url_for(record_once, programmeid=uid))))
+                (plugin.url_for(record_once, programmeid=uid, channelid=echannelid, channelname=echannelname))))
                 context_items.append((_("Watch Once"), 'XBMC.RunPlugin(%s)' %
-                (plugin.url_for(watch_once, programmeid=uid))))
+                (plugin.url_for(watch_once, programmeid=uid, channelid=echannelid, channelname=echannelname))))
                 context_items.append((_("Remind Once"), 'XBMC.RunPlugin(%s)' %
-                (plugin.url_for(remind_once, programmeid=uid))))
+                (plugin.url_for(remind_once, programmeid=uid, channelid=echannelid, channelname=echannelname))))
 
         if url:
             context_items.append((_("Play Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=echannelname))))
             if plugin.get_setting('external.player'):
                 context_items.append((_("Play Channel External"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external, channelname=echannelname))))
 
-        context_items.append((echannelname, 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('channel', channelid=echannelid))))
+        context_items.append((echannelname, 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('channel', channelid=echannelid, channelname=echannelname))))
         context_items.append((etitle, 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('search_title', title=etitle))))
         if ecategories:
             context_items.append((ecategories, 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('search_categories', categories=ecategories))))
 
         if url:
-            path = plugin.url_for(broadcast, programmeid=uid)
+            path = plugin.url_for(broadcast, programmeid=uid, channelname=echannelname)
         else:
-            path = plugin.url_for('channel', channelid=echannelid)
+            path = plugin.url_for('channel', channelid=echannelid, channelname=echannelname)
 
         dictitem = {
             'label': label,
@@ -1881,7 +1903,7 @@ def group(channelgroup=None,section=None):
             context_items.append((_("Remove Favourite Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_favourite_channel, channelname=channelname))))
 
         if url:
-            path = plugin.url_for(channel, channelid=channelid)
+            path = plugin.url_for(channel, channelid=channelid, channelname=channelname)
         else:
             path = sys.argv[0]
 
@@ -2457,7 +2479,7 @@ def xmltv():
                 conn.execute("UPDATE streams SET tvg_id=? WHERE tvg_name=?", (tvg_id, tvg_name))
         elif name.lower() in lower_channels:
             tvg_id = lower_channels[name.lower()]
-            conn.execute("UPDATE streams SET tvg_id=? WHERE name=?", (tvg_id, name))
+            conn.execute("UPDATE streams SET tvg_id=?, tvg_name=? WHERE name=?", (tvg_id, name, name))
 
     if len(load_groups.keys()) == 0:
         load_all = True
