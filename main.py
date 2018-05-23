@@ -2355,6 +2355,8 @@ def xmltv():
                 tvg_name = re.search('tvg-name="(.*?)"', channel[0])
                 if tvg_name:
                     tvg_name = tvg_name.group(1)
+                else:
+                    tvg_name = name
 
                 tvg_id = re.search('tvg-id="(.*?)"', channel[0])
                 if tvg_id:
@@ -2480,7 +2482,7 @@ def xmltv():
                 conn.execute("UPDATE streams SET tvg_id=? WHERE tvg_name=?", (tvg_id, tvg_name))
         elif name.lower() in lower_channels:
             tvg_id = lower_channels[name.lower()]
-            conn.execute("UPDATE streams SET tvg_id=?, tvg_name=? WHERE name=?", (tvg_id, name, name))
+            conn.execute("UPDATE streams SET tvg_id=? WHERE name=?", (tvg_id, name))
 
     if len(load_groups.keys()) == 0:
         load_all = True
