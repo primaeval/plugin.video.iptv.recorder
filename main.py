@@ -1550,7 +1550,8 @@ def movie(title, date):
 
 
 def listing(programmes, scroll=False, channelname=None):
-    channelname = channelname.decode("utf8")
+    if channelname:
+        channelname = channelname.decode("utf8")
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
