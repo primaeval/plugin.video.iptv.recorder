@@ -2098,7 +2098,7 @@ def service_thread():
 
             for p in programmes:
                 uid, channel , title , sub_title , date , description , episode, categories = p
-                record_once(programmeid=uid, do_refresh=False, watch=watch, remind=remind)
+                record_once(programmeid=uid, channelname=jchannelname, do_refresh=False, watch=watch, remind=remind)
 
         elif jtype == "DAILY":
             if jtitle:
@@ -2114,7 +2114,7 @@ def service_thread():
                     tstart = start.time()
                     tstop = stop.time()
                     if tjstart == tstart and tjstop == tstop:
-                        record_once(programmeid=uid, do_refresh=False, watch=watch, remind=remind)
+                        record_once(programmeid=uid, channelname=jchannelname, do_refresh=False, watch=watch, remind=remind)
             else:
                 tjstart = jstart.time()
                 tjstop = jstop.time()
@@ -2135,13 +2135,13 @@ def service_thread():
             programmes = cursor.execute("SELECT uid FROM programmes WHERE channelid=? AND title LIKE ?", (jchannelid, "%"+jtitle+"%")).fetchall()
             for p in programmes:
                 uid = p[0]
-                record_once(programmeid=uid, do_refresh=False, watch=watch, remind=remind)
+                record_once(programmeid=uid, channelname=jchannelname, do_refresh=False, watch=watch, remind=remind)
 
         elif jtype == "PLOT":
             programmes = cursor.execute("SELECT uid FROM programmes WHERE channelid=? AND description LIKE ?", (jchannelid, "%"+jdescription+"%")).fetchall()
             for p in programmes:
                 uid = p[0]
-                record_once(programmeid=uid, do_refresh=False, watch=watch, remind=remind)
+                record_once(programmeid=uid, channelname=jchannelname, do_refresh=False, watch=watch, remind=remind)
 
     refresh()
 
