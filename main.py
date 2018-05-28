@@ -193,7 +193,11 @@ def jobs():
 
     items = []
 
+    now = datetime.now()
     for uid, uuid, channelid, channelname, title, start, stop, type in jobs:
+        local_stop = utc2local(stop)
+        if local_stop < now:
+            continue
 
         url = ""
         channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
