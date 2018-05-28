@@ -627,8 +627,13 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     f = xbmcvfs.File(pyjob, 'wb')
     f.write("import os, subprocess, time\n")
 
+
     debug = plugin.get_setting('debug.ffmpeg') == 'true'
     if watch == False and remind == False:
+        if not (windows() and (plugin.get_setting('task.scheduler') == 'true')):
+            f.write("import xbmcgui\n")
+            notification = 'xbmcgui.Dialog().notification("Recording: %s", "%s", sound=%s)\n' % (channelname, title, plugin.get_setting('silent')=="false")
+            f.write(notification.encode("utf8"))
         f.write("cmd = %s\n" % repr(cmd))
         if debug:
             f.write("stdout = open(r'%s','w+')\n" % xbmc.translatePath(pyjob+'.stdout.txt'))
@@ -639,9 +644,14 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
         f.write("f = open(r'%s', 'w+')\n" % xbmc.translatePath(pyjob+'.pid'))
         f.write("f.write(repr(p.pid))\n")
         f.write("f.close()\n")
+        f.write("p.wait()\n")
         if debug:
             f.write("stderr.close()\n")
             f.write("stdout.close()\n")
+        if not (windows() and (plugin.get_setting('task.scheduler') == 'true')):
+            f.write("import xbmcgui\n")
+            notification = 'xbmcgui.Dialog().notification("Recording finished: %s", "%s", sound=%s)\n' % (channelname, title, plugin.get_setting('silent')=="false")
+            f.write(notification.encode("utf8"))
         if post_command:
             f.write("post_cmd = %s\n" % repr(post_cmd))
             f.write("p = subprocess.Popen(post_cmd, shell=%s)\n" % windows())
