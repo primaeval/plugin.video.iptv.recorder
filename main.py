@@ -653,7 +653,6 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
             f.write("stderr.close()\n")
             f.write("stdout.close()\n")
         if not (windows() and (plugin.get_setting('task.scheduler') == 'true')):
-            f.write("import xbmcgui\n")
             notification = 'xbmcgui.Dialog().notification("Recording finished: %s", "%s", sound=%s)\n' % (channelname, title, plugin.get_setting('silent')=="false")
             f.write(notification.encode("utf8"))
         if post_command:
