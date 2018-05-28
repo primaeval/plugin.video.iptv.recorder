@@ -729,6 +729,10 @@ def renew_jobs():
         local_endtime = local_endtime + timedelta(minutes=after)
 
         now = datetime.now()
+        if local_endtime < now:
+            delete_job(uuid,ask=False)
+            continue
+
         if (local_starttime < now) and (local_endtime > now):
             local_starttime = now
             immediate = True
