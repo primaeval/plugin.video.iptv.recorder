@@ -775,7 +775,7 @@ def sane_name(name):
     if windows() or (plugin.get_setting('filename.urlencode') == 'true'):
         name = urllib.quote(name.encode("utf8"))
         name = name.replace("%20",' ')
-    else:
+    elif plugin.get_setting('filename.urlencode.windows') == 'true':
         quote = {'"': '%22', '|': '%7C', '*': '%2A', '/': '/', '<': '%3C', ':': '%3A', '\\': '%5C', '?': '%3F', '>': '%3E'}
         for char in quote:
             name = name.replace(char, quote[char])
