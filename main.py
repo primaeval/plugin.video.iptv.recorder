@@ -1494,7 +1494,7 @@ def channel(channelid,channelname):
     conn.close()
 
     if plugin.get_setting('add.favourite.channel') == 'true':
-        add_favourite_channel(channelname, channelid, thumbnail)
+        add_favourite_channel(channelname.encode("utf8"), channelid.encode("utf8"), thumbnail)
 
     return listing(programmes, scroll=True, channelname=echannelname)
 
