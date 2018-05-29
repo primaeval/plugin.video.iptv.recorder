@@ -629,6 +629,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     pyjob = directory + job + ".py"
 
     f = xbmcvfs.File(pyjob, 'wb')
+    f.write("# -*- coding: utf-8 -*-\n")
     f.write("import os, subprocess, time\n")
 
 
