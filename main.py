@@ -1589,24 +1589,27 @@ def listing(programmes, scroll=False, channelname=None):
     for p in programmes:
         uid, channelid , title , sub_title , start , stop , date , description , episode, categories = p
 
+        if channelname:
+            pchannelname = channelname
+
         stream = streams.get(channelid) #cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
         channel = channels.get(channelid)
         if stream:
             cuid, schannelname, tvg_name, tvg_id, tvg_logo, groups, url = stream
             thumbnail = tvg_logo
             if not channelname:
-                channelname = schannelname
+                pchannelname = schannelname
         elif channel:
             uid, tvg_id, cchannelname, tvg_logo = channel
             url = ""
             thumbnail = tvg_logo
             if not channelname:
-                channelname = cchannelname
+                pchannelname = cchannelname
         else:
             continue
 
 
-        jobs = cursor.execute("SELECT uuid, type FROM jobs WHERE channelid=? AND channelname=? AND start=? AND stop=?", (channelid, channelname, start, stop)).fetchall()
+        jobs = cursor.execute("SELECT uuid, type FROM jobs WHERE channelid=? AND channelname=? AND start=? AND stop=?", (channelid, pchannelname, start, stop)).fetchall()
         if jobs:
             types = []
             for uuid, type in jobs:
@@ -1646,14 +1649,14 @@ def listing(programmes, scroll=False, channelname=None):
         if (plugin.get_setting('hide.channel.name') == "true") and thumbnail:
             channelname_label = ""
         else:
-            channelname_label = channelname
+            channelname_label = pchannelname
 
         label = "%02d:%02d [COLOR grey]%s[/COLOR] %s %s %s%s %s" % (starttime.hour, starttime.minute, day(starttime), channelname_label, categories_label, CR, stitle, recording)
 
         context_items = []
 
         echannelid = channelid.encode("utf8")
-        echannelname=channelname.encode("utf8")
+        echannelname=pchannelname.encode("utf8")
         etitle=title.encode("utf8")
         ecategories=categories.encode("utf8")
 
