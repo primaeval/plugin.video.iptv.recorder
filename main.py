@@ -415,6 +415,8 @@ def ffmpeg_location():
 
 @plugin.route('/record_once/<programmeid>/<channelid>/<channelname>')
 def record_once(programmeid, channelid, channelname, do_refresh=True, watch=False, remind=False):
+    channelid = channelid.decode("utf8")
+    channelname = channelname.decode("utf8")
     start = None
     stop = None
     threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind, channelid, channelname, start, stop]).start()
@@ -422,6 +424,8 @@ def record_once(programmeid, channelid, channelname, do_refresh=True, watch=Fals
 
 @plugin.route('/watch_once/<programmeid>/<channelid>/<channelname>')
 def watch_once(programmeid, channelid, channelname, do_refresh=True, watch=True, remind=False):
+    channelid = channelid.decode("utf8")
+    channelname = channelname.decode("utf8")
     start = None
     stop = None
     threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind, channelid, channelname, start, stop]).start()
@@ -429,6 +433,8 @@ def watch_once(programmeid, channelid, channelname, do_refresh=True, watch=True,
 
 @plugin.route('/remind_once/<programmeid>/<channelid>/<channelname>')
 def remind_once(programmeid, channelid, channelname, do_refresh=True, watch=False, remind=True):
+    channelid = channelid.decode("utf8")
+    channelname = channelname.decode("utf8")
     start = None
     stop = None
     threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind, channelid, channelname, start, stop]).start()
@@ -436,6 +442,7 @@ def remind_once(programmeid, channelid, channelname, do_refresh=True, watch=Fals
 
 @plugin.route('/record_one_time/<channelid>/<channelname>')
 def record_one_time(channelid, channelname):
+    channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
 
     utcnow = datetime.utcnow()
@@ -469,6 +476,7 @@ def record_one_time(channelid, channelname):
 
 @plugin.route('/record_once_time/<channelid>/<channelname>/<start>/<stop>')
 def record_once_time(channelid, channelname, start, stop, do_refresh=True, watch=False, remind=True):
+    channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
     threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, channelname, start, stop]).start()
 
@@ -2119,7 +2127,7 @@ def service_thread():
 
             for p in programmes:
                 uid, channel , title , sub_title , date , description , episode, categories = p
-                record_once(programmeid=uid, channelname=jchannelname, do_refresh=False, watch=watch, remind=remind)
+                record_once(programmeid=uid, channelid=jchannelid, channelname=jchannelname, do_refresh=False, watch=watch, remind=remind)
 
         elif jtype == "DAILY":
             if jtitle:
@@ -2135,7 +2143,7 @@ def service_thread():
                     tstart = start.time()
                     tstop = stop.time()
                     if tjstart == tstart and tjstop == tstop:
-                        record_once(programmeid=uid, channelname=jchannelname, do_refresh=False, watch=watch, remind=remind)
+                        record_once(programmeid=uid, channelid=jchannelid, channelname=jchannelname, do_refresh=False, watch=watch, remind=remind)
             else:
                 tjstart = jstart.time()
                 tjstop = jstop.time()
@@ -2156,13 +2164,13 @@ def service_thread():
             programmes = cursor.execute("SELECT uid FROM programmes WHERE channelid=? AND title LIKE ?", (jchannelid, "%"+jtitle+"%")).fetchall()
             for p in programmes:
                 uid = p[0]
-                record_once(programmeid=uid, channelname=jchannelname, do_refresh=False, watch=watch, remind=remind)
+                record_once(programmeid=uid, channelid=jchannelid, channelname=jchannelname, do_refresh=False, watch=watch, remind=remind)
 
         elif jtype == "PLOT":
             programmes = cursor.execute("SELECT uid FROM programmes WHERE channelid=? AND description LIKE ?", (jchannelid, "%"+jdescription+"%")).fetchall()
             for p in programmes:
                 uid = p[0]
-                record_once(programmeid=uid, channelname=jchannelname, do_refresh=False, watch=watch, remind=remind)
+                record_once(programmeid=uid, channelid=jchannelid, channelname=jchannelname, do_refresh=False, watch=watch, remind=remind)
 
     refresh()
 
