@@ -18,7 +18,6 @@ from datetime import datetime, timedelta, tzinfo
 import uuid
 from HTMLParser import HTMLParser
 import calendar
-import pytz
 from struct import *
 from collections import namedtuple
 from language import get_string as _
