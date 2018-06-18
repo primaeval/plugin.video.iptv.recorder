@@ -481,7 +481,6 @@ def record_once_time(channelid, channelname, start, stop, do_refresh=True, watch
 
 
 def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, channelid=None, channelname=None, start=None,stop=None):
-
     #TODO check for ffmpeg process already recording if job is re-added
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
@@ -497,6 +496,8 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
         nfo = {}
 
     channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=? AND tvg_name=?", (channelid, channelname)).fetchone()
+    if not channel:
+        channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=? AND name=?", (channelid, channelname)).fetchone()
     if not channel:
         channel = cursor.execute("SELECT * FROM channels WHERE id=?", (channelid, )).fetchone()
         uid, tvg_id, name, tvg_logo = channel
@@ -521,7 +522,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
         if aheaders:
             for h in aheaders:
                 k, v = h.split('=', 1)
-                headers[k] = v
+                headers[k] = urllib.unquote_plus(v)
 
     local_starttime = utc2local(start)
     local_endtime = utc2local(stop)
