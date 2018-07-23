@@ -456,13 +456,17 @@ def record_one_time(channelid, channelname):
     start = xbmcgui.Dialog().input("Start Time",type=xbmcgui.INPUT_TIME)
     if not start:
         return
-    hour, min = start.split(':')
+    hms = start.split(':')
+    hour = hms[0]
+    min = hms[1]
     start = utcnow.replace(day=int(day), month=int(month), year=int(year), hour=int(hour), minute=int(min), second=0, microsecond=0) - timedelta(seconds=utc_offset)
 
     stop = xbmcgui.Dialog().input("Stop",type=xbmcgui.INPUT_TIME)
     if not stop:
         return
-    hour, min = stop.split(':')
+    hms = stop.split(':')
+    hour = hms[0]
+    min = hms[1]
     stop = utcnow.replace(day=int(day), month=int(month), year=int(year), hour=int(hour), minute=int(min), second=0, microsecond=0) - timedelta(seconds=utc_offset)
     if stop < start:
         stop = stop + timedelta(days=1)
@@ -807,11 +811,15 @@ def record_daily_time(channelid, channelname):
     utc_offset = (datetime.fromtimestamp(ts) - datetime.utcfromtimestamp(ts)).total_seconds()
 
     start = xbmcgui.Dialog().input("Start Time",type=xbmcgui.INPUT_TIME)
-    hour, min = start.split(':')
+    hms = start.split(':')
+    hour = hms[0]
+    min = hms[1]
     start = utcnow.replace(hour=int(hour),minute=int(min),second=0,microsecond=0) - timedelta(seconds=utc_offset)
 
     stop = xbmcgui.Dialog().input("Stop",type=xbmcgui.INPUT_TIME)
-    hour, min = stop.split(':')
+    hms = stop.split(':')
+    hour = hms[0]
+    min = hms[1]
     stop = utcnow.replace(hour=int(hour),minute=int(min),second=0,microsecond=0) - timedelta(seconds=utc_offset)
     if stop < start:
         stop = stop + timedelta(days=1)
