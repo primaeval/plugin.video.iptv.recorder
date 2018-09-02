@@ -383,13 +383,11 @@ def android_get_current_appid():
         return fp.read().rstrip("\0")
 
 
+@plugin.route('/delete_ffmpeg')
 def delete_ffmpeg():
-    ffmpeg_src = xbmc.translatePath(plugin.get_setting('ffmpeg'))
-
     if xbmc.getCondVisibility('system.platform.android'):
         ffmpeg_dst = '/data/data/%s/ffmpeg' % android_get_current_appid()
         xbmcvfs.delete(ffmpeg_dst)
-
 
 
 def ffmpeg_location():
