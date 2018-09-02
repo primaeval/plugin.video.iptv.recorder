@@ -389,8 +389,9 @@ def ffmpeg_location():
     if xbmc.getCondVisibility('system.platform.android'):
         ffmpeg_dst = '/data/data/%s/ffmpeg' % android_get_current_appid()
 
-        if not xbmcvfs.exists(ffmpeg_dst) and ffmpeg_src != ffmpeg_dst:
+        if (plugin.get_setting('ffmpeg') != plugin.get_setting('ffmpeg.last')) or (not xbmcvfs.exists(ffmpeg_dst) and ffmpeg_src != ffmpeg_dst):
             xbmcvfs.copy(ffmpeg_src, ffmpeg_dst)
+            plugin.set_setting('ffmpeg.last',plugin.get_setting('ffmpeg'))
 
         ffmpeg = ffmpeg_dst
     else:
