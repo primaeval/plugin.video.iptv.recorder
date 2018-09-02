@@ -383,6 +383,15 @@ def android_get_current_appid():
         return fp.read().rstrip("\0")
 
 
+def delete_ffmpeg():
+    ffmpeg_src = xbmc.translatePath(plugin.get_setting('ffmpeg'))
+
+    if xbmc.getCondVisibility('system.platform.android'):
+        ffmpeg_dst = '/data/data/%s/ffmpeg' % android_get_current_appid()
+        xbmcvfs.delete(ffmpeg_dst)
+
+
+
 def ffmpeg_location():
     ffmpeg_src = xbmc.translatePath(plugin.get_setting('ffmpeg'))
 
@@ -2804,6 +2813,14 @@ def maintenance_index():
             'thumbnail':get_icon_path('settings'),
             'context_menu': context_items,
         })
+        if xbmc.getCondVisibility('system.platform.android'):
+            items.append(
+            {
+                'label': _("Delete ffmpeg"),
+                'path': plugin.url_for('delete_ffmpeg'),
+                'thumbnail':get_icon_path('settings'),
+                'context_menu': context_items,
+            })
 
     return items
 
