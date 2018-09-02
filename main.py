@@ -633,11 +633,12 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
 
     ffmpeg_recording_path = os.path.join(ffmpeg_dir, filename + '.' + plugin.get_setting("ffmpeg.ext"))
 
-    cmd = probe_cmd + ["-reconnect", "1", "-reconnect_at_eof", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "300", "-y", "-t", str(seconds), "-c", "copy"]
+    cmd = probe_cmd + ["-reconnect", "1", "-reconnect_at_eof", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "300", "-y", "-t", str(seconds), "-c", "copy", "-f", "mpegts"]
     ffmpeg_args = plugin.get_setting('ffmpeg.args')
     if ffmpeg_args:
         cmd = cmd + ffmpeg_args.split(' ')
-    cmd.append(ffmpeg_recording_path.encode('utf8'))
+    #cmd.append(ffmpeg_recording_path.encode('utf8'))
+    cmd.append('-')
 
     post_command = plugin.get_setting('post.command')
     post_cmd = post_command.split(' ')
@@ -656,7 +657,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     debug = plugin.get_setting('debug.ffmpeg') == 'true'
     if watch == False and remind == False:
         if not (windows() and (plugin.get_setting('task.scheduler') == 'true')):
-            f.write("import xbmcgui\n")
+            f.write("import xbmc,xbmcgui,xbmcvfs\n")
             notification = 'xbmcgui.Dialog().notification("Recording: %s", "%s", sound=%s)\n' % (channelname, title, plugin.get_setting('silent')=="false")
             f.write(notification.encode("utf8"))
         f.write("cmd = %s\n" % repr(cmd))
@@ -665,14 +666,18 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
             f.write("stderr = open(r'%s','w+')\n" % xbmc.translatePath(pyjob+'.stderr.txt'))
             f.write("p = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, shell=%s)\n" % windows())
         else:
-            f.write("p = subprocess.Popen(cmd, shell=%s)\n" % windows())
+            f.write("p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=%s)\n" % windows())
         f.write("f = open(r'%s', 'w+')\n" % xbmc.translatePath(pyjob+'.pid'))
         f.write("f.write(repr(p.pid))\n")
         f.write("f.close()\n")
-        f.write("p.wait()\n")
+        f.write("video = xbmcvfs.File(r'%s','wb')\n" % ffmpeg_recording_path.encode('utf8'))
         if debug:
             f.write("stderr.close()\n")
             f.write("stdout.close()\n")
+        f.write("while True:\n")
+        f.write("  data = p.stdout.read(1000000)\n")
+        f.write("  video.write(data)\n")
+        f.write("video.close()\n")
         if not (windows() and (plugin.get_setting('task.scheduler') == 'true')):
             notification = 'xbmcgui.Dialog().notification("Recording finished: %s", "%s", sound=%s)\n' % (channelname, title, plugin.get_setting('silent')=="false")
             f.write(notification.encode("utf8"))
