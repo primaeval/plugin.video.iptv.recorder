@@ -637,7 +637,10 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     ffmpeg_args = plugin.get_setting('ffmpeg.args')
     if ffmpeg_args:
         cmd = cmd + ffmpeg_args.split(' ')
-    cmd.append(ffmpeg_recording_path.encode('utf8'))
+    if (plugin.get_setting('ffmpeg.pipe') == 'true') and not (windows() and (plugin.get_setting('task.scheduler') == 'true')):
+        cmd = cmd + ['-f', 'mpegts','-']
+    else:
+        cmd.append(ffmpeg_recording_path.encode('utf8'))
 
     post_command = plugin.get_setting('post.command')
     post_cmd = post_command.split(' ')
@@ -656,7 +659,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     debug = plugin.get_setting('debug.ffmpeg') == 'true'
     if watch == False and remind == False:
         if not (windows() and (plugin.get_setting('task.scheduler') == 'true')):
-            f.write("import xbmcgui\n")
+            f.write("import xbmc,xbmcvfs,xbmcgui\n")
             notification = 'xbmcgui.Dialog().notification("Recording: %s", "%s", sound=%s)\n' % (channelname, title, plugin.get_setting('silent')=="false")
             f.write(notification.encode("utf8"))
         f.write("cmd = %s\n" % repr(cmd))
@@ -665,11 +668,21 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
             f.write("stderr = open(r'%s','w+')\n" % xbmc.translatePath(pyjob+'.stderr.txt'))
             f.write("p = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, shell=%s)\n" % windows())
         else:
-            f.write("p = subprocess.Popen(cmd, shell=%s)\n" % windows())
+            if (plugin.get_setting('ffmpeg.pipe') == 'true') and not (windows() and (plugin.get_setting('task.scheduler') == 'true')):
+                f.write("p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=%s)\n" % windows())
+            else:
+                f.write("p = subprocess.Popen(cmd, shell=%s)\n" % windows())
         f.write("f = open(r'%s', 'w+')\n" % xbmc.translatePath(pyjob+'.pid'))
         f.write("f.write(repr(p.pid))\n")
         f.write("f.close()\n")
-        f.write("p.wait()\n")
+        if (plugin.get_setting('ffmpeg.pipe') == 'true') and not (windows() and (plugin.get_setting('task.scheduler') == 'true')):
+            f.write("video = xbmcvfs.File(r'%s','wb')\n" % ffmpeg_recording_path.encode('utf8'))
+            f.write("while True:\n")
+            f.write("  data = p.stdout.read(1000000)\n")
+            f.write("  video.write(data)\n")
+            f.write("video.close()\n")
+        else:
+            f.write("p.wait()\n")
         if debug:
             f.write("stderr.close()\n")
             f.write("stdout.close()\n")
