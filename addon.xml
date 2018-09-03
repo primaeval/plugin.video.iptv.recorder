@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <addon id="plugin.video.iptv.recorder"
-version="0.0.71"
+version="0.0.72"
 name="IPTV Recorder"
 provider-name="primaeval, Chychy">
 <requires>
@@ -25,7 +25,7 @@ ffmpeg simply copies the stream into a transport stream container.
 <source>https://github.com/primaeval/plugin.video.iptv.recorder</source>
 <forum>https://forum.kodi.tv/showthread.php?tid=329991</forum>
 <language>en fr</language>
-<news>Sort Channels by Name setting</news>
+<news>pipe ffmpeg output through Kodi (for network streams)</news>
 <assets>
   <icon>icon.png</icon>
   <screenshot>resources/screenshots/screenshot-00.jpg</screenshot>
