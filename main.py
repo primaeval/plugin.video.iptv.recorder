@@ -2398,13 +2398,15 @@ def xmltv():
             encoding = chardet.detect(data)
             data = data.decode(encoding['encoding'])
 
-            global_shift = 0
+            settings_shift = float(plugin.get_setting('external.m3u.shift.'+x))
+            global_shift = settings_shift
+
             header = re.search('#EXTM3U(.*)', data)
             if header:
                 tvg_shift = re.search('tvg-shift="(.*?)"', header.group(1))
                 if tvg_shift:
                     tvg_shift = tvg_shift.group(1)
-                    global_shift = int(tvg_shift)
+                    global_shift = float(tvg_shift) + settings_shift
 
             channels = re.findall('#EXTINF:(.*?)(?:\r\n|\r|\n)(.*?)(?:\r\n|\r|\n|$)', data, flags=(re.I | re.DOTALL))
             total = len(channels)
@@ -2430,7 +2432,7 @@ def xmltv():
                 tvg_shift = re.search('tvg-shift="(.*?)"', channel[0])
                 if tvg_shift:
                     tvg_shift = tvg_shift.group(1)
-                    shifts[tvg_id] = tvg_shift
+                    shifts[tvg_id] = float(tvg_shift) + settings_shift
 
                 url = channel[1]
                 search = plugin.get_setting('m3u.regex.search')
@@ -2607,7 +2609,7 @@ def xmltv():
                             continue
 
                     if channel in shifts:
-                        shift = int(shifts[channel])
+                        shift = shifts[channel]
                     else:
                         shift = None
 
