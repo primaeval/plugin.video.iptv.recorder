@@ -69,7 +69,7 @@
     <setting id="external.m3u.1" label="External m3u 1" type="enum" default="IPTV Simple Client" values="IPTV Simple Client|File|Url" />
     <setting id="external.m3u.file.1" label="External m3u File 1" visible="eq(-1,1)" type="file" default=""/>
     <setting id="external.m3u.url.1" label="External m3u Url 1" visible="eq(-2,2)" type="text" default=""/>
-    <setting id="external.m3u.shift.1" label="External m3u TimeShift(minutes) 1" visible="!eq(-2,0)" type="slider" default="0" range="-12,.5,12" option="float"/>
+    <setting id="external.m3u.shift.1" label="External m3u Time Shift 1 (hours)" visible="!eq(-3,0)" type="slider" default="0" range="-12,.5,12" option="float"/>
 
     <setting type="sep"/>
     <setting id="external.xmltv.2" label="External xmltv 2" type="enum" values="None|File|Url" />
@@ -80,7 +80,7 @@
     <setting id="external.m3u.2" label="External m3u 2" type="enum" values="None|File|Url" />
     <setting id="external.m3u.file.2" label="External m3u File 2" visible="eq(-1,1)" type="file" default=""/>
     <setting id="external.m3u.url.2" label="External m3u Url 2" visible="eq(-2,2)" type="text" default=""/>
-    <setting id="external.m3u.shift.2" label="External m3u TimeShift(minutes) 2" visible="!eq(-2,0)" type="slider" default="0" range="-12,.5,12" option="float"/>
+    <setting id="external.m3u.shift.2" label="External m3u Time Shift 2 (hours)" visible="!eq(-3,0)" type="slider" default="0" range="-12,.5,12" option="float"/>
 
     <setting type="sep"/>
     <setting id="m3u.regex.search" label="m3u Url Regex Search" type="text" default=""/>
