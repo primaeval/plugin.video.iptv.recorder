@@ -624,11 +624,12 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     f.close()
 
     cmd = [ffmpeg]
+    cmd.append("-i")
+    cmd.append(url)
     for h in headers:
         cmd.append("-headers")
         cmd.append("%s:%s" % (h, headers[h]))
-    cmd.append("-i")
-    cmd.append(url)
+
     probe_cmd = cmd
 
     ffmpeg_recording_path = os.path.join(ffmpeg_dir, filename + '.' + plugin.get_setting("ffmpeg.ext"))
@@ -662,7 +663,24 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
             f.write("import xbmc,xbmcvfs,xbmcgui\n")
             notification = 'xbmcgui.Dialog().notification("Recording: %s", "%s", sound=%s)\n' % (channelname, title, plugin.get_setting('silent')=="false")
             f.write(notification.encode("utf8"))
-        f.write("cmd = %s\n" % repr(cmd))
+            f.write("cmd = %s\n" % repr(cmd))
+
+            if url.startswith('plugin://'):
+                f.write("player = xbmc.Player()\n")
+                f.write("player.play('%s')\n" % url.encode("utf8"))
+                f.write("new_url = ''\n")
+                f.write("for _ in range(60):\n")
+                f.write("    time.sleep(1)\n")
+                f.write("    if player.isPlaying():\n")
+                f.write("        new_url = player.getPlayingFile()\n")
+                f.write("        break\n")
+                f.write("time.sleep(1)\n")
+                f.write("player.stop()\n")
+                f.write("time.sleep(1)\n")
+                f.write("if new_url:\n")
+                f.write("    cmd[2] = new_url\n")
+        else:
+            f.write("cmd = %s\n" % repr(cmd))
         if debug:
             f.write("stdout = open(r'%s','w+')\n" % xbmc.translatePath(pyjob+'.stdout.txt'))
             f.write("stderr = open(r'%s','w+')\n" % xbmc.translatePath(pyjob+'.stderr.txt'))
