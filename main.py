@@ -885,7 +885,7 @@ def record_daily(channelid, channelname, title, start, stop):
     channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
     title = title.decode("utf8")
-    title = xbmcgui.Dialog().input(_("% is Wildcard"), title)
+    title = xbmcgui.Dialog().input(_("% is Wildcard"), title).decode("utf8")
 
     start = timestamp2datetime(float(start))
     stop = timestamp2datetime(float(stop))
@@ -911,7 +911,7 @@ def record_always(channelid, channelname, title):
     channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
     title = title.decode("utf8")
-    title = xbmcgui.Dialog().input(_("% is Wildcard"), title)
+    title = xbmcgui.Dialog().input(_("% is Wildcard"), title).decode("utf8")
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
@@ -933,7 +933,7 @@ def record_always_search(channelid, channelname):
     channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
 
-    title = xbmcgui.Dialog().input("IPTV Recorder: " + _("Title Search (% is wildcard)?"))
+    title = xbmcgui.Dialog().input("IPTV Recorder: " + _("Title Search (% is wildcard)?")).decode("utf8")
     if not title:
         return
 
@@ -957,7 +957,7 @@ def record_always_search_plot(channelid, channelname):
     channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
 
-    description = xbmcgui.Dialog().input("IPTV Recorder: " + _("Plot Search (% is wildcard)?"))
+    description = xbmcgui.Dialog().input("IPTV Recorder: " + _("Plot Search (% is wildcard)?")).decode("utf8")
     if not description:
         return
 
@@ -981,7 +981,7 @@ def watch_daily(channelid, channelname, title, start, stop):
     channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
     title = title.decode("utf8")
-    title = xbmcgui.Dialog().input(_("% is Wildcard"), title)
+    title = xbmcgui.Dialog().input(_("% is Wildcard"), title).decode("utf8")
 
     start = timestamp2datetime(float(start))
     stop = timestamp2datetime(float(stop))
@@ -1007,7 +1007,7 @@ def watch_always(channelid, channelname, title):
     channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
     title = title.decode("utf8")
-    title = xbmcgui.Dialog().input(_("% is Wildcard"), title)
+    title = xbmcgui.Dialog().input(_("% is Wildcard"), title).decode("utf8")
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
@@ -1029,7 +1029,7 @@ def watch_always_search(channelid, channelname):
     channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
 
-    title = xbmcgui.Dialog().input("IPTV watcher: " + _("Title Search (% is wildcard)?"))
+    title = xbmcgui.Dialog().input("IPTV watcher: " + _("Title Search (% is wildcard)?")).decode("utf8")
     if not title:
         return
 
@@ -1053,7 +1053,7 @@ def watch_always_search_plot(channelid, channelname):
     channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
 
-    description = xbmcgui.Dialog().input("IPTV watcher: " + _("Plot Search (% is wildcard)?"))
+    description = xbmcgui.Dialog().input("IPTV watcher: " + _("Plot Search (% is wildcard)?")).decode("utf8")
     if not description:
         return
 
@@ -1077,7 +1077,7 @@ def remind_daily(channelid, channelname, title, start, stop):
     channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
     title = title.decode("utf8")
-    title = xbmcgui.Dialog().input(_("% is Wildcard"), title)
+    title = xbmcgui.Dialog().input(_("% is Wildcard"), title).decode("utf8")
 
     start = timestamp2datetime(float(start))
     stop = timestamp2datetime(float(stop))
@@ -1103,7 +1103,7 @@ def remind_always(channelid, channelname, title):
     channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
     title = title.decode("utf8")
-    title = xbmcgui.Dialog().input(_("% is Wildcard"), title)
+    title = xbmcgui.Dialog().input(_("% is Wildcard"), title).decode("utf8")
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
@@ -1125,7 +1125,7 @@ def remind_always_search(channelid, channelname):
     channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
 
-    title = xbmcgui.Dialog().input("IPTV reminder: " + _("Title Search (% is wildcard)?"))
+    title = xbmcgui.Dialog().input("IPTV reminder: " + _("Title Search (% is wildcard)?")).decode("utf8")
     if not title:
         return
 
@@ -1149,7 +1149,7 @@ def remind_always_search_plot(channelid, channelname):
     channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
 
-    description = xbmcgui.Dialog().input("IPTV reminder: " + _("Plot Search (% is wildcard)?"))
+    description = xbmcgui.Dialog().input("IPTV reminder: " + _("Plot Search (% is wildcard)?")).decode("utf8")
     if not description:
         return
 
