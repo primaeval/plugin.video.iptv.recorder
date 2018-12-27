@@ -335,7 +335,7 @@ def delete_job(job, kill=True, ask=True):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
-    job_details = cursor.execute("SELECT * FROM jobs WHERE uuid=?", (job, )).fetchone()
+    job_details = cursor.execute("SELECT uuid FROM jobs WHERE uuid=?", (job, )).fetchone()
     if not job_details:
         return
 
