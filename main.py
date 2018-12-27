@@ -2206,7 +2206,7 @@ def service_thread():
                     start = start + timedelta(days=days)
                     stop = stop + timedelta(days=days)
                     if stop > start:
-                        record_once_time(jchannelid, start, stop, do_refresh=False, watch=watch, remind=remind)
+                        record_once_time(jchannelid, jchannelname, start, stop, do_refresh=False, watch=watch, remind=remind)
 
         elif jtype == "SEARCH":
             programmes = cursor.execute("SELECT uid FROM programmes WHERE channelid=? AND title LIKE ?", (jchannelid, "%"+jtitle+"%")).fetchall()
