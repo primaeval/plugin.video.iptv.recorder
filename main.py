@@ -1540,8 +1540,10 @@ def channel(channelid,channelname):
         url = ""
     else:
         uid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
+
     thumbnail = tvg_logo
     #channelname = name
+
 
     programmes = cursor.execute(
     'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE channelid=?', (channelid, )).fetchall()
@@ -1860,6 +1862,7 @@ def group(channelgroup=None,section=None):
         order = ""
 
     logos = {}
+    channel_logos = {}
     if section == "EPG":
         channels = cursor.execute("SELECT * FROM channels" + order).fetchall()
         streams = cursor.execute("SELECT tvg_id, tvg_logo FROM streams").fetchall()
@@ -1872,9 +1875,10 @@ def group(channelgroup=None,section=None):
         collection = favourite_channels
         show_now_next = plugin.get_setting('show.now.next.favourites') == "true"
     else:
+        channels = cursor.execute("SELECT * FROM channels" + order).fetchall()
+        channel_logos = {x[1]:x[3] for x in channels}
         if channelgroup == "All Channels":
             streams = cursor.execute("SELECT * FROM streams" + order).fetchall()
-            channels = cursor.execute("SELECT * FROM channels" + order).fetchall()
             show_now_next = plugin.get_setting('show.now.next.all') == "true"
         else:
             streams = cursor.execute("SELECT * FROM streams WHERE groups=?" + order, (channelgroup, )).fetchall()
@@ -1918,7 +1922,7 @@ def group(channelgroup=None,section=None):
             channelid = tvg_id
             if not channelid:
                 continue
-            thumbnail = tvg_logo or get_icon_path('tv')
+            thumbnail = tvg_logo or logos.get(channelid) or channel_logos.get(channelid) or get_icon_path('tv')
             logo = tvg_logo
 
         description = ""
