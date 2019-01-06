@@ -1654,7 +1654,7 @@ def listing(programmes, scroll=False, channelname=None):
         channel = channels.get(channelid)
         if stream:
             cuid, schannelname, tvg_name, tvg_id, tvg_logo, groups, url = stream
-            thumbnail = tvg_logo
+            thumbnail = tvg_logo or channel[3]
             if not channelname:
                 pchannelname = schannelname
         elif channel:
