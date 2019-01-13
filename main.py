@@ -694,7 +694,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
         f.write("f.write(repr(p.pid))\n")
         f.write("f.close()\n")
         if (plugin.get_setting('ffmpeg.pipe') == 'true') and not (windows() and (plugin.get_setting('task.scheduler') == 'true')):
-            f.write("video = xbmcvfs.File(r'%s','wb')\n" % ffmpeg_recording_path.encode('utf8'))
+            f.write("video = xbmcvfs.File(r'%s','wb')\n" % path.encode('utf8'))
             f.write("while True:\n")
             f.write("  data = p.stdout.read(1000000)\n")
             f.write("  video.write(data)\n")
