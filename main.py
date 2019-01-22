@@ -241,7 +241,7 @@ def rules():
         url = ""
         channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
         if channel:
-            uid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
+            cuid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
             echannelname=name.encode("utf8")
 
         context_items = []
