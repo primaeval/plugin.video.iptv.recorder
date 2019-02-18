@@ -30,6 +30,9 @@
     <setting type="sep"/>
     <setting id="add.favourite.channel" label="Add Channel to Favourites when Visited" type="bool" default="true" />
     <setting id="add.context.searches" label="Add Context Searches to Search Lists" type="bool" default="true" />
+
+    <setting type="sep"/>
+    <setting id="meta" label="Meta4kodi or fork" type="addon" addontype="xbmc.python.pluginsource" default="plugin.video.meta" />
 </category>
 
 <category label="Jobs and Rules">

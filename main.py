@@ -1177,8 +1177,8 @@ def broadcast(programmeid, channelname):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
-    programme = cursor.execute('SELECT channelid, title, start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]" FROM programmes WHERE uid=? LIMIT 1', (programmeid, )).fetchone()
-    channelid, title, start, stop = programme
+    programme = cursor.execute('SELECT channelid, title, start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", episode FROM programmes WHERE uid=? LIMIT 1', (programmeid, )).fetchone()
+    channelid, title, start, stop, episode = programme
 
     channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=? AND tvg_name=?", (channelid, channelname)).fetchone()
     if not channel:
@@ -1270,8 +1270,49 @@ def broadcast(programmeid, channelname):
             'thumbnail': thumbnail or get_icon_path('tv'),
         })
 
-    #TODO Watch Timers
-
+    if xbmc.getCondVisibility('System.HasAddon(%s)' % plugin.get_setting('meta')) == 1:
+        icon = xbmcaddon.Addon(plugin.get_setting('meta')).getAddonInfo('icon')
+        name = xbmcaddon.Addon(plugin.get_setting('meta')).getAddonInfo('name')
+        if episode:
+            #log((channelname,channelid,title,episode))
+            tvdb_url = "http://thetvdb.com/api/GetSeries.php?seriesname=%s&language=en" % title
+            #log(tvdb_url)
+            data = requests.get(tvdb_url).text
+            if data:
+                match = re.search('seriesid>(.*?)<',data)
+                if match:
+                    tvdb_id = match.group(1)
+                match = re.search('S(\d+)E(\d+)',episode,flags=re.I)
+                if match:
+                    season = match.group(1)
+                    ep = match.group(2)
+                    meta_url = "plugin://%s/tv/play/%s/%d/%d/library" % (plugin.get_setting('meta').lower(),tvdb_id,int(season),int(ep))
+                    items.append({
+                        'label': "%s - %s %s" % (name,title,episode),
+                        'path': meta_url,
+                        'thumbnail': icon,
+                    })
+                else:
+                    meta_url = "plugin://%s/tv/search_term/%s/1" % (plugin.get_setting('meta').lower(),urllib.quote_plus(title))
+                    items.append({
+                        'label': "%s - %s" % (name,title),
+                        'path': meta_url,
+                        'thumbnail': icon,
+                    })
+            else:
+                meta_url = "plugin://%s/tv/search_term/%s/1" % (plugin.get_setting('meta').lower(),urllib.quote_plus(title))
+                items.append({
+                    'label': "%s - %s" % (name,title),
+                    'path': meta_url,
+                    'thumbnail': icon,
+                })
+        else:
+            meta_url = "plugin://%s/movies/search_term/%s/1" % (plugin.get_setting('meta').lower(),urllib.quote_plus(title))
+            items.append({
+                'label': "%s - %s" % (name,title),
+                'path': meta_url,
+                'thumbnail': icon,
+            })
     return items
 
 
