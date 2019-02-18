@@ -8,9 +8,13 @@ provider-name="primaeval, Chychy">
   <import addon="script.module.xbmcswift2" version="2.4.0"/>
   <import addon="script.module.requests" version="2.9.1" />
   <import addon="script.module.chardet" />
+  <import addon="script.module.pytz" />
 </requires>
 <extension point="xbmc.python.pluginsource" library="main.py">
   <provides>video</provides>
+</extension>
+<extension point="xbmc.python.script" library="default.py">
+    <provides>executable</provides>
 </extension>
 <extension point="xbmc.service" library="server.py" start="login"/>
 <extension point="xbmc.addon.metadata">
