@@ -13,6 +13,8 @@ import json
 import os, os.path
 import stat
 import subprocess
+import shutil
+import glob
 from datetime import datetime, timedelta, tzinfo
 #TODO strptime bug fix
 import uuid
@@ -2883,10 +2885,70 @@ def select_groups():
         full_service()
 
 
+@plugin.route('/estuary')
+def estuary():
+    from_path = xbmc.translatePath('special://xbmc/addons/skin.estuary')
+    to_path = xbmc.translatePath('special://home/addons/skin.estuary.iptv.recorder')
+    #log((from_path,to_path))
+    if os.path.exists(to_path):
+        #TODO warning
+        shutil.rmtree(to_path)
+    shutil.copytree(from_path, to_path)
+
+    filename = xbmc.translatePath('special://home/addons/skin.estuary.iptv.recorder/addon.xml')
+    with open(filename,'r') as f:
+        text = f.read()
+    text = text.replace('skin.estuary','skin.estuary.iptv.recoder').replace('Estuary','Estuary (IPTV Recorder)')
+    with open(filename,'w') as f:
+        f.write(text)
+
+    files = glob.glob(os.path.join(to_path,'language','*','*.po'))
+    for filename in files:
+        with open(filename,'r') as f:
+            text = f.read()
+        text = text.replace('skin.estuary','skin.estuary.iptv.recoder')
+        with open(filename,'w') as f:
+            f.write(text)
+
+    filename = xbmc.translatePath('special://home/addons/skin.estuary.iptv.recorder/xml/DialogPVRInfo.xml')
+    with open(filename,'r') as f:
+        text = f.read()
+    text = text.replace('<control type="grouplist" id="9000">',
+    '''<control type="grouplist" id="9000">
+					<include content="InfoDialogButton">
+						<param name="width" value="275" />
+						<param name="id" value="666" />
+						<param name="icon" value="icons/infodialogs/record.png" />
+						<param name="label" value="IPTV Recorder" />
+						<param name="onclick_1" value="Action(close)" />
+						<param name="onclick_2" value="RunScript(plugin.video.iptv.recorder,$ESCINFO[ListItem.ChannelName],$ESCINFO[ListItem.Title],$ESCINFO[ListItem.Date],$ESCINFO[ListItem.Duration],$ESCINFO[ListItem.Plot])" />
+						<param name="visible" value="System.hasAddon(plugin.video.iptv.recorder)" />
+					</include>''')
+    with open(filename,'w') as f:
+        f.write(text)
+
+    xbmc.executebuiltin("UpdateLocalAddons")
+    time.sleep(2)
+    params = '"method":"Addons.SetAddonEnabled","params":{"addonid":"skin.estuary.iptv.recorder","enabled":true}'
+    try:
+        xbmc.executeJSONRPC('{"jsonrpc": "2.0", %s, "id": 1}' % params)
+    except:
+        d.ok("IPTV Recorder","Kodi web interface wasn't enabled. Restart Kodi and Enable Skin in My Addons.")
+    xbmc.executebuiltin("ActivateWindow(10040,addons://user/xbmc.gui.skin,return)")
+
+
 @plugin.route('/')
 def index():
     items = []
     context_items = []
+
+    items.append(
+    {
+        'label': "[COLOR yellow]NEW! Create Estuary (IPTV Recorder) Skin[/COLOR]",
+        'path': plugin.url_for('estuary'),
+        'thumbnail':get_icon_path('popular'),
+        'context_menu': context_items,
+    })
 
     items.append(
     {
