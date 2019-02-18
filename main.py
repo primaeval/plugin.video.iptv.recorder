@@ -1278,28 +1278,23 @@ def broadcast(programmeid, channelname):
             tvdb_url = "http://thetvdb.com/api/GetSeries.php?seriesname=%s&language=en" % title
             #log(tvdb_url)
             data = requests.get(tvdb_url).text
+            found = False
             if data:
                 match = re.search('seriesid>(.*?)<',data)
                 if match:
                     tvdb_id = match.group(1)
-                match = re.search('S(\d+)E(\d+)',episode,flags=re.I)
-                if match:
-                    season = match.group(1)
-                    ep = match.group(2)
-                    meta_url = "plugin://%s/tv/play/%s/%d/%d/library" % (plugin.get_setting('meta').lower(),tvdb_id,int(season),int(ep))
-                    items.append({
-                        'label': "%s - %s %s" % (name,title,episode),
-                        'path': meta_url,
-                        'thumbnail': icon,
-                    })
-                else:
-                    meta_url = "plugin://%s/tv/search_term/%s/1" % (plugin.get_setting('meta').lower(),urllib.quote_plus(title))
-                    items.append({
-                        'label': "%s - %s" % (name,title),
-                        'path': meta_url,
-                        'thumbnail': icon,
-                    })
-            else:
+                    match = re.search('S(\d+)E(\d+)',episode,flags=re.I)
+                    if match:
+                        found = True
+                        season = match.group(1)
+                        ep = match.group(2)
+                        meta_url = "plugin://%s/tv/play/%s/%d/%d/library" % (plugin.get_setting('meta').lower(),tvdb_id,int(season),int(ep))
+                        items.append({
+                            'label': "%s - %s %s" % (name,title,episode),
+                            'path': meta_url,
+                            'thumbnail': icon,
+                        })
+            if not found:
                 meta_url = "plugin://%s/tv/search_term/%s/1" % (plugin.get_setting('meta').lower(),urllib.quote_plus(title))
                 items.append({
                     'label': "%s - %s" % (name,title),
