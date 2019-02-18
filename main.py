@@ -2965,6 +2965,15 @@ def estuary():
 						<param name="onclick_1" value="Action(close)" />
 						<param name="onclick_2" value="RunScript(plugin.video.iptv.recorder,$ESCINFO[ListItem.ChannelName],$ESCINFO[ListItem.Title],$ESCINFO[ListItem.Date],$ESCINFO[ListItem.Duration],$ESCINFO[ListItem.Plot])" />
 						<param name="visible" value="System.hasAddon(plugin.video.iptv.recorder)" />
+					</include>
+					<include content="InfoDialogButton">
+						<param name="width" value="275" />
+						<param name="id" value="667" />
+						<param name="icon" value="icons/infodialogs/record.png" />
+						<param name="label" value="Recordings" />
+						<param name="onclick_1" value="Action(close)" />
+						<param name="onclick_2" value="ActivateWindow(10025,&quot;plugin://plugin.video.iptv.recorder/recordings&quot;,return)" />
+						<param name="visible" value="System.hasAddon(plugin.video.iptv.recorder)" />
 					</include>''')
     with open(filename,'w') as f:
         f.write(text)
