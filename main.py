@@ -1309,7 +1309,13 @@ def broadcast(programmeid, channelname):
         else:
             meta_url = "plugin://%s/movies/search_term/%s/1" % (plugin.get_setting('meta').lower(),urllib.quote_plus(title))
             items.append({
-                'label': "%s - %s" % (name,title),
+                'label': "%s - Movie - %s" % (name,title),
+                'path': meta_url,
+                'thumbnail': icon,
+            })
+            meta_url = "plugin://%s/tv/search_term/%s/1" % (plugin.get_setting('meta').lower(),urllib.quote_plus(title))
+            items.append({
+                'label': "%s - TV Show - %s" % (name,title),
                 'path': meta_url,
                 'thumbnail': icon,
             })
