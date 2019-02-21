@@ -496,6 +496,7 @@ def record_once_time(channelid, channelname, start, stop, do_refresh=True, watch
 
 def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, channelid=None, channelname=None, start=None,stop=None):
     #TODO check for ffmpeg process already recording if job is re-added
+    channelname = urllib.unquote_plus(channelname)
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
@@ -1176,6 +1177,7 @@ def remind_always_search_plot(channelid, channelname):
 @plugin.route('/broadcast/<programmeid>/<channelname>')
 def broadcast(programmeid, channelname):
     channelname = channelname.decode("utf8")
+    channelname = urllib.unquote_plus(channelname)
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
@@ -1674,7 +1676,7 @@ def movie(title, date):
 
 def listing(programmes, scroll=False, channelname=None):
     if channelname:
-        channelname = channelname.decode("utf8")
+        channelname = urllib.unquote_plus(channelname.decode("utf8"))
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
@@ -1971,6 +1973,8 @@ def group(channelgroup=None,section=None):
                 continue
             thumbnail = tvg_logo or logos.get(channelid) or channel_logos.get(channelid) or get_icon_path('tv')
             logo = tvg_logo
+
+        channelname = urllib.unquote_plus(channelname)
 
         description = ""
         categories = ""
@@ -2482,7 +2486,7 @@ def xmltv():
             i = 0
             for channel in channels:
 
-                name = remove_formatting(channel[0].rsplit(',', 1)[-1]).strip()
+                name = urllib.quote_plus(channel[0].rsplit(',', 1)[-1].strip())
                 tvg_name = re.search('tvg-name="(.*?)"', channel[0])
                 if tvg_name:
                     tvg_name = tvg_name.group(1)

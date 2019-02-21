@@ -5,6 +5,7 @@ import sqlite3
 import pytz
 import tzlocal
 import re
+import urllib
 
 def log(x):
     xbmc.log(repr(x),xbmc.LOGERROR)
@@ -14,7 +15,7 @@ def remove_formatting(label):
     label = re.sub(r"\[/?COLOR.*?\]", '', label, flags=re.I)
     return label
 
-channel = remove_formatting(sys.argv[1]).strip()
+channel = urllib.quote_plus(sys.argv[1].strip())
 title = sys.argv[2]
 date = sys.argv[3]
 duration = sys.argv[4]
