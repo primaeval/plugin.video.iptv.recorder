@@ -48,6 +48,7 @@
     <setting type="sep"/>
     <setting id="ffmpeg" label="ffmpeg exe" type="file" default=""/>
     <setting id="ffmpeg.last" label="ffmpeg exe" type="file" default="" visible="false"/>
+    <setting id="ffmpeg.reconnect" label="ffmpeg reconnect arguments" type="bool" default="true"/>
     <setting id="ffmpeg.args" label="Optional extra ffmpeg arguments" type="text" default=""/>
     <setting id="ffmpeg.ext" label="ffmpeg file extension (ts is recommended)" type="text" default="ts"/>
 

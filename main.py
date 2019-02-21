@@ -637,6 +637,9 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     ffmpeg_recording_path = os.path.join(ffmpeg_dir, filename + '.' + plugin.get_setting("ffmpeg.ext"))
 
     cmd = probe_cmd + ["-y", "-t", str(seconds), "-c", "copy"]
+    ffmpeg_reconnect = plugin.get_setting('ffmpeg.reconnect')
+    if ffmpeg_reconnect:
+        cmd = cmd + ["-reconnect_at_eof", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "300"]
     ffmpeg_args = plugin.get_setting('ffmpeg.args')
     if ffmpeg_args:
         cmd = cmd + ffmpeg_args.split(' ')
