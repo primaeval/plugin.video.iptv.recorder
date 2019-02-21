@@ -4,13 +4,17 @@ import time,datetime
 import sqlite3
 import pytz
 import tzlocal
-
+import re
 
 def log(x):
     xbmc.log(repr(x),xbmc.LOGERROR)
 
-    
-channel = sys.argv[1]
+def remove_formatting(label):
+    label = re.sub(r"\[/?[BI]\]", '', label)
+    label = re.sub(r"\[/?COLOR.*?\]", '', label)
+    return label
+
+channel = remove_formatting(sys.argv[1]).strip()
 title = sys.argv[2]
 date = sys.argv[3]
 duration = sys.argv[4]

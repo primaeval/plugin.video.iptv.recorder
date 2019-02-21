@@ -2482,7 +2482,7 @@ def xmltv():
             i = 0
             for channel in channels:
 
-                name = channel[0].rsplit(',', 1)[-1]
+                name = remove_formatting(channel[0].rsplit(',', 1)[-1]).strip()
                 tvg_name = re.search('tvg-name="(.*?)"', channel[0])
                 if tvg_name:
                     tvg_name = tvg_name.group(1)
