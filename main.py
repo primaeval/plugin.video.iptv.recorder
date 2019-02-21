@@ -2940,7 +2940,7 @@ def estuary():
     filename = xbmc.translatePath('special://home/addons/skin.estuary.iptv.recorder/addon.xml')
     with open(filename,'r') as f:
         text = f.read()
-    text = text.replace('skin.estuary','skin.estuary.iptv.recoder').replace('Estuary','Estuary (IPTV Recorder)')
+    text = text.replace('skin.estuary','skin.estuary.iptv.recorder').replace('Estuary','Estuary (IPTV Recorder)')
     with open(filename,'w') as f:
         f.write(text)
 
@@ -2948,7 +2948,7 @@ def estuary():
     for filename in files:
         with open(filename,'r') as f:
             text = f.read()
-        text = text.replace('skin.estuary','skin.estuary.iptv.recoder')
+        text = text.replace('skin.estuary','skin.estuary.iptv.recorder')
         with open(filename,'w') as f:
             f.write(text)
 
@@ -2982,10 +2982,17 @@ def estuary():
     time.sleep(2)
     params = '"method":"Addons.SetAddonEnabled","params":{"addonid":"skin.estuary.iptv.recorder","enabled":true}'
     try:
+        xbmc.startServer(xbmc.SERVER_WEBSERVER, True,True)
         xbmc.executeJSONRPC('{"jsonrpc": "2.0", %s, "id": 1}' % params)
     except:
         d.ok("IPTV Recorder","Kodi web interface wasn't enabled. Restart Kodi and Enable Skin in My Addons.")
     xbmc.executebuiltin("ActivateWindow(10040,addons://user/xbmc.gui.skin,return)")
+    time.sleep(2)
+    xbmc.executeJSONRPC('{"jsonrpc":"2.0","method":"Settings.SetSettingValue","id":1,"params":{"setting":"lookandfeel.skin","value":"skin.estuary.iptv.recorder"}}')
+    xbmc.executebuiltin('SendClick(11)')
+    xbmc.sleep(500)
+    xbmc.executebuiltin( 'ActivateWindow(Home)' )
+    xbmc.executebuiltin( 'XBMC.ReloadSkin()' )
 
 
 @plugin.route('/')
