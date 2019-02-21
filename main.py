@@ -52,8 +52,8 @@ def get_icon_path(icon_name):
 
 
 def remove_formatting(label):
-    label = re.sub(r"\[/?[BI]\]", '', label)
-    label = re.sub(r"\[/?COLOR.*?\]", '', label)
+    label = re.sub(r"\[/?[BI]\]", '', label, flags=re.I)
+    label = re.sub(r"\[/?COLOR.*?\]", '', label, flags=re.I)
     return label
 
 

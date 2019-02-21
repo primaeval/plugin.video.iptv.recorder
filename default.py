@@ -10,8 +10,8 @@ def log(x):
     xbmc.log(repr(x),xbmc.LOGERROR)
 
 def remove_formatting(label):
-    label = re.sub(r"\[/?[BI]\]", '', label)
-    label = re.sub(r"\[/?COLOR.*?\]", '', label)
+    label = re.sub(r"\[/?[BI]\]", '', label, flags=re.I)
+    label = re.sub(r"\[/?COLOR.*?\]", '', label, flags=re.I)
     return label
 
 channel = remove_formatting(sys.argv[1]).strip()
