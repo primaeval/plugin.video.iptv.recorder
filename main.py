@@ -2932,12 +2932,20 @@ def select_groups():
 
 @plugin.route('/estuary')
 def estuary():
+    xbmc.startServer(xbmc.SERVER_WEBSERVER, True,True)
+    try:
+        xbmc.executeJSONRPC('{"jsonrpc":"2.0","method":"Settings.SetSettingValue","id":1,"params":{"setting":"lookandfeel.skin","value":"skin.estouchy"}}')
+    except:
+        xbmc.executeJSONRPC('{"jsonrpc":"2.0","method":"Settings.SetSettingValue","id":1,"params":{"setting":"lookandfeel.skin","value":"skin.confluence"}}')
+    xbmc.executebuiltin( 'XBMC.ReloadSkin()' )
+
     from_path = xbmc.translatePath('special://xbmc/addons/skin.estuary')
     to_path = xbmc.translatePath('special://home/addons/skin.estuary.iptv.recorder')
     #log((from_path,to_path))
     if os.path.exists(to_path):
         #TODO warning
         shutil.rmtree(to_path)
+        time.sleep(1)
     shutil.copytree(from_path, to_path)
 
     filename = xbmc.translatePath('special://home/addons/skin.estuary.iptv.recorder/addon.xml')
@@ -2982,20 +2990,20 @@ def estuary():
         f.write(text)
 
     xbmc.executebuiltin("UpdateLocalAddons")
-    time.sleep(2)
-    params = '"method":"Addons.SetAddonEnabled","params":{"addonid":"skin.estuary.iptv.recorder","enabled":true}'
+    time.sleep(1)
+
     try:
-        xbmc.startServer(xbmc.SERVER_WEBSERVER, True,True)
+        params = '"method":"Addons.SetAddonEnabled","params":{"addonid":"skin.estuary.iptv.recorder","enabled":true}'
         xbmc.executeJSONRPC('{"jsonrpc": "2.0", %s, "id": 1}' % params)
+        xbmc.executebuiltin("ActivateWindow(10040,addons://user/xbmc.gui.skin,return)")
+        xbmc.executeJSONRPC('{"jsonrpc":"2.0","method":"Settings.SetSettingValue","id":1,"params":{"setting":"lookandfeel.skin","value":"skin.estuary.iptv.recorder"}}')
+        xbmc.executebuiltin('SendClick(11)')
+        time.sleep(1)
+        xbmc.executebuiltin( 'XBMC.ReloadSkin()' )
     except:
         d.ok("IPTV Recorder","Kodi web interface wasn't enabled. Restart Kodi and Enable Skin in My Addons.")
-    xbmc.executebuiltin("ActivateWindow(10040,addons://user/xbmc.gui.skin,return)")
-    time.sleep(2)
-    xbmc.executeJSONRPC('{"jsonrpc":"2.0","method":"Settings.SetSettingValue","id":1,"params":{"setting":"lookandfeel.skin","value":"skin.estuary.iptv.recorder"}}')
-    xbmc.executebuiltin('SendClick(11)')
-    xbmc.sleep(500)
-    xbmc.executebuiltin( 'ActivateWindow(Home)' )
-    xbmc.executebuiltin( 'XBMC.ReloadSkin()' )
+        xbmc.executebuiltin("ActivateWindow(10040,addons://user/xbmc.gui.skin,return)")
+    xbmcgui.Dialog().notification("IPTV Recorder", "Estuary (IPTV Recorder) created")
 
 
 @plugin.route('/')
