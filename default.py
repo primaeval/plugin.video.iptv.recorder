@@ -15,7 +15,7 @@ def remove_formatting(label):
     label = re.sub(r"\[/?COLOR.*?\]", '', label, flags=re.I)
     return label
 
-channel = urllib.quote_plus(sys.argv[1].strip())
+channel = urllib.quote_plus(sys.argv[1])
 title = sys.argv[2]
 date = sys.argv[3]
 duration = sys.argv[4]
