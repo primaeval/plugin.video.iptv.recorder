@@ -2,6 +2,8 @@
 
 <category label="Display">
 
+    <setting id="show.skin" label="Show Create Estuary (IPTV Recorder) skin" type="bool" default="true" />
+
     <setting id="show.finished" label="Show Finished Programmes" type="bool" default="true" />
     <setting id="sort.channels" label="Sort Channels by Name" type="bool" default="true" />
 

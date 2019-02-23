@@ -3018,6 +3018,7 @@ def estuary():
         d.ok("IPTV Recorder","Kodi web interface wasn't enabled. Restart Kodi and Enable Skin in My Addons.")
         xbmc.executebuiltin("ActivateWindow(10040,addons://user/xbmc.gui.skin,return)")
     xbmcgui.Dialog().notification("IPTV Recorder", "Estuary (IPTV Recorder) created")
+    plugin.set_setting('show.skin','false')
 
 
 @plugin.route('/')
@@ -3025,13 +3026,14 @@ def index():
     items = []
     context_items = []
 
-    items.append(
-    {
-        'label': "[COLOR yellow]NEW! Create Estuary (IPTV Recorder) Skin[/COLOR]",
-        'path': plugin.url_for('estuary'),
-        'thumbnail':get_icon_path('popular'),
-        'context_menu': context_items,
-    })
+    if plugin.get_setting('show.skin',bool):
+        items.append(
+        {
+            'label': "[COLOR yellow]NEW! Create Estuary (IPTV Recorder) Skin[/COLOR]",
+            'path': plugin.url_for('estuary'),
+            'thumbnail':get_icon_path('popular'),
+            'context_menu': context_items,
+        })
 
     items.append(
     {
