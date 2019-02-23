@@ -47,5 +47,12 @@ try:
         xbmc.executebuiltin("ActivateWindow(videos,plugin://plugin.video.iptv.recorder/broadcast/%s/%s,return)" % (program_id,channel))
     else:
         xbmcgui.Dialog().notification("IPTV Recorder","program not found",xbmcgui.NOTIFICATION_WARNING)
+        select = xbmcgui.Dialog().select("IPTV Recorder",["Add Timed Recording","Add Daily Timed Recording"])
+        if select != -1:
+            if select == 0:
+                xbmc.executebuiltin("ActivateWindow(videos,plugin://plugin.video.iptv.recorder/record_one_time/%s/%s,return)" % (channel_id,channel))
+            elif select == 1:
+                xbmc.executebuiltin("ActivateWindow(videos,plugin://plugin.video.iptv.recorder/record_daily_time/%s/%s,return)" % (channel_id,channel))
+
 except:
     xbmcgui.Dialog().notification("IPTV Recorder","program not found",xbmcgui.NOTIFICATION_WARNING)
