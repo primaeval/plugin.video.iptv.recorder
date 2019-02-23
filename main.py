@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from xbmcswift2 import Plugin, ListItem
 import re
 import requests
@@ -1974,7 +1975,9 @@ def group(channelgroup=None,section=None):
             thumbnail = tvg_logo or logos.get(channelid) or channel_logos.get(channelid) or get_icon_path('tv')
             logo = tvg_logo
 
-        channelname = urllib.unquote_plus(channelname)
+            channelname = channelname.encode("ascii")
+            channelname = urllib.unquote_plus(channelname)
+            channelname = channelname.decode("utf8")
 
         description = ""
         categories = ""
@@ -2010,7 +2013,7 @@ def group(channelgroup=None,section=None):
             if (plugin.get_setting('hide.channel.name') == "true") and logo:
                 label = "%s %s%s" % (now_title, CR, next_title)
             else:
-                label = "%s %s %s%s" % (channelname, now_title, CR, next_title)
+                label = u"%s %s %s%s" % (channelname, now_title, CR, next_title)
 
 
         else:
@@ -2466,10 +2469,14 @@ def xmltv():
 
             xbmcvfs.copy(path, m3uFile)
             f = open(xbmc.translatePath(m3uFile),'rb')
-            f = open(xbmc.translatePath(m3uFile),'rb')
             data = f.read()
-            encoding = chardet.detect(data)
-            data = data.decode(encoding['encoding'])
+            if "m3u8" in path.lower():
+                data = data.decode('utf8')
+                log("m3u8")
+            else:
+                encoding = chardet.detect(data)
+                log(encoding)
+                data = data.decode(encoding['encoding'])
 
             settings_shift = float(plugin.get_setting('external.m3u.shift.'+x))
             global_shift = settings_shift
@@ -2486,7 +2493,10 @@ def xmltv():
             i = 0
             for channel in channels:
 
-                name = urllib.quote_plus(channel[0].rsplit(',', 1)[-1].strip())
+                name = channel[0].rsplit(',', 1)[-1].strip()
+                name = name.encode("utf8")
+                name = urllib.quote_plus(name)
+
                 tvg_name = re.search('tvg-name="(.*?)"', channel[0])
                 if tvg_name:
                     tvg_name = tvg_name.group(1)
