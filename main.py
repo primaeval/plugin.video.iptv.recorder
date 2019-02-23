@@ -2359,7 +2359,8 @@ def recordings():
             label = os.path.splitext(os.path.basename(path))[0]
             description = ""
             starts.append("0")
-        label = urllib.unquote(label)
+            label = urllib.unquote_plus(label)
+            label = label.decode("utf8")
 
         context_items = []
 
