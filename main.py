@@ -511,15 +511,15 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
         title = None
         nfo = {}
 
-    log((channelid,channelname))
+    #log((channelid,channelname))
     channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=? AND tvg_name=?", (channelid, channelname)).fetchone()
-    log(("1",channel))
+    #log(("1",channel))
     if not channel:
         channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=? AND name=?", (channelid, urllib.quote_plus(channelname.encode("utf8")))).fetchone()
-        log(("2",channel))
+        #log(("2",channel))
     if not channel:
         channel = cursor.execute("SELECT * FROM channels WHERE id=?", (channelid, )).fetchone()
-        log(("3",channel))
+        #log(("3",channel))
         uid, tvg_id, name, tvg_logo = channel
         url = ""
     else:
@@ -528,7 +528,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     if not channelname:
         channelname = name
     nfo["channel"] = {"channelname":channelname, "thumbnail":thumbnail, "channelid":tvg_id}
-    log(url)
+    #log(url)
     if not url:
         xbmc.log("No url for %s" % channelname, xbmc.LOGERROR)
         return
@@ -1305,20 +1305,20 @@ def broadcast(programmeid, channelname):
                             'thumbnail': icon,
                         })
             if not found:
-                meta_url = "plugin://%s/tv/search_term/%s/1" % (plugin.get_setting('meta').lower(),urllib.quote_plus(title))
+                meta_url = "plugin://%s/tv/search_term/%s/1" % (plugin.get_setting('meta').lower(),urllib.quote_plus(title.encode("utf8")))
                 items.append({
                     'label': "%s - %s" % (name,title),
                     'path': meta_url,
                     'thumbnail': icon,
                 })
         else:
-            meta_url = "plugin://%s/movies/search_term/%s/1" % (plugin.get_setting('meta').lower(),urllib.quote_plus(title))
+            meta_url = "plugin://%s/movies/search_term/%s/1" % (plugin.get_setting('meta').lower(),urllib.quote_plus(title.encode("utf8")))
             items.append({
                 'label': "%s - Movie - %s" % (name,title),
                 'path': meta_url,
                 'thumbnail': icon,
             })
-            meta_url = "plugin://%s/tv/search_term/%s/1" % (plugin.get_setting('meta').lower(),urllib.quote_plus(title))
+            meta_url = "plugin://%s/tv/search_term/%s/1" % (plugin.get_setting('meta').lower(),urllib.quote_plus(title.encode("utf8")))
             items.append({
                 'label': "%s - TV Show - %s" % (name,title),
                 'path': meta_url,
