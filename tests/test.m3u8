@@ -1,0 +1,4 @@
+#EXTM3U
+
+#EXTINF:-1 tvg-name="test name Ü" tvg-id="test id Ü" tvg-logo="" group-title="test group Ü",[B]test comma name Ü[/B]
+http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_surround-fix.avi

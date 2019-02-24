@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tv SYSTEM "xmltv.dtd">
+<tv source-info-name="test" generator-info-name="test" generator-info-url="test">
+  <channel id="test id Ü">
+    <display-name>[B]test name Ü[/B]</display-name>
+  </channel>
+  <programme channel="test id Ü" start="20190224063000 +0000" stop="20200224120000 +0000">
+    <title lang="en">[B]test title Ü[/B]</title>
+    <desc lang="en">[B]test description Ü[/B]</desc>
+    <episode-num system="xmltv_ns">1.1</episode-num>
+  </programme>
+</tv>
