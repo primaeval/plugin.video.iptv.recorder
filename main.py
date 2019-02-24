@@ -1,32 +1,33 @@
 # -*- coding: utf-8 -*-
 from xbmcswift2 import Plugin, ListItem
-import re
-import requests
-import xbmc, xbmcaddon, xbmcvfs, xbmcgui
-import xbmcplugin
+from HTMLParser import HTMLParser
+from collections import namedtuple
+from datetime import datetime, timedelta, tzinfo
+from language import get_string as _
+from struct import *
 import base64
-import random
-import urllib
-import sqlite3
-import time
-import threading
+import calendar
+import chardet
+import ctypes
+import glob
+import gzip
 import json
 import os, os.path
+import platform
+import random
+import re
+import requests
+import shutil
+import sqlite3
 import stat
 import subprocess
-import shutil
-import glob
-from datetime import datetime, timedelta, tzinfo
-#TODO strptime bug fix
+import sys
+import threading
+import time
+import urllib
 import uuid
-from HTMLParser import HTMLParser
-import calendar
-from struct import *
-from collections import namedtuple
-from language import get_string as _
-import chardet
-import gzip
-
+import xbmc, xbmcaddon, xbmcvfs, xbmcgui
+import xbmcplugin
 
 
 def addon_id():
@@ -3026,10 +3027,23 @@ def estuary():
     plugin.set_setting('show.skin','false')
 
 
+def get_free_space_mb(dirname):
+    """Return folder/drive free space (in megabytes)."""
+    if platform.system() == 'Windows':
+        free_bytes = ctypes.c_ulonglong(0)
+        ctypes.windll.kernel32.GetDiskFreeSpaceExW(ctypes.c_wchar_p(dirname), None, None, ctypes.pointer(free_bytes))
+        return free_bytes.value / 1024 / 1024
+    else:
+        st = os.statvfs(dirname)
+        return st.f_bavail * st.f_frsize / 1024 / 1024
+
+
 @plugin.route('/')
 def index():
     items = []
     context_items = []
+
+
 
     if plugin.get_setting('show.skin',bool):
         items.append(
@@ -3107,6 +3121,16 @@ def index():
         'thumbnail':get_icon_path('folder'),
         'context_menu': context_items,
     })
+
+    free = get_free_space_mb(xbmc.translatePath(plugin.get_setting('recordings')))
+    if free:
+        items.append(
+        {
+            'label': "[COLOR dimgray]%d MB Free[/COLOR]" % free,
+            'path': plugin.url_for('recordings'),
+            'thumbnail':get_icon_path('settings'),
+            'context_menu': context_items,
+        })
 
     return items
 
