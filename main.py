@@ -511,11 +511,15 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
         title = None
         nfo = {}
 
+    log((channelid,channelname))
     channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=? AND tvg_name=?", (channelid, channelname)).fetchone()
+    log(("1",channel))
     if not channel:
-        channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=? AND name=?", (channelid, channelname)).fetchone()
+        channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=? AND name=?", (channelid, urllib.quote_plus(channelname.encode("utf8")))).fetchone()
+        log(("2",channel))
     if not channel:
         channel = cursor.execute("SELECT * FROM channels WHERE id=?", (channelid, )).fetchone()
+        log(("3",channel))
         uid, tvg_id, name, tvg_logo = channel
         url = ""
     else:
@@ -524,7 +528,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     if not channelname:
         channelname = name
     nfo["channel"] = {"channelname":channelname, "thumbnail":thumbnail, "channelid":tvg_id}
-
+    log(url)
     if not url:
         xbmc.log("No url for %s" % channelname, xbmc.LOGERROR)
         return
