@@ -29,7 +29,7 @@ plot = sys.argv[5]
 dateshort_format = xbmc.getRegion('dateshort')
 time_format = xbmc.getRegion('time').replace('%H%H','%H')
 format = "%s %s" % (dateshort_format, time_format.replace(':%S',''))
-log((date,dateshort_format,time_format,format))
+#log((date,dateshort_format,time_format,format))
 start_time = datetime.datetime.fromtimestamp(time.mktime(time.strptime(date, format)))
 timezone = tzlocal.get_localzone()
 start_time = timezone.localize(start_time)
