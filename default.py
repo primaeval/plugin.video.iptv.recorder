@@ -15,6 +15,9 @@ def remove_formatting(label):
     label = re.sub(r"\[/?COLOR.*?\]", '', label, flags=re.I)
     return label
 
+if len(sys.argv) == 1:
+    xbmc.executebuiltin("ActivateWindow(videos,plugin://plugin.video.iptv.recorder)")
+    quit()
 
 channel = sys.argv[1]
 channel = channel.decode("utf8")
