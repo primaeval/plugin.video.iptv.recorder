@@ -16,6 +16,14 @@ provider-name="primaeval, Chychy">
 <extension point="xbmc.python.script" library="default.py">
     <provides>executable</provides>
 </extension>
+<extension point="kodi.context.item">
+<menu id="kodi.core.main">
+  <item library="context.py">
+    <label>IPTV Recorder Timer</label>
+    <visible>Window.isActive(tvchannels)</visible>
+  </item>
+</menu>
+</extension>
 <extension point="xbmc.service" library="server.py" start="login"/>
 <extension point="xbmc.addon.metadata">
   <summary lang="en">Record from IPTV Simple Client or xmltv/m3u with ffmpeg.</summary>

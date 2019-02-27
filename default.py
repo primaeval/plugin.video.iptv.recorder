@@ -15,6 +15,8 @@ def remove_formatting(label):
     label = re.sub(r"\[/?COLOR.*?\]", '', label, flags=re.I)
     return label
 
+#log(sys.argv)
+
 if len(sys.argv) == 1:
     xbmc.executebuiltin("ActivateWindow(videos,plugin://plugin.video.iptv.recorder)")
     quit()
@@ -40,12 +42,15 @@ utc = pytz.timezone('utc')
 start_time = start_time.astimezone(utc)
 start_time = start_time.replace(tzinfo=None)
 
+#log((channel, start_time))
+
 conn = sqlite3.connect(xbmc.translatePath('special://profile/addon_data/plugin.video.iptv.recorder/xmltv.db'), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 cursor = conn.cursor()
 try:
     channel_id = cursor.execute('SELECT tvg_id FROM streams WHERE name=?',(channel,)).fetchone()[0]
+    #log(channel_id)
     program_id = cursor.execute('SELECT uid FROM programmes WHERE channelid=? AND start=?',(channel_id,start_time)).fetchone()[0]
-
+    #log((channel_id, program_id, start_time))
     if program_id:
         xbmc.executebuiltin("ActivateWindow(videos,plugin://plugin.video.iptv.recorder/broadcast/%s/%s,return)" % (program_id,channel))
     else:
@@ -53,9 +58,11 @@ try:
         select = xbmcgui.Dialog().select("IPTV Recorder",["Add Timed Recording","Add Daily Timed Recording"])
         if select != -1:
             if select == 0:
-                xbmc.executebuiltin("ActivateWindow(videos,plugin://plugin.video.iptv.recorder/record_one_time/%s/%s,return)" % (channel_id,channel))
+                cmd = "ActivateWindow(videos,plugin://plugin.video.iptv.recorder/record_one_time/%s/%s,return)" % (urllib.quote_plus(channel_id.encode("utf8")),channel)
+                result = xbmc.executebuiltin(cmd)
             elif select == 1:
-                xbmc.executebuiltin("ActivateWindow(videos,plugin://plugin.video.iptv.recorder/record_daily_time/%s/%s,return)" % (channel_id,channel))
+                cmd = "ActivateWindow(videos,plugin://plugin.video.iptv.recorder/record_daily_time/%s/%s,return)" % (urllib.quote_plus(channel_id.encode("utf8")),channel)
+                result = xbmc.executebuiltin(cmd)
 
 except:
     xbmcgui.Dialog().notification("IPTV Recorder","program not found",xbmcgui.NOTIFICATION_WARNING)
