@@ -125,8 +125,8 @@ def play_channel(channelname):
     if not channel:
         return
     uid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
-    plugin.set_resolved_url(url)
-
+    #plugin.set_resolved_url(url)
+    xbmc.Player().play(url)
 
 
 @plugin.route('/play_channel_external/<channelname>')
