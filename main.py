@@ -1711,6 +1711,7 @@ def listing(programmes, scroll=False, channelname=None):
 
     i = 1
     for p in programmes:
+        pchannelname = cchannelname = schannelname = ""
         uid, channelid , title , sub_title , start , stop , date , description , episode, categories = p
 
         if channelname:
@@ -1731,7 +1732,7 @@ def listing(programmes, scroll=False, channelname=None):
                 pchannelname = cchannelname
         else:
             continue
-
+        #log((channelname,pchannelname,cchannelname,schannelname))
 
         jobs = cursor.execute("SELECT uuid, type FROM jobs WHERE channelid=? AND channelname=? AND start=? AND stop=?", (channelid, pchannelname, start, stop)).fetchall()
         if jobs:
@@ -1773,7 +1774,7 @@ def listing(programmes, scroll=False, channelname=None):
         if (plugin.get_setting('hide.channel.name') == "true") and thumbnail:
             channelname_label = ""
         else:
-            channelname_label = pchannelname
+            channelname_label = urllib.unquote_plus(pchannelname)
 
         label = "%02d:%02d [COLOR grey]%s[/COLOR] %s %s %s%s %s" % (starttime.hour, starttime.minute, day(starttime), channelname_label, categories_label, CR, stitle, recording)
 
