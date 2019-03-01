@@ -115,20 +115,25 @@ def find(path):
 @plugin.route('/play_channel/<channelname>')
 def play_channel(channelname):
     channelname = channelname.decode("utf8")
+    channelname = urllib.quote_plus(channelname.encode("utf8"))
+
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
     c = conn.cursor()
 
     channel = c.execute("SELECT * FROM streams WHERE name=?", (channelname, )).fetchone()
+
     if not channel:
         return
     uid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
+    plugin.set_resolved_url(url)
 
-    xbmc.Player().play(url)
 
 
 @plugin.route('/play_channel_external/<channelname>')
 def play_channel_external(channelname):
     channelname = channelname.decode("utf8")
+    channelname = urllib.quote_plus(channelname.encode("utf8"))
+
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
     c = conn.cursor()
 
@@ -1272,6 +1277,9 @@ def broadcast(programmeid, channelname):
         'label': _("Play Channel") + " - %s" % (channelname),
         'path': plugin.url_for(play_channel, channelname=echannelname),
         'thumbnail': thumbnail or get_icon_path('tv'),
+        'info_type': 'video',
+        'info':{"title": channelname},
+        'is_playable': True,
     })
 
     if plugin.get_setting('external.player'):
@@ -1279,6 +1287,9 @@ def broadcast(programmeid, channelname):
             'label': _("Play Channel External") + " - %s" % (channelname),
             'path': plugin.url_for(play_channel_external, channelname=echannelname),
             'thumbnail': thumbnail or get_icon_path('tv'),
+            'info_type': 'video',
+            'info':{"title": channelname},
+            'is_playable': True,
         })
 
     if xbmc.getCondVisibility('System.HasAddon(%s)' % plugin.get_setting('meta')) == 1:
