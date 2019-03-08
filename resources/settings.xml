@@ -121,6 +121,7 @@
 
 <category label="Debug">
     <setting id="debug" label="Debugging Menu Items" type="bool" default="false"  />
+	<setting type="lsep" label="NOTE: This will prevent recording. Only use it for debugging."/>
     <setting id="debug.ffmpeg" label="Debug ffmpeg stdout/stderr" type="bool" default="false"  />
 </category>
 
