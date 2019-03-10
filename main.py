@@ -11,6 +11,7 @@ import chardet
 import ctypes
 import glob
 import gzip
+import StringIO
 import json
 import os, os.path
 import platform
@@ -26,8 +27,7 @@ import threading
 import time
 import urllib
 import uuid
-import xbmc, xbmcaddon, xbmcvfs, xbmcgui
-import xbmcplugin
+import xbmc, xbmcaddon, xbmcvfs, xbmcgui, xbmcplugin
 
 
 def addon_id():
@@ -2490,7 +2490,7 @@ def xmltv():
             data = f.read()
             if "m3u8" in path.lower():
                 data = data.decode('utf8')
-                log("m3u8")
+                #log("m3u8")
             else:
                 encoding = chardet.detect(data)
                 log(encoding)
@@ -2580,12 +2580,16 @@ def xmltv():
             xbmcvfs.copy(path, tmp)
 
             f = xbmcvfs.File(tmp, "rb")
-            magic = f.read(3)
+            data = f.read()
             f.close()
+            magic = data[:3]
             if magic == "\x1f\x8b\x08":
                 dialog.update(0, message=_("Unzipping xmltv file"))
-                g = gzip.open(tmp)
-                data = g.read()
+                compressedFile = StringIO.StringIO()
+                compressedFile.write(data)
+                compressedFile.seek(0)
+                decompressedFile = gzip.GzipFile(fileobj=compressedFile, mode='rb')
+                data = decompressedFile.read()
                 f = xbmcvfs.File(xml, "wb")
                 f.write(data)
                 f.close()
