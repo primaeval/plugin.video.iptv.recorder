@@ -435,7 +435,7 @@ def record_once(programmeid, channelid, channelname, do_refresh=True, watch=Fals
     channelname = channelname.decode("utf8")
     start = None
     stop = None
-    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind, channelid, channelname, start, stop]).start()
+    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind, channelid, channelname, start, stop, False]).start()
 
 
 @plugin.route('/watch_once/<programmeid>/<channelid>/<channelname>')
@@ -444,7 +444,7 @@ def watch_once(programmeid, channelid, channelname, do_refresh=True, watch=True,
     channelname = channelname.decode("utf8")
     start = None
     stop = None
-    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind, channelid, channelname, start, stop]).start()
+    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind, channelid, channelname, start, stop, False]).start()
 
 
 @plugin.route('/remind_once/<programmeid>/<channelid>/<channelname>')
@@ -453,7 +453,7 @@ def remind_once(programmeid, channelid, channelname, do_refresh=True, watch=Fals
     channelname = channelname.decode("utf8")
     start = None
     stop = None
-    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind, channelid, channelname, start, stop]).start()
+    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind, channelid, channelname, start, stop, False]).start()
 
 
 @plugin.route('/record_one_time/<channelid>/<channelname>')
@@ -491,17 +491,42 @@ def record_one_time(channelid, channelname):
     do_refresh = False
     watch = False
     remind = False
-    threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, channelname, start, stop]).start()
+    threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, channelname, start, stop, False]).start()
+
+
+@plugin.route('/record_and_play/<channelid>/<channelname>')
+def record_and_play(channelid, channelname):
+    channelid = channelid.decode("utf8")
+    channelname = channelname.decode("utf8")
+
+    utcnow = datetime.utcnow()
+    ts = time.time()
+    utc_offset = (datetime.fromtimestamp(ts) - datetime.utcfromtimestamp(ts)).total_seconds()
+
+    start = utcnow - timedelta(seconds=utc_offset)
+
+    hours = xbmcgui.Dialog().input("Hours",type=xbmcgui.INPUT_NUMERIC,defaultt="4")
+    log(hours)
+
+    stop = utcnow - timedelta(seconds=utc_offset) + timedelta(hours=int(hours))
+
+    do_refresh = False
+    watch = False
+    remind = False
+    threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, channelname, start, stop, True]).start()
+    time.sleep(5)
+
+    return recordings()
 
 
 @plugin.route('/record_once_time/<channelid>/<channelname>/<start>/<stop>')
 def record_once_time(channelid, channelname, start, stop, do_refresh=True, watch=False, remind=True):
     channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
-    threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, channelname, start, stop]).start()
+    threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, channelname, start, stop, False]).start()
 
 
-def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, channelid=None, channelname=None, start=None,stop=None):
+def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, channelid=None, channelname=None, start=None,stop=None, play=False):
     #TODO check for ffmpeg process already recording if job is re-added
     channelname = urllib.unquote_plus(channelname)
 
@@ -712,9 +737,14 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
         f.write("f.close()\n")
         if (plugin.get_setting('ffmpeg.pipe') == 'true') and not (windows() and (plugin.get_setting('task.scheduler') == 'true')):
             f.write('video = xbmcvfs.File(r"%s","wb")\n' % path.encode('utf8'))
+            f.write('playing = False\n')
             f.write("while True:\n")
             f.write("  data = p.stdout.read(1000000)\n")
             f.write("  video.write(data)\n")
+            if play:
+                f.write("  if not playing:\n")
+                f.write("    xbmc.Player().play('%s')\n" % path.encode('utf8'))
+                f.write("    playing = True\n")
             f.write("video.close()\n")
         else:
             f.write("p.wait()\n")
@@ -2402,7 +2432,7 @@ def recordings():
     start_items = zip(starts,items)
     start_items.sort(reverse=True)
     items = [x for y, x in start_items]
-    return items
+    return sorted(items, key=lambda k: k['label'].lower())
 
 
 def xml2utc(xml):

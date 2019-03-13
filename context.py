@@ -29,7 +29,7 @@ def unescape( str ):
     str = str.replace("&amp;","&")
     return str
 
-window   = xbmcgui.getCurrentWindowId() 
+window   = xbmcgui.getCurrentWindowId()
 
 channel = xbmc.getInfoLabel('ListItem.Label')
 #log(channel)
@@ -45,14 +45,17 @@ try:
     #log(("channel_id",channel_id))
 
     d = xbmcgui.Dialog()
-    select = d.select("IPTV Recorder",["Add Timed Recording","Add Daily Timed Recording"])
-    
+    select = d.select("IPTV Recorder",["Add Timed Recording","Add Daily Timed Recording","Record and Play"])
+
     if select != -1:
         if select == 0:
             cmd = "ActivateWindow(videos,plugin://plugin.video.iptv.recorder/record_one_time/%s/%s,return)" % (urllib.quote_plus(channel_id.encode("utf8")),channel)
             result = xbmc.executebuiltin(cmd)
         elif select == 1:
             cmd = "ActivateWindow(videos,plugin://plugin.video.iptv.recorder/record_daily_time/%s/%s,return)" % (urllib.quote_plus(channel_id.encode("utf8")),channel)
+            result = xbmc.executebuiltin(cmd)
+        elif select == 2:
+            cmd = "ActivateWindow(videos,plugin://plugin.video.iptv.recorder/record_and_play/%s/%s,return)" % (urllib.quote_plus(channel_id.encode("utf8")),channel)
             result = xbmc.executebuiltin(cmd)
 
 except:
