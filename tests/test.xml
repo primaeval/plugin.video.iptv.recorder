@@ -4,6 +4,9 @@
   <channel id="test id Ü">
     <display-name>[B]test name Ü[/B]</display-name>
   </channel>
+  <channel id="id in xml">
+    <display-name>[B]tvg-id in xml[/B]</display-name>
+  </channel>
   <programme channel="test id Ü" start="20190224063000 +0000" stop="20200224120000 +0000">
     <title lang="en">[B]test title Ü[/B]</title>
     <desc lang="en">[B]test description Ü[/B]</desc>

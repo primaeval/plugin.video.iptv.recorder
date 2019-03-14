@@ -2,3 +2,27 @@
 
 #EXTINF:-1 tvg-name="test name Ü" tvg-id="test id Ü" tvg-logo="" group-title="test group Ü",[B]test comma name Ü[/B]
 http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_surround-fix.avi
+
+#EXTINF:-1,Comma Name Only
+http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_surround-fix.avi
+
+#EXTINF:-1 tvg-id="",tvg-id empty string
+http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_surround-fix.avi
+
+#EXTINF:-1 tvg-id="id not in xml",tvg-id not in xml
+http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_surround-fix.avi
+
+#EXTINF:-1 tvg-id="id in xml",tvg-id in xml
+http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_surround-fix.avi
+
+#EXTINF:-1 tvg-name="tvg-name matches comma name",tvg-name matches comma name
+http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_surround-fix.avi
+
+#EXTINF:-1 tvg-name="tvg-name does not match comma name",[B]tvg-name does not match comma name !!![/B]
+http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_surround-fix.avi
+
+#EXTINF:-1 tvg-id="tvg-name does not match comma name" tvg-name="tvg-name does not match comma name",[B]tvg-name does not match comma name !!![/B]
+http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_surround-fix.avi
+
+#EXTINF:-1 tvg-id="tvg-shift is empty" tvg-name="tvg-shift is empty" tvg-shift="",tvg-shift is empty
+http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_surround-fix.avi
