@@ -12,4 +12,9 @@
     <desc lang="en">[B]test description Ü[/B]</desc>
     <episode-num system="xmltv_ns">1.1</episode-num>
   </programme>
+  <programme channel="id in xml" start="20190224063000 +0000" stop="20200224120000 +0000">
+    <title lang="en">[B]test id in xml[/B]</title>
+    <desc lang="en">[B]test id in xml Ü[/B]</desc>
+    <episode-num system="xmltv_ns">1.1</episode-num>
+  </programme>
 </tv>
