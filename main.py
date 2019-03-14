@@ -2534,7 +2534,8 @@ def xmltv():
                 tvg_shift = re.search('tvg-shift="(.*?)"', header.group(1))
                 if tvg_shift:
                     tvg_shift = tvg_shift.group(1)
-                    global_shift = float(tvg_shift) + settings_shift
+                    if tvg_shift:
+                        global_shift = float(tvg_shift) + settings_shift
 
             channels = re.findall('#EXTINF:(.*?)(?:\r\n|\r|\n)(.*?)(?:\r\n|\r|\n|$)', data, flags=(re.I | re.DOTALL))
             total = len(channels)
@@ -2563,7 +2564,8 @@ def xmltv():
                 tvg_shift = re.search('tvg-shift="(.*?)"', channel[0])
                 if tvg_shift:
                     tvg_shift = tvg_shift.group(1)
-                    shifts[tvg_id] = float(tvg_shift) + settings_shift
+                    if tvg_shift:
+                        shifts[tvg_id] = float(tvg_shift) + settings_shift
 
                 url = channel[1]
                 search = plugin.get_setting('m3u.regex.search')
