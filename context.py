@@ -41,7 +41,7 @@ channel = urllib.quote_plus(channel)
 try:
 
     d = xbmcgui.Dialog()
-    select = d.select("IPTV Recorder",["Add Timed Recording","Add Daily Timed Recording","Record and Play"])
+    select = d.select("IPTV Recorder",["Add Timed Recording","Add Daily Timed Recording","Add Weekly Timed Recording","Record and Play"])
 
     if select != -1:
         if select == 0:
@@ -51,6 +51,9 @@ try:
             cmd = "ActivateWindow(videos,plugin://plugin.video.iptv.recorder/record_daily_time/%s,return)" % (channel)
             result = xbmc.executebuiltin(cmd)
         elif select == 2:
+            cmd = "ActivateWindow(videos,plugin://plugin.video.iptv.recorder/record_weekly_time/%s,return)" % (channel)
+            result = xbmc.executebuiltin(cmd)
+        elif select == 3:
             cmd = "ActivateWindow(videos,plugin://plugin.video.iptv.recorder/record_and_play/%s,return)" % (channel)
             result = xbmc.executebuiltin(cmd)
 
