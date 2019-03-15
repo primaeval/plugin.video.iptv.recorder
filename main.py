@@ -273,15 +273,15 @@ def rules():
 
         label = "TODO"
         if type == "ALWAYS":
-            label = "%s [COLOR yellow]%s[/COLOR] %s" % (channelname, title, type_label)
+            label = "%s [COLOR yellow]%s[/COLOR] %s ALWAYS" % (channelname, title, type_label)
         elif type == "DAILY":
-            label =  "%s [COLOR yellow]%s[/COLOR] %s[COLOR grey]%s - %s[/COLOR] %s" % (channelname, title, CR, utc2local(start).time(), utc2local(stop).time(), type_label)
+            label =  "%s [COLOR yellow]%s[/COLOR] %s[COLOR grey]%s - %s[/COLOR] %s DAILY" % (channelname, title, CR, utc2local(start).time(), utc2local(stop).time(), type_label)
         elif type == "WEEKLY":
-            label =  "%s [COLOR yellow]%s[/COLOR] %s[COLOR grey]%s - %s[/COLOR] %s" % (channelname, title, CR, utc2local(start).time(), utc2local(stop).time(), type_label)
+            label =  "%s [COLOR yellow]%s[/COLOR] %s[COLOR grey]%s - %s[/COLOR] %s WEEKLY" % (channelname, title, CR, utc2local(start).time(), utc2local(stop).time(), type_label)
         elif type == "SEARCH":
-            label = "%s [COLOR yellow]%s[/COLOR] %s" % (channelname, title, type_label)
+            label = "%s [COLOR yellow]%s[/COLOR] %s SEARCH" % (channelname, title, type_label)
         elif type == "PLOT":
-            label = "%s [COLOR yellow](%s)[/COLOR] %s" % (channelname, description, type_label)
+            label = "%s [COLOR yellow](%s)[/COLOR] %s PLOT" % (channelname, description, type_label)
 
         items.append({
             'label': label,
