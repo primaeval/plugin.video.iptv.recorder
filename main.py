@@ -531,7 +531,7 @@ def record_once_time(channelid, channelname, start, stop, do_refresh=True, watch
 
 def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, channelid=None, channelname=None, start=None,stop=None, play=False):
     #TODO check for ffmpeg process already recording if job is re-added
-    channelname = urllib.unquote_plus(channelname)
+    #channelname = urllib.unquote_plus(channelname)
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
@@ -748,7 +748,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
             f.write("  video.write(data)\n")
             if play:
                 f.write("  if not playing:\n")
-                f.write("    xbmc.Player().play('%s')\n" % path.encode('utf8'))
+                f.write("    xbmc.Player().play(r'%s')\n" % path.encode('utf8'))
                 f.write("    playing = True\n")
             f.write("video.close()\n")
         else:
@@ -2084,6 +2084,7 @@ def group(channelgroup=None,section=None):
         if url:
             context_items.append((_("Add One Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_one_time, channelname=channelname))))
             context_items.append((_("Add Daily Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_daily_time, channelname=channelname))))
+            context_items.append((_("Record and Play"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_and_play, channelname=channelname))))
             if channelid:
                 context_items.append((_("Add Title Search Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search, channelid=channelid, channelname=channelname))))
                 context_items.append((_("Add Plot Search Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search_plot, channelid=channelid, channelname=channelname))))
