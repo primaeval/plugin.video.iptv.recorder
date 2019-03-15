@@ -1224,10 +1224,9 @@ def remind_always_search_plot(channelid, channelname):
 
 @plugin.route('/broadcast/<programmeid>/<channelname>')
 def broadcast(programmeid, channelname):
-    log("XXXX")
     channelname = channelname.decode("utf8")
     #channelname = urllib.unquote_plus(channelname)
-    log(channelname)
+    #log(channelname)
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
@@ -1435,10 +1434,11 @@ def search_title_dialog():
 
     for search in searches:
         context_items = []
-        context_items.append((_("Delete Search"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_search_title, title=search))))
+        #log(search)
+        context_items.append((_("Delete Search"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_search_title, title=search.encode("utf8")))))
         items.append({
             "label": search,
-            "path": plugin.url_for('search_title', title=search),
+            "path": plugin.url_for('search_title', title=search.encode("utf8")),
             "thumbnail": get_icon_path('search'),
             'context_menu': context_items,
             })
@@ -1451,11 +1451,12 @@ def search_title_input(title):
     if title == "title":
         title = ""
     d = xbmcgui.Dialog()
-    what = d.input(_("Search Title"), title)
+    what = d.input(_("Search Title"), title).decode("utf8")
+    #log(what)
     if not what:
         return
     searches[what] = ''
-    return search_title(what)
+    return search_title(what.encode("utf8"))
 
 
 @plugin.route('/search_title/<title>')
@@ -1502,10 +1503,10 @@ def search_plot_dialog():
 
     for search in searches:
         context_items = []
-        context_items.append(("Delete Search" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_search_plot, plot=search))))
+        context_items.append(("Delete Search" , 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_search_plot, plot=search.encode("utf8")))))
         items.append({
             "label": search,
-            "path": plugin.url_for('search_plot', plot=search),
+            "path": plugin.url_for('search_plot', plot=search.encode("utf8")),
             "thumbnail": get_icon_path('search'),
             'context_menu': context_items,
             })
@@ -1519,11 +1520,11 @@ def search_plot_input(plot):
     if plot == "plot":
         plot = ""
     d = xbmcgui.Dialog()
-    what = d.input(_("Search Plot"), plot)
+    what = d.input(_("Search Plot"), plot).decode("utf8")
     if not what:
         return
     searches[what] = ''
-    return search_plot(what)
+    return search_plot(what.encode("utf8"))
 
 
 @plugin.route('/search_plot/<plot>')
