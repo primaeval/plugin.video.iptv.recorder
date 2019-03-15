@@ -2000,7 +2000,7 @@ def group(channelgroup=None,section=None):
         next_titles = {x[0]:(x[1],x[2],x[3]) for x in next_titles}
 
     for stream_channel in collection:
-        log(stream_channel)
+        #log(stream_channel)
 
         url = ""
         if section == "EPG":
@@ -2014,6 +2014,7 @@ def group(channelgroup=None,section=None):
             channelname, channelid, thumbnail = stream_channel
             url = stream_urls.get(channelid)
             logo = thumbnail
+            thumbnail = logo or get_icon_path('tv')
         else:
             uid, name, tvg_name, tvg_id, tvg_logo, groups, url = stream_channel
             channelname = name or tvg_name
