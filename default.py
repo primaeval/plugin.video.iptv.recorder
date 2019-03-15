@@ -49,13 +49,17 @@ cursor = conn.cursor()
 try:
     #log(channel)
     channel_id = cursor.execute('SELECT tvg_id FROM streams WHERE name=?',(channel,)).fetchone()[0]
+    if not channel_id:
+        channel_id = cursor.execute('SELECT tvg_id FROM streams WHERE tvg_name=?',(channel,)).fetchone()[0]
     #log(channel_id)
-    program_id = cursor.execute('SELECT uid FROM programmes WHERE channelid=? AND start=?',(channel_id,start_time)).fetchone()[0]
-    #log((channel_id, program_id, start_time))
-    if program_id:
-        channel = channel.encode("utf8")
-        channel = urllib.quote_plus(channel)
-        xbmc.executebuiltin("ActivateWindow(videos,plugin://plugin.video.iptv.recorder/broadcast/%s/%s,return)" % (program_id,channel))
+    if channel_id:
+        program_id = cursor.execute('SELECT uid FROM programmes WHERE channelid=? AND start=?',(channel_id,start_time)).fetchone()[0]
+        #log((channel_id, program_id, start_time))
+        if program_id:
+            channel = channel.encode("utf8")
+            channel = urllib.quote_plus(channel)
+            xbmc.executebuiltin("ActivateWindow(videos,plugin://plugin.video.iptv.recorder/broadcast/%s/%s,return)" % (program_id,channel))
 
-except:
+except Exception as e:
+    #log(e)
     xbmcgui.Dialog().notification("IPTV Recorder","program not found",xbmcgui.NOTIFICATION_WARNING)
