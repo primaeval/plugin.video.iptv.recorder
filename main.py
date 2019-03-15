@@ -456,9 +456,9 @@ def remind_once(programmeid, channelid, channelname, do_refresh=True, watch=Fals
     threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind, channelid, channelname, start, stop, False]).start()
 
 
-@plugin.route('/record_one_time/<channelid>/<channelname>')
-def record_one_time(channelid, channelname):
-    channelid = channelid.decode("utf8")
+@plugin.route('/record_one_time/<channelname>')
+def record_one_time( channelname):
+    #channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
 
     utcnow = datetime.utcnow()
@@ -491,12 +491,13 @@ def record_one_time(channelid, channelname):
     do_refresh = False
     watch = False
     remind = False
+    channelid = None
     threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, channelname, start, stop, False]).start()
 
 
-@plugin.route('/record_and_play/<channelid>/<channelname>')
-def record_and_play(channelid, channelname):
-    channelid = channelid.decode("utf8")
+@plugin.route('/record_and_play/<channelname>')
+def record_and_play(channelname):
+    #channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
 
     utcnow = datetime.utcnow()
@@ -513,6 +514,7 @@ def record_and_play(channelid, channelname):
     do_refresh = False
     watch = False
     remind = False
+    channelid = None
     threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, channelname, start, stop, True]).start()
     time.sleep(5)
 
@@ -521,7 +523,8 @@ def record_and_play(channelid, channelname):
 
 @plugin.route('/record_once_time/<channelid>/<channelname>/<start>/<stop>')
 def record_once_time(channelid, channelname, start, stop, do_refresh=True, watch=False, remind=True):
-    channelid = channelid.decode("utf8")
+    if channelid:
+        channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
     threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, channelname, start, stop, False]).start()
 
@@ -543,18 +546,20 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
         nfo = {}
 
     #log((channelid,channelname))
-    channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=? AND tvg_name=?", (channelid, channelname)).fetchone()
-    #log(("1",channel))
-    if not channel:
-        channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=? AND name=?", (channelid, urllib.quote_plus(channelname.encode("utf8")))).fetchone()
-        #log(("2",channel))
-    if not channel:
-        channel = cursor.execute("SELECT * FROM channels WHERE id=?", (channelid, )).fetchone()
-        #log(("3",channel))
-        uid, tvg_id, name, tvg_logo = channel
-        url = ""
+    if channelid:
+        channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=? AND tvg_name=?", (channelid, channelname)).fetchone()
+        if not channel:
+            channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=? AND name=?", (channelid, channelname)).fetchone()
     else:
-        uid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
+        channel = cursor.execute("SELECT * FROM streams WHERE name=?", (channelname,)).fetchone()
+        if not channel:
+            channel = cursor.execute("SELECT * FROM streams WHERE tvg_name=?", (channelname,)).fetchone()
+
+    if not channel:
+        xbmc.log("No channel %s" % channelname, xbmc.LOGERROR)
+        return
+
+    uid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
     thumbnail = tvg_logo
     if not channelname:
         channelname = name
@@ -888,9 +893,9 @@ def refresh():
         xbmc.executebuiltin('Container.Refresh')
 
 
-@plugin.route('/record_daily_time/<channelid>/<channelname>')
-def record_daily_time(channelid, channelname):
-    channelid = channelid.decode("utf8")
+@plugin.route('/record_daily_time/<channelname>')
+def record_daily_time(channelname):
+    #channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
 
     utcnow = datetime.utcnow()
@@ -913,6 +918,8 @@ def record_daily_time(channelid, channelname):
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
+
+    channelid = None
 
     #TODO problem with PRIMARY KEYS, UNIQUE and TIMESTAMP
     rule = cursor.execute('SELECT * FROM rules WHERE channelid=? AND channelname=? AND title=null AND start=? AND stop =? AND type=?', (channelid, channelname, start, stop, "DAILY")).fetchone()
@@ -2075,9 +2082,9 @@ def group(channelgroup=None,section=None):
             channelid =channelid.encode("utf8")
 
         if url:
+            context_items.append((_("Add One Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_one_time, channelname=channelname))))
+            context_items.append((_("Add Daily Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_daily_time, channelname=channelname))))
             if channelid:
-                context_items.append((_("Add One Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_one_time, channelid=channelid, channelname=channelname))))
-                context_items.append((_("Add Daily Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_daily_time, channelid=channelid, channelname=channelname))))
                 context_items.append((_("Add Title Search Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search, channelid=channelid, channelname=channelname))))
                 context_items.append((_("Add Plot Search Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search_plot, channelid=channelid, channelname=channelname))))
             context_items.append((_("Play Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=channelname))))
