@@ -2542,29 +2542,31 @@ def xmltv():
             i = 0
             for channel in channels:
 
-                name = channel[0].rsplit(',', 1)[-1].strip()
-                name = name.encode("utf8")
-                name = urllib.quote_plus(name)
+                name = None
+                if ',' in re.sub('tvg-[a-z]+"[^"]*"','',channel[0]):
+                    name = channel[0].rsplit(',', 1)[-1].strip()
+                    #name = name.encode("utf8")
+                    #name = urllib.quote_plus(name)
 
                 tvg_name = re.search('tvg-name="(.*?)"', channel[0])
                 if tvg_name:
-                    tvg_name = tvg_name.group(1)
-                else:
-                    tvg_name = name
+                    tvg_name = tvg_name.group(1) or None
+                #else:
+                    #tvg_name = name
 
                 tvg_id = re.search('tvg-id="(.*?)"', channel[0])
                 if tvg_id:
-                    tvg_id = tvg_id.group(1)
+                    tvg_id = tvg_id.group(1) or None
 
                 tvg_logo = re.search('tvg-logo="(.*?)"', channel[0])
                 if tvg_logo:
-                    tvg_logo = tvg_logo.group(1)
+                    tvg_logo = tvg_logo.group(1) or None
 
                 shifts[tvg_id] = global_shift
                 tvg_shift = re.search('tvg-shift="(.*?)"', channel[0])
                 if tvg_shift:
                     tvg_shift = tvg_shift.group(1)
-                    if tvg_shift:
+                    if tvg_shift and tvg_id:
                         shifts[tvg_id] = float(tvg_shift) + settings_shift
 
                 url = channel[1]
@@ -2575,10 +2577,10 @@ def xmltv():
 
                 groups = re.search('group-title="(.*?)"', channel[0])
                 if groups:
-                    groups = groups.group(1)
+                    groups = groups.group(1) or None
 
                 conn.execute("INSERT OR IGNORE INTO streams(name, tvg_name, tvg_id, tvg_logo, groups, url) VALUES (?, ?, ?, ?, ?, ?)",
-                [name.strip(), tvg_name, tvg_id, tvg_logo, groups, url.strip()])
+                [name, tvg_name, tvg_id, tvg_logo, groups, url.strip()])
 
                 i += 1
                 percent = 0 + int(100.0 * i / total)
@@ -2668,7 +2670,7 @@ def xmltv():
                     percent = 0 + int(100.0 * i / total)
                     dialog.update(percent, message=_("Finding channels"))
 
-
+    '''
     missing_streams = conn.execute('SELECT name, tvg_name FROM streams WHERE tvg_id IS null OR tvg_id IS ""').fetchall()
     sql_channels = conn.execute('SELECT id, name FROM channels').fetchall()
     lower_channels = {x[1].lower():x[0] for x in sql_channels}
@@ -2682,7 +2684,7 @@ def xmltv():
         elif name.lower() in lower_channels:
             tvg_id = lower_channels[name.lower()]
             conn.execute("UPDATE streams SET tvg_id=? WHERE name=?", (tvg_id, name))
-
+    '''
     if len(load_groups.keys()) == 0:
         load_all = True
     else:
