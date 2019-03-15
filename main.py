@@ -115,7 +115,7 @@ def find(path):
 @plugin.route('/play_channel/<channelname>')
 def play_channel(channelname):
     channelname = channelname.decode("utf8")
-    channelname = urllib.quote_plus(channelname.encode("utf8"))
+    #channelname = urllib.quote_plus(channelname.encode("utf8"))
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
     c = conn.cursor()
@@ -132,7 +132,7 @@ def play_channel(channelname):
 @plugin.route('/play_channel_external/<channelname>')
 def play_channel_external(channelname):
     channelname = channelname.decode("utf8")
-    channelname = urllib.quote_plus(channelname.encode("utf8"))
+    #channelname = urllib.quote_plus(channelname.encode("utf8"))
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
     c = conn.cursor()
@@ -2074,11 +2074,12 @@ def group(channelgroup=None,section=None):
         if channelid:
             channelid =channelid.encode("utf8")
 
-        if url and channelid:
-            context_items.append((_("Add One Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_one_time, channelid=channelid, channelname=channelname))))
-            context_items.append((_("Add Daily Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_daily_time, channelid=channelid, channelname=channelname))))
-            context_items.append((_("Add Title Search Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search, channelid=channelid, channelname=channelname))))
-            context_items.append((_("Add Plot Search Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search_plot, channelid=channelid, channelname=channelname))))
+        if url:
+            if channelid:
+                context_items.append((_("Add One Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_one_time, channelid=channelid, channelname=channelname))))
+                context_items.append((_("Add Daily Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_daily_time, channelid=channelid, channelname=channelname))))
+                context_items.append((_("Add Title Search Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search, channelid=channelid, channelname=channelname))))
+                context_items.append((_("Add Plot Search Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search_plot, channelid=channelid, channelname=channelname))))
             context_items.append((_("Play Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=channelname))))
             if plugin.get_setting('external.player'):
                 context_items.append((_("Play Channel External"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external, channelname=channelname))))
