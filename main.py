@@ -507,7 +507,7 @@ def record_and_play(channelname):
     start = utcnow - timedelta(seconds=utc_offset)
 
     hours = xbmcgui.Dialog().input("Hours",type=xbmcgui.INPUT_NUMERIC,defaultt="4")
-    log(hours)
+    #log(hours)
 
     stop = utcnow - timedelta(seconds=utc_offset) + timedelta(hours=int(hours))
 
@@ -3100,7 +3100,7 @@ def get_free_space_mb(dirname):
             st = os.statvfs(dirname)
             return st.f_bavail * st.f_frsize / 1024 / 1024
         except:
-            log(dirname)
+            #log(dirname)
             return
 
 
