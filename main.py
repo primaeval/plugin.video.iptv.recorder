@@ -241,11 +241,11 @@ def rules():
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
-    rules = cursor.execute('SELECT uid, channelid, channelname, title, start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", description, type FROM rules ORDER by channelname, title, start, stop').fetchall()
+    rules = cursor.execute('SELECT uid, channelid, channelname, title, start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", description, type, name FROM rules ORDER by channelname, title, start, stop').fetchall()
 
     items = []
 
-    for uid, channelid, channelname, title, start, stop, description, type  in rules:
+    for uid, channelid, channelname, title, start, stop, description, type, rulename  in rules:
 
         url = ""
         channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
@@ -282,6 +282,9 @@ def rules():
             label = "%s [COLOR yellow]%s[/COLOR] %s SEARCH" % (channelname, title, type_label)
         elif type == "PLOT":
             label = "%s [COLOR yellow](%s)[/COLOR] %s PLOT" % (channelname, description, type_label)
+
+        if rulename:
+            label = "(%s) %s" % (rulename,label)
 
         items.append({
             'label': label,
@@ -918,6 +921,8 @@ def record_daily_time(channelname):
     if stop < start:
         stop = stop + timedelta(days=1)
 
+    name = xbmcgui.Dialog().input("Rule Name").decode("utf8")
+
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
@@ -927,8 +932,8 @@ def record_daily_time(channelname):
     rule = cursor.execute('SELECT * FROM rules WHERE channelid=? AND channelname=? AND title=null AND start=? AND stop =? AND type=?', (channelid, channelname, start, stop, "DAILY")).fetchone()
 
     if not rule:
-        conn.execute("INSERT OR REPLACE INTO rules(channelid, channelname, start, stop, type) VALUES(?, ?, ?, ?, ?)",
-        [channelid, channelname, start, stop, "DAILY"])
+        conn.execute("INSERT OR REPLACE INTO rules(channelid, channelname, start, stop, type, name) VALUES(?, ?, ?, ?, ?, ?)",
+        [channelid, channelname, start, stop, "DAILY", name])
 
     conn.commit()
     conn.close()
@@ -965,6 +970,8 @@ def record_weekly_time(channelname):
     if stop < start:
         stop = stop + timedelta(days=1)
 
+    name = xbmcgui.Dialog().input("Rule Name").decode("utf8")
+
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
@@ -974,8 +981,8 @@ def record_weekly_time(channelname):
     rule = cursor.execute('SELECT * FROM rules WHERE channelid=? AND channelname=? AND title=null AND start=? AND stop =? AND type=?', (channelid, channelname, start, stop, "WEEKLY")).fetchone()
 
     if not rule:
-        conn.execute("INSERT OR REPLACE INTO rules(channelid, channelname, start, stop, type) VALUES(?, ?, ?, ?, ?)",
-        [channelid, channelname, start, stop, "WEEKLY"])
+        conn.execute("INSERT OR REPLACE INTO rules(channelid, channelname, start, stop, type, name) VALUES(?, ?, ?, ?, ?, ?)",
+        [channelid, channelname, start, stop, "WEEKLY", name])
 
     conn.commit()
     conn.close()
@@ -2581,7 +2588,9 @@ def xmltv():
     conn.execute('CREATE TABLE IF NOT EXISTS channels(uid INTEGER PRIMARY KEY ASC, id TEXT, name TEXT, icon TEXT)')
     conn.execute('CREATE TABLE IF NOT EXISTS programmes(uid INTEGER PRIMARY KEY ASC, channelid TEXT, title TEXT, sub_title TEXT, start TIMESTAMP, stop TIMESTAMP, date TEXT, description TEXT, episode TEXT, categories TEXT, xml TEXT)')
     #TODO unique fails with timestamps: UNIQUE(channelid, channelname, start, stop, description, type)
-    conn.execute('CREATE TABLE IF NOT EXISTS rules(uid INTEGER PRIMARY KEY ASC, channelid TEXT, channelname TEXT, title TEXT, sub_title TEXT, start TIMESTAMP, stop TIMESTAMP, date TEXT, description TEXT, episode TEXT, categories TEXT, type TEXT)')
+    conn.execute('CREATE TABLE IF NOT EXISTS rules(uid INTEGER PRIMARY KEY ASC, channelid TEXT, channelname TEXT, title TEXT, sub_title TEXT, start TIMESTAMP, stop TIMESTAMP, date TEXT, description TEXT, episode TEXT, categories TEXT, type TEXT, name TEXT)')
+    try: conn.execute('ALTER TABLE rules ADD COLUMN name TEXT')
+    except: pass
     #TODO check primary key
     conn.execute('CREATE TABLE IF NOT EXISTS streams(uid INTEGER PRIMARY KEY ASC, name TEXT, tvg_name TEXT, tvg_id TEXT, tvg_logo TEXT, groups TEXT, url TEXT)')
     conn.execute('CREATE TABLE IF NOT EXISTS favourites(channelname TEXT, channelid TEXT, logo TEXT, PRIMARY KEY(channelname))')
