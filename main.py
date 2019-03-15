@@ -2000,6 +2000,7 @@ def group(channelgroup=None,section=None):
         next_titles = {x[0]:(x[1],x[2],x[3]) for x in next_titles}
 
     for stream_channel in collection:
+        log(stream_channel)
 
         url = ""
         if section == "EPG":
@@ -2015,16 +2016,16 @@ def group(channelgroup=None,section=None):
             logo = thumbnail
         else:
             uid, name, tvg_name, tvg_id, tvg_logo, groups, url = stream_channel
-            channelname = name
+            channelname = name or tvg_name
             channelid = tvg_id
-            if not channelid:
-                continue
+            #if not channelid:
+                #continue
             thumbnail = tvg_logo or logos.get(channelid) or channel_logos.get(channelid) or get_icon_path('tv')
             logo = tvg_logo
 
-            channelname = channelname.encode("ascii")
-            channelname = urllib.unquote_plus(channelname)
-            channelname = channelname.decode("utf8")
+            #channelname = channelname.encode("ascii")
+            #channelname = urllib.unquote_plus(channelname)
+            #channelname = channelname.decode("utf8")
 
         description = ""
         categories = ""
@@ -2069,9 +2070,10 @@ def group(channelgroup=None,section=None):
         context_items = []
 
         channelname = channelname.encode("utf8")
-        channelid =channelid.encode("utf8")
+        if channelid:
+            channelid =channelid.encode("utf8")
 
-        if url:
+        if url and channelid:
             context_items.append((_("Add One Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_one_time, channelid=channelid, channelname=channelname))))
             context_items.append((_("Add Daily Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_daily_time, channelid=channelid, channelname=channelname))))
             context_items.append((_("Add Title Search Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search, channelid=channelid, channelname=channelname))))
@@ -2080,12 +2082,12 @@ def group(channelgroup=None,section=None):
             if plugin.get_setting('external.player'):
                 context_items.append((_("Play Channel External"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external, channelname=channelname))))
 
-        if channelname not in favourites:
+        if channelname not in favourites and channelid:
             context_items.append((_("Add Favourite Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(add_favourite_channel, channelname=channelname, channelid=channelid, thumbnail=thumbnail))))
         else:
             context_items.append((_("Remove Favourite Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_favourite_channel, channelname=channelname))))
 
-        if url:
+        if url and channelid:
             path = plugin.url_for(channel, channelid=channelid, channelname=channelname)
         else:
             path = sys.argv[0]
