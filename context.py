@@ -35,7 +35,7 @@ channel = xbmc.getInfoLabel('ListItem.Label')
 #log(channel)
 channel = channel.decode("utf8")
 channel = channel.encode("utf8")
-channel = urllib.quote(channel)
+channel = urllib.quote_plus(channel)
 #log(("channel",channel))
 
 try:
