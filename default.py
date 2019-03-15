@@ -23,8 +23,8 @@ if len(sys.argv) == 1:
 
 channel = sys.argv[1]
 channel = channel.decode("utf8")
-channel = channel.encode("utf8")
-channel = urllib.quote_plus(channel)
+#channel = channel.encode("utf8")
+#channel = urllib.quote_plus(channel)
 
 title = sys.argv[2]
 date = sys.argv[3]
@@ -47,22 +47,15 @@ start_time = start_time.replace(tzinfo=None)
 conn = sqlite3.connect(xbmc.translatePath('special://profile/addon_data/plugin.video.iptv.recorder/xmltv.db'), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
 cursor = conn.cursor()
 try:
+    #log(channel)
     channel_id = cursor.execute('SELECT tvg_id FROM streams WHERE name=?',(channel,)).fetchone()[0]
     #log(channel_id)
     program_id = cursor.execute('SELECT uid FROM programmes WHERE channelid=? AND start=?',(channel_id,start_time)).fetchone()[0]
     #log((channel_id, program_id, start_time))
     if program_id:
+        channel = channel.encode("utf8")
+        channel = urllib.quote_plus(channel)
         xbmc.executebuiltin("ActivateWindow(videos,plugin://plugin.video.iptv.recorder/broadcast/%s/%s,return)" % (program_id,channel))
-    else:
-        xbmcgui.Dialog().notification("IPTV Recorder","program not found",xbmcgui.NOTIFICATION_WARNING)
-        select = xbmcgui.Dialog().select("IPTV Recorder",["Add Timed Recording","Add Daily Timed Recording"])
-        if select != -1:
-            if select == 0:
-                cmd = "ActivateWindow(videos,plugin://plugin.video.iptv.recorder/record_one_time/%s/%s,return)" % (urllib.quote_plus(channel_id.encode("utf8")),channel)
-                result = xbmc.executebuiltin(cmd)
-            elif select == 1:
-                cmd = "ActivateWindow(videos,plugin://plugin.video.iptv.recorder/record_daily_time/%s/%s,return)" % (urllib.quote_plus(channel_id.encode("utf8")),channel)
-                result = xbmc.executebuiltin(cmd)
 
 except:
     xbmcgui.Dialog().notification("IPTV Recorder","program not found",xbmcgui.NOTIFICATION_WARNING)
