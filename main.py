@@ -493,11 +493,13 @@ def record_one_time( channelname):
     if stop < start:
         stop = stop + timedelta(days=1)
 
+    name = xbmcgui.Dialog().input("Rule Name").decode("utf8")
+
     do_refresh = False
     watch = False
     remind = False
     channelid = None
-    threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, channelname, start, stop, False, None]).start()
+    threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, channelname, start, stop, False, name]).start()
 
 
 @plugin.route('/record_and_play/<channelname>')
