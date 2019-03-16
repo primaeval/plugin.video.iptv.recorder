@@ -2353,7 +2353,7 @@ def service_thread():
 
             for p in programmes:
                 uid, channel , title , sub_title , date , description , episode, categories = p
-                record_once(programmeid=uid, channelid=jchannelid, channelname=jchannelname, do_refresh=False, watch=watch, remind=remind)
+                record_once(programmeid=uid, channelid=jchannelid.encode("utf8"), channelname=jchannelname.encode("utf8"), do_refresh=False, watch=watch, remind=remind)
 
         elif jtype == "DAILY":
             if jtitle:
@@ -2369,7 +2369,7 @@ def service_thread():
                     tstart = start.time()
                     tstop = stop.time()
                     if tjstart == tstart and tjstop == tstop:
-                        record_once(programmeid=uid, channelid=jchannelid, channelname=jchannelname, do_refresh=False, watch=watch, remind=remind)
+                        record_once(programmeid=uid, channelid=jchannelid.encode("utf8"), channelname=jchannelname.encode("utf8"), do_refresh=False, watch=watch, remind=remind)
             else:
                 tjstart = jstart.time()
                 tjstop = jstop.time()
@@ -2384,7 +2384,9 @@ def service_thread():
                     start = start + timedelta(days=days)
                     stop = stop + timedelta(days=days)
                     if stop > start:
-                        record_once_time(jchannelid, jchannelname, start, stop, do_refresh=False, watch=watch, remind=remind)
+                        if jchannelid:
+                            jchannelid = jchannelid.encode("utf8")
+                        record_once_time(jchannelid, jchannelname.encode("utf8"), start, stop, do_refresh=False, watch=watch, remind=remind)
 
         elif jtype == "WEEKLY":
             if jtitle:
@@ -2417,20 +2419,22 @@ def service_thread():
                     start = start + timedelta(weeks=weeks)
                     stop = stop + timedelta(weeks=weeks)
                     if stop > start:
-                        log((jchannelid,jchannelname))
+                        #log((jchannelid,jchannelname))
+                        if jchannelid:
+                            jchannelid = jchannelid.encode("utf8")
                         record_once_time(jchannelid, jchannelname.encode("utf8"), start, stop, do_refresh=False, watch=watch, remind=remind)
 
         elif jtype == "SEARCH":
             programmes = cursor.execute("SELECT uid FROM programmes WHERE channelid=? AND title LIKE ?", (jchannelid, "%"+jtitle+"%")).fetchall()
             for p in programmes:
                 uid = p[0]
-                record_once(programmeid=uid, channelid=jchannelid, channelname=jchannelname, do_refresh=False, watch=watch, remind=remind)
+                record_once(programmeid=uid, channelid=jchannelid.encode("utf8"), channelname=jchannelname.encode("utf8"), do_refresh=False, watch=watch, remind=remind)
 
         elif jtype == "PLOT":
             programmes = cursor.execute("SELECT uid FROM programmes WHERE channelid=? AND description LIKE ?", (jchannelid, "%"+jdescription+"%")).fetchall()
             for p in programmes:
                 uid = p[0]
-                record_once(programmeid=uid, channelid=jchannelid, channelname=jchannelname, do_refresh=False, watch=watch, remind=remind)
+                record_once(programmeid=uid, channelid=jchannelid.encode("utf8"), channelname=jchannelname.encode("utf8"), do_refresh=False, watch=watch, remind=remind)
 
     refresh()
 
