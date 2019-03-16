@@ -440,7 +440,7 @@ def record_once(programmeid, channelid, channelname, do_refresh=True, watch=Fals
     channelname = channelname.decode("utf8")
     start = None
     stop = None
-    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind, channelid, channelname, start, stop, False]).start()
+    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind, channelid, channelname, start, stop, False, None]).start()
 
 
 @plugin.route('/watch_once/<programmeid>/<channelid>/<channelname>')
@@ -449,7 +449,7 @@ def watch_once(programmeid, channelid, channelname, do_refresh=True, watch=True,
     channelname = channelname.decode("utf8")
     start = None
     stop = None
-    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind, channelid, channelname, start, stop, False]).start()
+    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind, channelid, channelname, start, stop, False, None]).start()
 
 
 @plugin.route('/remind_once/<programmeid>/<channelid>/<channelname>')
@@ -458,7 +458,7 @@ def remind_once(programmeid, channelid, channelname, do_refresh=True, watch=Fals
     channelname = channelname.decode("utf8")
     start = None
     stop = None
-    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind, channelid, channelname, start, stop, False]).start()
+    threading.Thread(target=record_once_thread,args=[programmeid, do_refresh, watch, remind, channelid, channelname, start, stop, False, None]).start()
 
 
 @plugin.route('/record_one_time/<channelname>')
@@ -497,7 +497,7 @@ def record_one_time( channelname):
     watch = False
     remind = False
     channelid = None
-    threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, channelname, start, stop, False]).start()
+    threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, channelname, start, stop, False, None]).start()
 
 
 @plugin.route('/record_and_play/<channelname>')
@@ -520,21 +520,21 @@ def record_and_play(channelname):
     watch = False
     remind = False
     channelid = None
-    threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, channelname, start, stop, True]).start()
+    threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, channelname, start, stop, True, None]).start()
     time.sleep(5)
 
     return recordings()
 
 
 @plugin.route('/record_once_time/<channelid>/<channelname>/<start>/<stop>')
-def record_once_time(channelid, channelname, start, stop, do_refresh=True, watch=False, remind=True):
+def record_once_time(channelid, channelname, start, stop, do_refresh=True, watch=False, remind=True, title=None):
     if channelid:
         channelid = channelid.decode("utf8")
     channelname = channelname.decode("utf8")
-    threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, channelname, start, stop, False]).start()
+    threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, channelname, start, stop, False, title]).start()
 
 
-def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, channelid=None, channelname=None, start=None,stop=None, play=False):
+def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, channelid=None, channelname=None, start=None,stop=None, play=False, title=None):
     #TODO check for ffmpeg process already recording if job is re-added
     #channelname = urllib.unquote_plus(channelname)
 
@@ -547,7 +547,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
 
         nfo = {"programme":{"channelid":channelid, "title":title, "sub_title":sub_title, "start":datetime2timestamp(start), "stop":datetime2timestamp(stop), "date":date, "description":description, "episode":episode, "categories":categories}}
     else:
-        title = None
+        #title = None
         nfo = {}
 
     #log((channelid,channelname))
@@ -593,7 +593,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
         if sub_title:
             fsub_title = sane_name(sub_title)
     else:
-        ftitle = None
+        ftitle = sane_name(title)
     fchannelname = sane_name(channelname)
 
     folder = ""
@@ -620,7 +620,10 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
                 filename = "%s - %s - %s" % (ftitle, fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
     else:
         folder = fchannelname
-        filename = "%s - %s" % (fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
+        if ftitle:
+            filename = "%s - %s - %s" % (ftitle, fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
+        else:
+            filename = "%s - %s" % (fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
 
     if watch:
         type = "WATCH"
@@ -2326,9 +2329,9 @@ def service_thread():
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
-    rules = cursor.execute('SELECT uid, channelid, channelname, title, start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", description, type FROM rules ORDER by channelname, title, start, stop').fetchall()
+    rules = cursor.execute('SELECT uid, channelid, channelname, title, start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", description, type, name FROM rules ORDER by channelname, title, start, stop').fetchall()
 
-    for uid, jchannelid, jchannelname, jtitle, jstart, jstop, jdescription, jtype  in rules:
+    for uid, jchannelid, jchannelname, jtitle, jstart, jstop, jdescription, jtype, jname  in rules:
 
         if jtitle and '%' in jtitle:
             compare='LIKE'
@@ -2386,7 +2389,7 @@ def service_thread():
                     if stop > start:
                         if jchannelid:
                             jchannelid = jchannelid.encode("utf8")
-                        record_once_time(jchannelid, jchannelname.encode("utf8"), start, stop, do_refresh=False, watch=watch, remind=remind)
+                        record_once_time(jchannelid, jchannelname.encode("utf8"), start, stop, do_refresh=False, watch=watch, remind=remind, title=jname)
 
         elif jtype == "WEEKLY":
             if jtitle:
@@ -2422,7 +2425,7 @@ def service_thread():
                         #log((jchannelid,jchannelname))
                         if jchannelid:
                             jchannelid = jchannelid.encode("utf8")
-                        record_once_time(jchannelid, jchannelname.encode("utf8"), start, stop, do_refresh=False, watch=watch, remind=remind)
+                        record_once_time(jchannelid, jchannelname.encode("utf8"), start, stop, do_refresh=False, watch=watch, remind=remind, title=jname)
 
         elif jtype == "SEARCH":
             programmes = cursor.execute("SELECT uid FROM programmes WHERE channelid=? AND title LIKE ?", (jchannelid, "%"+jtitle+"%")).fetchall()
