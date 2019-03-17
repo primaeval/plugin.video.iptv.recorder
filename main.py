@@ -1800,10 +1800,17 @@ def listing(programmes, scroll=False, channelname=None):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
-    streams = cursor.execute("SELECT * FROM streams").fetchall()
-    streams = {x[3]:x for x in streams}
-    channels = cursor.execute("SELECT * FROM channels").fetchall()
-    channels = {x[1]:x for x in channels}
+    all_streams = cursor.execute("SELECT * FROM streams").fetchall()
+    #streams = {x[3]:x for x in streams}
+    streams = {}
+    for x in all_streams:
+        streams[x[3]] = x
+
+    all_channels = cursor.execute("SELECT * FROM channels").fetchall()
+    #channels = {x[1]:x for x in channels}
+    channels = {}
+    for x in all_channels:
+        channels[x[1]] = x
 
     items = []
 
