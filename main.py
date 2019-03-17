@@ -1800,17 +1800,13 @@ def listing(programmes, scroll=False, channelname=None):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
-    all_streams = cursor.execute("SELECT * FROM streams").fetchall()
+    streams = cursor.execute("SELECT * FROM streams").fetchall()
     #streams = {x[3]:x for x in streams}
-    streams = {}
-    for x in all_streams:
-        streams[x[3]] = x
+    streams = dict((x[3],x) for x in streams)
 
-    all_channels = cursor.execute("SELECT * FROM channels").fetchall()
+    channels = cursor.execute("SELECT * FROM channels").fetchall()
     #channels = {x[1]:x for x in channels}
-    channels = {}
-    for x in all_channels:
-        channels[x[1]] = x
+    channels = dict((x[1],x) for x in channels)
 
     items = []
 
@@ -2042,7 +2038,9 @@ def group(channelgroup=None,section=None):
     if section == "EPG":
         channels = cursor.execute("SELECT * FROM channels" + order).fetchall()
         streams = cursor.execute("SELECT tvg_id, tvg_logo FROM streams").fetchall()
-        logos = {x[0]:x[1] for x in streams}
+        #logos = {x[0]:x[1] for x in streams}
+        logos = dict((x[0],x[1]) for x in streams)
+
         collection = channels
         show_now_next = plugin.get_setting('show.now.next.all') == "true"
     elif section == "FAVOURITES":
@@ -2052,7 +2050,8 @@ def group(channelgroup=None,section=None):
         show_now_next = plugin.get_setting('show.now.next.favourites') == "true"
     else:
         channels = cursor.execute("SELECT * FROM channels" + order).fetchall()
-        channel_logos = {x[1]:x[3] for x in channels}
+        #channel_logos = {x[1]:x[3] for x in channels}
+        channel_logos = dict((x[1],x[3]) for x in channels)
         if channelgroup == "All Channels":
             streams = cursor.execute("SELECT * FROM streams" + order).fetchall()
             show_now_next = plugin.get_setting('show.now.next.all') == "true"
@@ -2065,7 +2064,8 @@ def group(channelgroup=None,section=None):
     favourites = [x[0] for x in favourites]
 
     all_streams = cursor.execute("SELECT * FROM streams" + order).fetchall()
-    stream_urls = {x[3]:x[6] for x in all_streams if x}
+    #stream_urls = {x[3]:x[6] for x in all_streams if x}
+    stream_urls = dict((x[3],x[6]) for x in all_streams if x)
 
     items = []
 
@@ -2073,10 +2073,12 @@ def group(channelgroup=None,section=None):
 
     if show_now_next:
         now_titles = cursor.execute('SELECT channelid, title, start AS "start [TIMESTAMP]", description, categories FROM programmes WHERE start<? AND stop>?', (now, now)).fetchall()
-        now_titles = {x[0]:(x[1],x[2],x[3],x[4]) for x in now_titles}
+        #now_titles = {x[0]:(x[1],x[2],x[3],x[4]) for x in now_titles}
+        now_titles = dict((x[0],(x[1],x[2],x[3],x[4])) for x in now_titles)
         #TODO limit to one per channelid
         next_titles = cursor.execute('SELECT channelid, title, start AS "start [TIMESTAMP]", categories FROM programmes WHERE start>? ORDER BY start DESC', (now,)).fetchall()
-        next_titles = {x[0]:(x[1],x[2],x[3]) for x in next_titles}
+        #next_titles = {x[0]:(x[1],x[2],x[3]) for x in next_titles}
+        next_titles = dict((x[0],(x[1],x[2],x[3])) for x in next_titles)
 
     for stream_channel in collection:
         #log(stream_channel)
@@ -2923,7 +2925,8 @@ def xmltv():
 
                     #TODO other systems
                     episode = re.findall('<episode-num system="(.*?)">(.*?)<', m, flags=(re.I|re.DOTALL))
-                    episode = {x[0]:x[1] for x in episode}
+                    #episode = {x[0]:x[1] for x in episode}
+                    episode = dict((x[0],x[1]) for x in episode)
 
                     SE = None
                     if episode:
