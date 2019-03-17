@@ -189,7 +189,7 @@ def str2dt(string_date):
 
 
 def total_seconds(td):
-    return ((td.microseconds + td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
+    return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
 
 
 @plugin.route('/jobs')
