@@ -189,7 +189,7 @@ def str2dt(string_date):
 
 
 def total_seconds(td):
-    return ((td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
+    return ((td.microseconds + td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
 
 
 @plugin.route('/jobs')
@@ -468,7 +468,7 @@ def record_one_time( channelname):
 
     utcnow = datetime.utcnow()
     ts = time.time()
-    utc_offset = (datetime.fromtimestamp(ts) - total_seconds(datetime.utcfromtimestamp(ts)))
+    utc_offset = total_seconds(datetime.fromtimestamp(ts) - datetime.utcfromtimestamp(ts))
 
     date = xbmcgui.Dialog().input("Start Date",type=xbmcgui.INPUT_DATE)
     if not date:
@@ -509,7 +509,7 @@ def record_and_play(channelname):
 
     utcnow = datetime.utcnow()
     ts = time.time()
-    utc_offset = (datetime.fromtimestamp(ts) - total_seconds(datetime.utcfromtimestamp(ts)))
+    utc_offset = total_seconds(datetime.fromtimestamp(ts) - datetime.utcfromtimestamp(ts))
 
     start = utcnow - timedelta(seconds=utc_offset)
 
@@ -910,7 +910,7 @@ def record_daily_time(channelname):
 
     utcnow = datetime.utcnow()
     ts = time.time()
-    utc_offset = (datetime.fromtimestamp(ts) - total_seconds(datetime.utcfromtimestamp(ts)))
+    utc_offset = total_seconds(datetime.fromtimestamp(ts) - datetime.utcfromtimestamp(ts))
 
     start = xbmcgui.Dialog().input("Start Time",type=xbmcgui.INPUT_TIME)
     hms = start.split(':')
@@ -953,7 +953,7 @@ def record_weekly_time(channelname):
 
     utcnow = datetime.utcnow()
     ts = time.time()
-    utc_offset = (datetime.fromtimestamp(ts) - total_seconds(datetime.utcfromtimestamp(ts)))
+    utc_offset = total_seconds(datetime.fromtimestamp(ts) - datetime.utcfromtimestamp(ts))
 
     date = xbmcgui.Dialog().input("Start Date",type=xbmcgui.INPUT_DATE)
     if not date:
