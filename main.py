@@ -885,6 +885,8 @@ def renew_jobs():
 
 
 def sane_name(name):
+    if not name:
+        return
     if windows() or (plugin.get_setting('filename.urlencode') == 'true'):
         name = urllib.quote(name.encode("utf8"))
         name = name.replace("%20",' ')
