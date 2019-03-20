@@ -1023,6 +1023,32 @@ def record_daily(channelid, channelname, title, start, stop):
     service()
 
 
+@plugin.route('/record_weekly/<channelid>/<channelname>/<title>/<start>/<stop>')
+def record_weekly(channelid, channelname, title, start, stop):
+    channelid = channelid.decode("utf8")
+    channelname = channelname.decode("utf8")
+    title = title.decode("utf8")
+    title = xbmcgui.Dialog().input(_("% is Wildcard"), title).decode("utf8")
+
+    start = timestamp2datetime(float(start))
+    stop = timestamp2datetime(float(stop))
+
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
+    #TODO problem with PRIMARY KEYS, UNIQUE and TIMESTAMP
+    rule = cursor.execute('SELECT * FROM rules WHERE channelid=? AND channelname=? AND title=? AND start=? AND stop =? AND type=?', (channelid, channelname, title, start, stop, "WEEKLY")).fetchone()
+
+    if not rule:
+        conn.execute("INSERT OR REPLACE INTO rules(channelid, channelname, title, start, stop, type) VALUES(?, ?, ?, ?, ?, ?)",
+        [channelid, channelname, title, start, stop, "WEEKLY"])
+
+    conn.commit()
+    conn.close()
+
+    service()
+
+
 @plugin.route('/record_always/<channelid>/<channelname>/<title>')
 def record_always(channelid, channelname, title):
     channelid = channelid.decode("utf8")
@@ -1119,6 +1145,32 @@ def watch_daily(channelid, channelname, title, start, stop):
     service()
 
 
+@plugin.route('/watch_weekly/<channelid>/<channelname>/<title>/<start>/<stop>')
+def watch_weekly(channelid, channelname, title, start, stop):
+    channelid = channelid.decode("utf8")
+    channelname = channelname.decode("utf8")
+    title = title.decode("utf8")
+    title = xbmcgui.Dialog().input(_("% is Wildcard"), title).decode("utf8")
+
+    start = timestamp2datetime(float(start))
+    stop = timestamp2datetime(float(stop))
+
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
+    #TODO problem with PRIMARY KEYS, UNIQUE and TIMESTAMP
+    rule = cursor.execute('SELECT * FROM rules WHERE channelid=? AND channelname=? AND title=? AND start=? AND stop =? AND type=?', (channelid, channelname, title, start, stop, "WATCH WEEKLY")).fetchone()
+
+    if not rule:
+        conn.execute("INSERT OR REPLACE INTO rules(channelid, channelname, title, start, stop, type) VALUES(?, ?, ?, ?, ?, ?)",
+        [channelid, channelname, title, start, stop, "WATCH WEEKLY"])
+
+    conn.commit()
+    conn.close()
+
+    service()
+
+
 @plugin.route('/watch_always/<channelid>/<channelname>/<title>')
 def watch_always(channelid, channelname, title):
     channelid = channelid.decode("utf8")
@@ -1208,6 +1260,32 @@ def remind_daily(channelid, channelname, title, start, stop):
     if not rule:
         conn.execute("INSERT OR REPLACE INTO rules(channelid, channelname, title, start, stop, type) VALUES(?, ?, ?, ?, ?, ?)",
         [channelid, channelname, title, start, stop, "REMIND DAILY"])
+
+    conn.commit()
+    conn.close()
+
+    service()
+
+
+@plugin.route('/remind_weekly/<channelid>/<channelname>/<title>/<start>/<stop>')
+def remind_weekly(channelid, channelname, title, start, stop):
+    channelid = channelid.decode("utf8")
+    channelname = channelname.decode("utf8")
+    title = title.decode("utf8")
+    title = xbmcgui.Dialog().input(_("% is Wildcard"), title).decode("utf8")
+
+    start = timestamp2datetime(float(start))
+    stop = timestamp2datetime(float(stop))
+
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
+    #TODO problem with PRIMARY KEYS, UNIQUE and TIMESTAMP
+    rule = cursor.execute('SELECT * FROM rules WHERE channelid=? AND channelname=? AND title=? AND start=? AND stop =? AND type=?', (channelid, channelname, title, start, stop, "REMIND WEEKLY")).fetchone()
+
+    if not rule:
+        conn.execute("INSERT OR REPLACE INTO rules(channelid, channelname, title, start, stop, type) VALUES(?, ?, ?, ?, ?, ?)",
+        [channelid, channelname, title, start, stop, "REMIND WEEKLY"])
 
     conn.commit()
     conn.close()
@@ -1334,7 +1412,11 @@ def broadcast(programmeid, channelname):
         'path': plugin.url_for(record_daily, channelid=echannelid, channelname=echannelname, title=etitle, start=start_ts, stop=stop_ts),
         'thumbnail': thumbnail or get_icon_path('recordings'),
     })
-
+    items.append({
+        'label': _("Record Weekly") + " - %s - %s %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, utc2local(start).time(), utc2local(stop).time()),
+        'path': plugin.url_for(record_weekly, channelid=echannelid, channelname=echannelname, title=etitle, start=start_ts, stop=stop_ts),
+        'thumbnail': thumbnail or get_icon_path('recordings'),
+    })
     items.append({
         'label': _("Watch Once") + " - %s - %s %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, utc2local(start), utc2local(stop)),
         'path': plugin.url_for(watch_once, programmeid=programmeid, channelid=echannelid, channelname=echannelname),
@@ -1352,6 +1434,11 @@ def broadcast(programmeid, channelname):
     items.append({
         'label': _("Watch Daily") + " - %s - %s %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, utc2local(start).time(), utc2local(stop).time()),
         'path': plugin.url_for(watch_daily, channelid=echannelid, channelname=echannelname, title=etitle, start=start_ts, stop=stop_ts),
+        'thumbnail': thumbnail or get_icon_path('recordings'),
+    })
+    items.append({
+        'label': _("Watch Weekly") + " - %s - %s %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, utc2local(start).time(), utc2local(stop).time()),
+        'path': plugin.url_for(watch_weekly, channelid=echannelid, channelname=echannelname, title=etitle, start=start_ts, stop=stop_ts),
         'thumbnail': thumbnail or get_icon_path('recordings'),
     })
 
@@ -1374,7 +1461,11 @@ def broadcast(programmeid, channelname):
         'path': plugin.url_for(remind_daily, channelid=echannelid, channelname=echannelname, title=etitle, start=start_ts, stop=stop_ts),
         'thumbnail': thumbnail or get_icon_path('recordings'),
     })
-
+    items.append({
+        'label': _("Remind Weekly") + " - %s - %s %s[COLOR grey]%s - %s[/COLOR]" % (channelname, title, CR, utc2local(start).time(), utc2local(stop).time()),
+        'path': plugin.url_for(remind_weekly, channelid=echannelid, channelname=echannelname, title=etitle, start=start_ts, stop=stop_ts),
+        'thumbnail': thumbnail or get_icon_path('recordings'),
+    })
     items.append({
         'label': _("Play Channel") + " - %s" % (channelname),
         'path': plugin.url_for(play_channel, channelname=echannelname),
@@ -2408,6 +2499,7 @@ def service_thread():
             if jtitle:
                 tjstart = jstart.time()
                 tjstop = jstop.time()
+                tjstart_day = jstart.weekday()
 
                 programmes = cursor.execute(
                 'SELECT uid, start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]" FROM programmes WHERE channelid=? AND title %s ?' % compare,
@@ -2415,9 +2507,10 @@ def service_thread():
 
                 for p in programmes:
                     uid, start, stop = p
+                    tstart_day = start.weekday()
                     tstart = start.time()
                     tstop = stop.time()
-                    if tjstart == tstart and tjstop == tstop:
+                    if tjstart_day == tstart_day and tjstart == tstart and tjstop == tstop:
                         record_once(programmeid=uid, channelid=jchannelid.encode("utf8"), channelname=jchannelname.encode("utf8"), do_refresh=False, watch=watch, remind=remind)
             else:
                 tjstart = jstart.time()
