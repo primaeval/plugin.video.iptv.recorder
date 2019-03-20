@@ -3,32 +3,32 @@
 #EXTINF:-1 tvg-name="test name Ü" tvg-id="test id Ü" tvg-logo="" group-title="test group Ü",1 [I]test comma name Ü[/I]
 http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_surround-fix.avi
 
-#EXTINF:-1,2 Comma Name Only
+#EXTINF:-1 group-title="test group Ü",2 Comma Name Only
 http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_surround-fix.avi
 
-#EXTINF:-1 tvg-id="",3 tvg-id empty string
+#EXTINF:-1 tvg-id="" group-title="test group Ü",3 tvg-id empty string
 http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_surround-fix.avi
 
-#EXTINF:-1 tvg-id="id not in xml",4 tvg-id not in xml
+#EXTINF:-1 tvg-id="id not in xml" group-title="test group Ü",4 tvg-id not in xml
 http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_surround-fix.avi
 
-#EXTINF:-1 tvg-id="id in xml",5 tvg-id in xml
+#EXTINF:-1 tvg-id="id in xml" group-title="test group Ü",5 tvg-id in xml
 http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_surround-fix.avi
 
-#EXTINF:-1 tvg-name="6 tvg-name matches comma name",6 tvg-name matches comma name
+#EXTINF:-1 tvg-name="6 tvg-name matches comma name" group-title="test group Ü",6 tvg-name matches comma name
 http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_surround-fix.avi
 
-#EXTINF:-1 tvg-name="tvg-name does not match comma name",7 [I]tvg-name does not match comma name !!![/I]
+#EXTINF:-1 tvg-name="tvg-name does not match comma name" group-title="test group Ü",7 [I]tvg-name does not match comma name !!![/I]
 http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_surround-fix.avi
 
-#EXTINF:-1 tvg-id="tvg-name does not match comma name" tvg-name="tvg-name does not match comma name",8 [I]tvg-name does not match comma name !!![/I]
+#EXTINF:-1 tvg-id="tvg-name does not match comma name" tvg-name="tvg-name does not match comma name" group-title="test group Ü",8 [I]tvg-name does not match comma name !!![/I]
 http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_surround-fix.avi
 
-#EXTINF:-1 tvg-id="tvg-shift is empty" tvg-name="tvg-shift is empty" tvg-shift="",9 tvg-shift is empty
+#EXTINF:-1 tvg-id="tvg-shift is empty" tvg-name="tvg-shift is empty" tvg-shift="" group-title="test group Ü",9 tvg-shift is empty
 http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_surround-fix.avi
 
-#EXTINF:-1 tvg-id="tvg-name only id" tvg-name="10 tvg-name only"
+#EXTINF:-1 tvg-id="tvg-name only id" tvg-name="10 tvg-name only" group-title="test group Ü"
 http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_surround-fix.avi
 
-#EXTINF:-1,[I]11 xml only[/I]
+#EXTINF:-1 group-title="test group Ü",[I]11 xml only[/I]
 http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_surround-fix.avi
