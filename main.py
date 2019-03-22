@@ -2765,27 +2765,27 @@ def xmltv():
             for channel in channels:
 
                 name = None
-                if ',' in re.sub('tvg-[a-z]+"[^"]*"','',channel[0]):
+                if ',' in re.sub('tvg-[a-z]+"[^"]*"','',channel[0], flags=re.I):
                     name = channel[0].rsplit(',', 1)[-1].strip()
                     #name = name.encode("utf8")
                     #name = urllib.quote_plus(name)
 
-                tvg_name = re.search('tvg-name="(.*?)"', channel[0])
+                tvg_name = re.search('tvg-name="(.*?)"', channel[0], flags=re.I)
                 if tvg_name:
                     tvg_name = tvg_name.group(1) or None
                 #else:
                     #tvg_name = name
 
-                tvg_id = re.search('tvg-id="(.*?)"', channel[0])
+                tvg_id = re.search('tvg-id="(.*?)"', channel[0], flags=re.I)
                 if tvg_id:
                     tvg_id = tvg_id.group(1) or None
 
-                tvg_logo = re.search('tvg-logo="(.*?)"', channel[0])
+                tvg_logo = re.search('tvg-logo="(.*?)"', channel[0], flags=re.I)
                 if tvg_logo:
                     tvg_logo = tvg_logo.group(1) or None
 
                 shifts[tvg_id] = global_shift
-                tvg_shift = re.search('tvg-shift="(.*?)"', channel[0])
+                tvg_shift = re.search('tvg-shift="(.*?)"', channel[0], flags=re.I)
                 if tvg_shift:
                     tvg_shift = tvg_shift.group(1)
                     if tvg_shift and tvg_id:
@@ -2797,7 +2797,7 @@ def xmltv():
                 if search:
                     url = re.sub(search, replace, url)
 
-                groups = re.search('group-title="(.*?)"', channel[0])
+                groups = re.search('group-title="(.*?)"', channel[0], flags=re.I)
                 if groups:
                     groups = groups.group(1) or None
 
