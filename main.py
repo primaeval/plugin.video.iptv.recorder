@@ -755,7 +755,10 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
             f.write('playing = False\n')
             f.write("while True:\n")
             f.write("  data = p.stdout.read(1000000)\n")
-            f.write("  video.write(data)\n")
+            f.write("  if data:\n")
+            f.write("      video.write(data)\n")
+            f.write("  else:\n")
+            f.write("      break\n")
             if play:
                 f.write("  if not playing:\n")
                 f.write("    xbmc.Player().play(r'%s')\n" % path.encode('utf8'))
