@@ -4,199 +4,199 @@ msgstr ""
 
 msgctxt "#30000"
 msgid "Delete All Recordings?"
-msgstr ""
+msgstr "Alle Aufnahmen löschen?"
 
 msgctxt "#30001"
 msgid "Play Channel"
-msgstr ""
+msgstr "Kanal abspielen"
 
 msgctxt "#30002"
 msgid "Delete Job"
-msgstr ""
+msgstr "Job löschen"
 
 msgctxt "#30003"
 msgid "Finished"
-msgstr ""
+msgstr "Erledigt"
 
 msgctxt "#30004"
 msgid "Record Once"
-msgstr ""
+msgstr "Einmalig aufzeichnen"
 
 msgctxt "#30005"
 msgid "Play Channel External"
-msgstr ""
+msgstr "Kanal extern abspielen"
 
 msgctxt "#30006"
 msgid "External Player"
-msgstr ""
+msgstr "Externer Player"
 
 msgctxt "#30007"
 msgid "Title Search (% is wildcard)?"
-msgstr ""
+msgstr "Nach Titel suchen (% als Platzhalter)?"
 
 msgctxt "#30008"
 msgid "Delete All Jobs"
-msgstr ""
+msgstr "Alle Jobs löschen"
 
 msgctxt "#30009"
 msgid "Search Plot"
-msgstr ""
+msgstr "Handlung durchsuchen"
 
 msgctxt "#30010"
 msgid "Add Favourite Channel"
-msgstr ""
+msgstr "Kanal als Favorit hinzufügen"
 
 msgctxt "#30011"
 msgid "Delete All Rules"
-msgstr ""
+msgstr "Alle Regeln entfernen"
 
 msgctxt "#30012"
 msgid "Recording Rules"
-msgstr ""
+msgstr "Aufnahmeregeln"
 
 msgctxt "#30013"
 msgid "Favourite Channels"
-msgstr ""
+msgstr "Kanalfavoriten"
 
 msgctxt "#30014"
 msgid "Delete All Recordings"
-msgstr ""
+msgstr "Alle Aufnahmen löschen"
 
 msgctxt "#30015"
 msgid "Full EPG"
-msgstr ""
+msgstr "Komplettes EPG"
 
 msgctxt "#30016"
 msgid "Search Title"
-msgstr ""
+msgstr "Nach Titel suchen"
 
 msgctxt "#30017"
 msgid "xmltv"
-msgstr ""
+msgstr "xmltv"
 
 msgctxt "#30018"
 msgid "Delete Search"
-msgstr ""
+msgstr "Suche löschen"
 
 msgctxt "#30019"
 msgid "Cancel Record?"
-msgstr ""
+msgstr "Aufahme abbrechen?"
 
 msgctxt "#30020"
 msgid "Delete Recording?"
-msgstr ""
+msgstr "Aufnahme löschen?"
 
 msgctxt "#30021"
 msgid "New"
-msgstr ""
+msgstr "Neu"
 
 msgctxt "#30022"
 msgid "Remove Favourite Channel"
-msgstr ""
+msgstr "Kanal aus Favoriten entfernen"
 
 msgctxt "#30023"
 msgid "Recording Jobs"
-msgstr ""
+msgstr "Aufnahmejobs"
 
 msgctxt "#30024"
 msgid "Plot Search (% is wildcard)?"
-msgstr ""
+msgstr "Handlung durchsuchen (% als Platzhalter)?"
 
 msgctxt "#30025"
 msgid "Add Title Search Rule"
-msgstr ""
+msgstr "Titel zur Suche hinzufügen"
 
 msgctxt "#30026"
 msgid "Add Plot Search Rule"
-msgstr ""
+msgstr "Handlung zur Suche hinzufügen"
 
 msgctxt "#30027"
 msgid "Delete All Rules?"
-msgstr ""
+msgstr "Alle Regeln entfernen?"
 
 msgctxt "#30028"
 msgid "Recordings Folder"
-msgstr ""
+msgstr "Aufnahmeordner"
 
 msgctxt "#30029"
 msgid "ffmpeg exe not found!"
-msgstr ""
+msgstr "ffmpeg.exe konnte nicht gefunden werden!"
 
 msgctxt "#30030"
 msgid "Tomorrow"
-msgstr ""
+msgstr "Morgen"
 
 msgctxt "#30031"
 msgid "Today"
-msgstr ""
+msgstr "Heute"
 
 msgctxt "#30032"
 msgid "Delete Rule"
-msgstr ""
+msgstr "Regel löschen"
 
 msgctxt "#30033"
 msgid "Channel Groups"
-msgstr ""
+msgstr "Kanalgruppen"
 
 msgctxt "#30034"
 msgid "Loading data..."
-msgstr ""
+msgstr "Lade Daten..."
 
 msgctxt "#30035"
 msgid "Cancel Record"
-msgstr ""
+msgstr "Aufnahme abbrechen"
 
 msgctxt "#30036"
 msgid "Service"
-msgstr ""
+msgstr "Service"
 
 msgctxt "#30037"
 msgid "Delete Recording"
-msgstr ""
+msgstr "Aufnahme löschen"
 
 msgctxt "#30038"
 msgid "Yesterday"
-msgstr ""
+msgstr "Gestern"
 
 msgctxt "#30039"
 msgid "Delete All Jobs?"
-msgstr ""
+msgstr "Alle Jobs löschen?"
 
 msgctxt "#30040"
 msgid "Recordings"
-msgstr ""
+msgstr "Aufnahmen"
 
 msgctxt "#30041"
 msgid "Record Always"
-msgstr ""
+msgstr "Immer aufzeichnen"
 
 msgctxt "#30042"
 msgid "Record Daily"
-msgstr ""
+msgstr "Täglich aufzeichnen"
 
 msgctxt "#30043"
 msgid "Creating database"
-msgstr ""
+msgstr "Erstelle Datenbank"
 
 msgctxt "#30044"
 msgid "Copying xmltv file"
-msgstr ""
+msgstr "Kopiere xmltv Datei"
 
 msgctxt "#30045"
 msgid "Unzipping xmltv file"
-msgstr ""
+msgstr "Entpacke xmltv Datei"
 
 msgctxt "#30046"
 msgid "Finding channels"
-msgstr ""
+msgstr "Scanne Kanäle"
 
 msgctxt "#30047"
 msgid "Finding programmes"
-msgstr ""
+msgstr "Scanne Programme"
 
 msgctxt "#30048"
 msgid "Finding streams"
-msgstr ""
+msgstr "Scanne Streams"
 
 msgctxt "#30049"
 msgid "NUKE"
@@ -204,160 +204,160 @@ msgstr ""
 
 msgctxt "#30050"
 msgid "Finished loading data"
-msgstr ""
+msgstr "Daten erfolgreich geladen"
 
 msgctxt "#30051"
 msgid "Watch Daily"
-msgstr ""
+msgstr "Täglich wiedergeben"
 
 msgctxt "#30052"
 msgid "Delete Everything and Start Again?"
-msgstr ""
+msgstr "Alles löschen und von vorne beginnen?"
 
 msgctxt "#30053"
 msgid "Watch Once"
-msgstr ""
+msgstr "Einmalig wiedergeben"
 
 msgctxt "#30054"
 msgid "Reload Data"
-msgstr ""
+msgstr "Daten erneut laden"
 
 msgctxt "#30055"
 msgid "Search Categories"
-msgstr ""
+msgstr "Kategorien durchsuchen"
 
 msgctxt "#30056"
 msgid "Watch Always"
-msgstr ""
+msgstr "Immer wiedergeben"
 
 msgctxt "#30057"
 msgid "Monday"
-msgstr ""
+msgstr "Montag"
 
 msgctxt "#30058"
 msgid "Tuesday"
-msgstr ""
+msgstr "Dienstag"
 
 msgctxt "#30059"
 msgid "Wednesday"
-msgstr ""
+msgstr "Mittwoch"
 
 msgctxt "#30060"
 msgid "Thursday"
-msgstr ""
+msgstr "Donnerstag"
 
 msgctxt "#30061"
 msgid "Friday"
-msgstr ""
+msgstr "Freitag"
 
 msgctxt "#30062"
 msgid "Saturday"
-msgstr ""
+msgstr "Samstag"
 
 msgctxt "#30063"
 msgid "Sunday"
-msgstr ""
+msgstr "Sonntag"
 
 msgctxt "#30064"
 msgid "Remind Daily"
-msgstr ""
+msgstr "Täglich erinnern"
 
 msgctxt "#30065"
 msgid "Rules"
-msgstr ""
+msgstr "Regeln"
 
 msgctxt "#30066"
 msgid "Jobs"
-msgstr ""
+msgstr "Jobs"
 
 msgctxt "#30067"
 msgid "Remind Once"
-msgstr ""
+msgstr "Einmalig erinnern"
 
 msgctxt "#30068"
 msgid "Remind Always"
-msgstr ""
+msgstr "Immer erinnern"
 
 msgctxt "#30069"
 msgid "Cancel Watch"
-msgstr ""
+msgstr "Wiedergabe abbrechen"
 
 msgctxt "#30070"
 msgid "Cancel Remind"
-msgstr ""
+msgstr "Erinnerung abbrecehn"
 
 msgctxt "#30071"
 msgid "% is Wildcard"
-msgstr ""
+msgstr "% als Platzhalter"
 
 msgctxt "#30072"
 msgid "Search"
-msgstr ""
+msgstr "Suchen"
 
 msgctxt "#30073"
 msgid "TV Shows"
-msgstr ""
+msgstr "TV Sendungen"
 
 msgctxt "#30074"
 msgid "Movies"
-msgstr ""
+msgstr "Filme"
 
 msgctxt "#30075"
 msgid "Do Not Load Group"
-msgstr ""
+msgstr "Gruppe nicht laden"
 
 msgctxt "#30076"
 msgid "Delete ffmpeg"
-msgstr ""
+msgstr "FFmpeg löschen"
 
 msgctxt "#30077"
 msgid "Add Daily Time Rule"
-msgstr ""
+msgstr "Tägliche Regel hinzufügen"
 
 msgctxt "#30078"
 msgid "Add Weekly Time Rule"
-msgstr ""
+msgstr "Wöchentliche Regel hinzufügen"
 
 msgctxt "#30079"
 msgid "Record and Play"
-msgstr ""
+msgstr "Aufzeichnen und Wiedergeben"
 
 msgctxt "#30080"
 msgid "Watch Weekly"
-msgstr ""
+msgstr "Wöchentlich wiedergeben"
 
 msgctxt "#30081"
 msgid "Other"
-msgstr ""
+msgstr "Sonstige"
 
 msgctxt "#30082"
 msgid "Select Groups To Load"
-msgstr ""
+msgstr "Gruppen zum Laden auswählen"
 
 msgctxt "#30083"
 msgid "Record Weekly"
-msgstr ""
+msgstr "Wöchentlich aufzeichnen"
 
 msgctxt "#30084"
 msgid "Maintenance"
-msgstr ""
+msgstr "Wartung"
 
 msgctxt "#30085"
 msgid "Load Group"
-msgstr ""
+msgstr "Gruppe Laden"
 
 msgctxt "#30086"
 msgid "Browse"
-msgstr ""
+msgstr "Durchsuchen"
 
 msgctxt "#30087"
 msgid "Add One Time Rule"
-msgstr ""
+msgstr "Einmalige Regel hinzufügen"
 
 msgctxt "#30088"
 msgid "Categories"
-msgstr ""
+msgstr "Kategorien"
 
 msgctxt "#30089"
 msgid "Remind Weekly"
-msgstr ""
+msgstr "Wöchentlich erinnern"
