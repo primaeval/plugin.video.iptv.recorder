@@ -36,7 +36,7 @@ ffmpeg simply copies the stream into a transport stream container.
 <disclaimer lang="en">Make sure recording streams is legal in your country.</disclaimer>
 <source>https://github.com/primaeval/plugin.video.iptv.recorder</source>
 <forum>https://forum.kodi.tv/showthread.php?tid=329991</forum>
-<language>en fr</language>
+<language>en fr de</language>
 <news>Now records plugin:// links in Leia</news>
 <assets>
   <icon>icon.png</icon>
