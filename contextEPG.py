@@ -51,10 +51,10 @@ try:
     stop = extract_date("ListItem.EndDate", "ListItem.EndTime")
 
     try:
-        cmd = "ActivateWindow(videos,plugin://plugin.video.iptv.recorder/record_epg/%s/%s/%s/%s,return)" % (channel,
-                                                                                                            title,
-                                                                                                            start,
-                                                                                                            stop)
+        cmd = "PlayMedia(plugin://plugin.video.iptv.recorder/record_epg/%s/%s/%s/%s)" % (channel,
+                                                                                        title,
+                                                                                        start,
+                                                                                        stop)
         xbmc.executebuiltin(cmd)
 
         message = "{}: {} ({} to {})'".format(channel, title, start, stop)
