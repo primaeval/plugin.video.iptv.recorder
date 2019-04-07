@@ -536,6 +536,36 @@ def record_once_time(channelid, channelname, start, stop, do_refresh=True, watch
     threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, channelname, start, stop, False, title]).start()
 
 
+@plugin.route('/record_epg/<channelname>/<name>/<start>/<stop>')
+def record_epg(channelname, name, start, stop):
+
+    channelname = channelname.decode("utf8")
+    name = name.decode("utf8")
+
+    start = get_utc_from_string(start.decode("utf8"))
+    stop = get_utc_from_string(stop.decode("utf8"))
+
+    log("Scheduling record for '{}: {} ({} to {})'".format(channelname, name, start, stop))
+
+    do_refresh = False
+    watch = False
+    remind = False
+    channelid = None
+    threading.Thread(target=record_once_thread,args=[None, do_refresh, watch, remind, channelid, channelname, start, stop, False, name]).start()
+
+
+def get_utc_from_string(date_string):
+    utcnow = datetime.utcnow()
+    ts = time.time()
+    utc_offset = total_seconds(datetime.fromtimestamp(ts) - datetime.utcfromtimestamp(ts))
+
+    r = re.search(r'(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):\d{2}', date_string)
+    if r:
+        year, month, day, hour, minute = r.group(1), r.group(2), r.group(3), r.group(4), r.group(5)
+        return utcnow.replace(day=int(day), month=int(month), year=int(year), hour=int(hour), minute=int(minute),
+                              second=0, microsecond=0) - timedelta(seconds=utc_offset)
+
+
 def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, channelid=None, channelname=None, start=None,stop=None, play=False, title=None):
     #TODO check for ffmpeg process already recording if job is re-added
     #channelname = urllib.unquote_plus(channelname)
