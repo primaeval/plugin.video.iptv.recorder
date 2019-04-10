@@ -859,9 +859,10 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
 def convert(path):
     input = xbmcvfs.File(path,'rb')
     output = xbmcvfs.File(path.replace('.ts','.mp4'),'wb')
+    error = open("c:\\temp\error.txt","w")
 
-    cmd = [ffmpeg_location(),"-y","-i","-","-c","copy","-f","mpegts","-"]
-    p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
+    cmd = [ffmpeg_location(),"-fflags","+genpts","-y","-i","-","-vcodec","copy","-acodec","copy","-f", "mpegts", "-"]
+    p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=error, shell=False)
     t = threading.Thread(target=read_thread,args=[p,output])
     t.start()
 
@@ -872,6 +873,8 @@ def convert(path):
             break
         p.stdin.write(data)
     p.stdin.close()
+    error.close()
+
 
 
 def read_thread(p,output):
