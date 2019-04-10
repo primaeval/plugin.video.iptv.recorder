@@ -862,7 +862,7 @@ def convert(path):
     error = open("c:\\temp\error.txt","w")
 
     cmd = [ffmpeg_location(),"-fflags","+genpts","-y","-i","-","-vcodec","copy","-acodec","copy","-f", "mpegts", "-"]
-    p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=error, shell=False)
+    p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=error, shell=windows())
     t = threading.Thread(target=read_thread,args=[p,output])
     t.start()
 
