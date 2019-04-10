@@ -2700,7 +2700,7 @@ def recordings():
         context_items.append((_("Delete All Recordings"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_all_recordings))))
         if plugin.get_setting('external.player'):
             context_items.append((_("External Player"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_external, path=path))))
-        context_items.append((_("Convert to mp4"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(convert, path=path))))
+        #context_items.append((_("Convert to mp4"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(convert, path=path))))
 
         items.append({
             'label': label,
