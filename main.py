@@ -854,6 +854,35 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     if do_refresh:
         refresh()
 
+
+@plugin.route('/convert/<path>')
+def convert(path):
+    input = xbmcvfs.File(path,'rb')
+    output = xbmcvfs.File(path.replace('.ts','.mp4'),'wb')
+
+    cmd = [ffmpeg_location(),"-y","-i","-","-c","copy","-f","mpegts","-"]
+    p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
+    t = threading.Thread(target=read_thread,args=[p,output])
+    t.start()
+
+    while True:
+        data = input.read(100000)
+        log(("read",len(data)))
+        if not data:
+            break
+        p.stdin.write(data)
+    p.stdin.close()
+
+
+def read_thread(p,output):
+    while True:
+        data = p.stdout.read(100000)
+        if not len(data):
+            break
+        output.write(data)
+    output.close()
+
+
 @plugin.route('/renew_jobs')
 def renew_jobs():
     #TODO check for ffmpeg process already recording if job is re-added
@@ -2668,6 +2697,7 @@ def recordings():
         context_items.append((_("Delete All Recordings"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_all_recordings))))
         if plugin.get_setting('external.player'):
             context_items.append((_("External Player"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_external, path=path))))
+        context_items.append((_("Convert to mp4"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(convert, path=path))))
 
         items.append({
             'label': label,
