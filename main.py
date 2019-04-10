@@ -859,7 +859,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
 def convert(path):
     input = xbmcvfs.File(path,'rb')
     output = xbmcvfs.File(path.replace('.ts','.mp4'),'wb')
-    error = open("c:\\temp\error.txt","w")
+    error = open(xbmc.translatePath("special://profile/addon_data/plugin.video.iptv.recorder/errors.txt"),"w")
 
     cmd = [ffmpeg_location(),"-fflags","+genpts","-y","-i","-","-vcodec","copy","-acodec","copy","-f", "mpegts", "-"]
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=error, shell=windows())
