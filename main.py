@@ -646,6 +646,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
                 folder = ftitle
                 filename = "%s %s - %s - %s" % (ftitle, episode, fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
         else:
+            folder = ftitle
             if sub_title:
                 filename = "%s %s - %s - %s" % (ftitle, fsub_title, fchannelname, local_starttime.strftime("%Y-%m-%d %H-%M"))
             else:
