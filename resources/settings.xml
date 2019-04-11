@@ -46,6 +46,7 @@
 
     <setting type="sep"/>
     <setting id="filename.urlencode" label="Url Encode Whole Filename" type="bool" default="false" />
+    <setting id="json" label="Create json File" type="bool" default="true" />
 
     <setting type="sep"/>
     <setting id="ffmpeg" label="ffmpeg exe" type="file" default=""/>

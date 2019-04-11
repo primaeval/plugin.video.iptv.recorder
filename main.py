@@ -702,10 +702,11 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     if not ffmpeg:
         return
 
-    json_nfo = json.dumps(nfo)
-    f = xbmcvfs.File(json_path,'w')
-    f.write(json_nfo)
-    f.close()
+    if plugin.get_setting('json',bool):
+        json_nfo = json.dumps(nfo)
+        f = xbmcvfs.File(json_path,'w')
+        f.write(json_nfo)
+        f.close()
 
     cmd = [ffmpeg]
     cmd.append("-i")
