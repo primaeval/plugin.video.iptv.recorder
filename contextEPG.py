@@ -39,9 +39,22 @@ def extract_date(dateLabel, timeLabel):
     return datetime.strftime(parsedDate, DATE_FORMAT)
 
 
+def get_language():
+    try:
+        language = xbmc.getLanguage(xbmc.ISO_639_1, True)
+        languageParts = language.split("-")
+        return "{}_{}.UTF-8".format(languageParts[0], languageParts[1])
+    except:
+        return ""
+
+
+try:
+    usedLocale = locale.setlocale(locale.LC_TIME, get_language())
+except:
+    usedLocale = locale.setlocale(locale.LC_TIME, "")
+log("Used locale: " + usedLocale)
+
 fullFormat = get_format()
-language = xbmc.getLanguage()
-locale.setlocale(locale.LC_TIME, language)
 
 channel = escape(xbmc.getInfoLabel("ListItem.ChannelName"))
 title = escape(xbmc.getInfoLabel("ListItem.Label"))
