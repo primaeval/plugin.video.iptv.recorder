@@ -777,10 +777,9 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
                 f.write("       if aheaders:\n")
                 f.write("           for h in aheaders:\n")
                 f.write("               k, v = h.split('=', 1)\n")
-                f.write("               headers[k] = urllib.unquote_plus(v)\n")
                 f.write("               cmd.append('-headers')\n")
-                f.write("               cmd.append('%s:%s' % (h, headers[h]))\n")
-                f.write("               cmd.append(last)\n")
+                f.write("               cmd.append('%s:%s' % (k, urllib.unquote_plus(v)))\n")
+                f.write("       cmd.append(last)\n")
                 f.write("    cmd[2] = new_url\n")
         else:
             f.write("cmd = %s\n" % repr(cmd))
