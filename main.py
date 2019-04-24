@@ -749,7 +749,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     debug = plugin.get_setting('debug.ffmpeg') == 'true'
     if watch == False and remind == False:
         if not (windows() and (plugin.get_setting('task.scheduler') == 'true')):
-            f.write("import xbmc,xbmcvfs,xbmcgui\n")
+            f.write("import xbmc,xbmcvfs,xbmcgui,urllib\n")
             notification = 'xbmcgui.Dialog().notification("Recording: %s", "%s", sound=%s)\n' % (channelname, title, plugin.get_setting('silent')=="false")
             f.write(notification.encode("utf8"))
             f.write("cmd = %s\n" % repr(cmd))
@@ -767,9 +767,24 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
                 f.write("player.stop()\n")
                 f.write("time.sleep(1)\n")
                 f.write("if new_url:\n")
+                f.write("    url_headers = new_url.split('|', 1)\n")
+                f.write("    new_url = url_headers[0]\n")
+                f.write("    headers = {}\n")
+                f.write("    if len(url_headers) == 2:\n")
+                f.write("       last = cmd.pop()\n")
+                f.write("       sheaders = url_headers[1]\n")
+                f.write("       aheaders = sheaders.split('&')\n")
+                f.write("       if aheaders:\n")
+                f.write("           for h in aheaders:\n")
+                f.write("               k, v = h.split('=', 1)\n")
+                f.write("               headers[k] = urllib.unquote_plus(v)\n")
+                f.write("               cmd.append('-headers')\n")
+                f.write("               cmd.append('%s:%s' % (h, headers[h]))\n")
+                f.write("               cmd.append(last)\n")
                 f.write("    cmd[2] = new_url\n")
         else:
             f.write("cmd = %s\n" % repr(cmd))
+
         if debug:
             f.write("stdout = open(r'%s','w+')\n" % xbmc.translatePath(pyjob+'.stdout.txt'))
             f.write("stderr = open(r'%s','w+')\n" % xbmc.translatePath(pyjob+'.stderr.txt'))
