@@ -781,6 +781,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
                 f.write("               cmd.append('%s:%s' % (k, urllib.unquote_plus(v)))\n")
                 f.write("       cmd.append(last)\n")
                 f.write("    cmd[2] = new_url\n")
+                f.write("xbmc.log(repr(cmd),xbmc.LOGERROR)\n")
         else:
             f.write("cmd = %s\n" % repr(cmd))
 
