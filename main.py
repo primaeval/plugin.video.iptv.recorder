@@ -753,12 +753,15 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
             notification = 'xbmcgui.Dialog().notification("Recording: %s", "%s", sound=%s)\n' % (channelname, title, plugin.get_setting('silent')=="false")
             f.write(notification.encode("utf8"))
             f.write("cmd = %s\n" % repr(cmd))
+            f.write("print repr('XXX url',url)\n"
 
             if url.startswith('plugin://'):
                 f.write("player = xbmc.Player()\n")
+                f.write("print 'XXX play'\n")
                 f.write("player.play('%s')\n" % url.encode("utf8"))
                 f.write("new_url = ''\n")
                 f.write("for _ in range(60):\n")
+                f.write("    print 'XXX tick'\n")
                 f.write("    time.sleep(1)\n")
                 f.write("    if player.isPlaying():\n")
                 f.write("        new_url = player.getPlayingFile()\n")
@@ -766,7 +769,8 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
                 f.write("time.sleep(1)\n")
                 f.write("player.stop()\n")
                 f.write("time.sleep(1)\n")
-                f.write("print new_url\n")
+                f.write("print 'XXX new_url'\n")
+                f.write("print repr('XXX',new_url)\n")
                 f.write("if new_url:\n")
                 f.write("    cmd[2] = new_url\n")
                 f.write("else:\n")
@@ -774,6 +778,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
                 f.write("    xbmcgui.Dialog().notification('IPTV Recorder','can not record')\n")
                 f.write("    quit()\n")
                 f.write("    print 'this should not be possible'\n")
+                f.write("print 'XXX finished'\n")
         else:
             f.write("cmd = %s\n" % repr(cmd))
         if debug:
