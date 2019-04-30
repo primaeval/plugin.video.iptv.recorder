@@ -766,11 +766,14 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
                 f.write("time.sleep(1)\n")
                 f.write("player.stop()\n")
                 f.write("time.sleep(1)\n")
+                f.write("print new_url\n")
                 f.write("if new_url:\n")
                 f.write("    cmd[2] = new_url\n")
                 f.write("else:\n")
+                f.write("    print 'quit'\n")
                 f.write("    xbmcgui.Dialog().notification('IPTV Recorder','can not record')\n")
                 f.write("    quit()\n")
+                f.write("    print 'this should not be possible'\n")
         else:
             f.write("cmd = %s\n" % repr(cmd))
         if debug:
