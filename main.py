@@ -753,7 +753,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
             notification = 'xbmcgui.Dialog().notification("Recording: %s", "%s", sound=%s)\n' % (channelname, title, plugin.get_setting('silent')=="false")
             f.write(notification.encode("utf8"))
             f.write("cmd = %s\n" % repr(cmd))
-            f.write("print repr('XXX url',url)\n"
+            f.write("print repr('XXX url',url)\n")
 
             if url.startswith('plugin://'):
                 f.write("player = xbmc.Player()\n")
