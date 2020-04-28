@@ -2944,11 +2944,16 @@ def xmltv():
             data = f.read()
             f.close()
 
-            match = re.search('<\?xml.*?encoding="(.*?)"',data,flags=(re.I|re.DOTALL))
+            match = re.search(r'<\?xml.*?encoding=["\'](.*?)["\']',data,flags=(re.I|re.DOTALL))
             if match:
                 encoding = match.group(1)
             else:
-                chardet_encoding = chardet.detect(data)
+                # Improve performance by limiting the detection of the encoding
+                # to the first 50k characters if the XML file is bigger
+                if len(data) > 50000:
+                    chardet_encoding = chardet.detect(data[:50000])
+                else:
+                    chardet_encoding = chardet.detect(data)
                 encoding = chardet_encoding['encoding']
             data = data.decode(encoding)
 
@@ -3033,11 +3038,16 @@ def xmltv():
             data = f.read()
             f.close()
 
-            match = re.search('<\?xml.*?encoding="(.*?)"',data,flags=(re.I|re.DOTALL))
+            match = re.search(r'<\?xml.*?encoding=["\'](.*?)["\']',data,flags=(re.I|re.DOTALL))
             if match:
                 encoding = match.group(1)
             else:
-                chardet_encoding = chardet.detect(data)
+                # Improve performance by limiting the detection of the encoding
+                # to the first 50k characters if the XML file is bigger
+                if len(data) > 50000:
+                    chardet_encoding = chardet.detect(data[:50000])
+                else:
+                    chardet_encoding = chardet.detect(data)
                 encoding = chardet_encoding['encoding']
             data = data.decode(encoding)
 
