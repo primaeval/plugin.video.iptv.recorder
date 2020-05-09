@@ -64,7 +64,7 @@ msgstr "Supprimer tous les enregistrements"
 
 msgctxt "#30015"
 msgid "Full EPG"
-msgstr "EPG Complet"
+msgstr "Programme télé complet"
 
 msgctxt "#30016"
 msgid "Search Title"
