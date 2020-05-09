@@ -365,3 +365,7 @@ msgstr "Wöchentlich erinnern"
 msgctxt "#30090"
 msgid "Convert to mp4"
 msgstr "Convert to mp4"
+
+msgctxt "#30091"
+msgid "All Channels"
+msgstr "All Channels"

@@ -2216,7 +2216,7 @@ def group(channelgroup=None,section=None):
         channels = cursor.execute("SELECT * FROM channels" + order).fetchall()
         #channel_logos = {x[1]:x[3] for x in channels}
         channel_logos = dict((x[1],x[3]) for x in channels)
-        if channelgroup == "All Channels":
+        if channelgroup == "All_Channels":
             streams = cursor.execute("SELECT * FROM streams" + order).fetchall()
             show_now_next = plugin.get_setting('show.now.next.all', str) == "true"
         else:
@@ -2361,7 +2361,7 @@ def groups():
 
     channelgroups = cursor.execute("SELECT DISTINCT groups FROM streams ORDER BY groups").fetchall()
 
-    for channelgroup in [("All Channels", )] + channelgroups:
+    for channelgroup in [("All_Channels", )] + channelgroups:
         channelgroup = channelgroup[0]
 
         if not channelgroup:
@@ -2373,8 +2373,11 @@ def groups():
         else:
             context_items.append((_("Do Not Load Group"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_load_group, channelgroup=channelgroup.encode("utf8")))))
 
+        channel_name = channelgroup
+        if channel_name == "All_Channels":
+            channel_name = _("All Channels")
         items.append({
-            'label': channelgroup,
+            'label': channel_name,
             'path': plugin.url_for(group, channelgroup=channelgroup.encode("utf8")),
             'thumbnail': get_icon_path('folder'),
             'context_menu': context_items,
