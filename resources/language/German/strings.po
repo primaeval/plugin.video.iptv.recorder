@@ -361,3 +361,7 @@ msgstr "Kategorien"
 msgctxt "#30089"
 msgid "Remind Weekly"
 msgstr "Wöchentlich erinnern"
+
+msgctxt "#30090"
+msgid "Convert to mp4"
+msgstr "Convert to mp4"

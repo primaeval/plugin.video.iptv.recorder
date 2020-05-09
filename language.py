@@ -157,3 +157,4 @@ __strings['browse'] = 30086
 __strings['add one time rule'] = 30087
 __strings['categories'] = 30088
 __strings['remind weekly'] = 30089
+__strings['convert to mp4'] = 30090

@@ -289,3 +289,79 @@ msgstr "Annuler le rappel"
 msgctxt "#30071"
 msgid "% is Wildcard"
 msgstr "% est joker"
+
+msgctxt "#30072"
+msgid "Search"
+msgstr "Rechercher"
+
+msgctxt "#30073"
+msgid "TV Shows"
+msgstr "Programmes"
+
+msgctxt "#30074"
+msgid "Movies"
+msgstr "Films"
+
+msgctxt "#30075"
+msgid "Do Not Load Group"
+msgstr "Ne pas charger le groupe de chaînes"
+
+msgctxt "#30076"
+msgid "Delete ffmpeg"
+msgstr "Supprimer ffmpeg"
+
+msgctxt "#30077"
+msgid "Add Daily Time Rule"
+msgstr "Ajouter une règle quotidienne"
+
+msgctxt "#30078"
+msgid "Add Weekly Time Rule"
+msgstr "Ajouter une règle hebdomadaire"
+
+msgctxt "#30079"
+msgid "Record and Play"
+msgstr "Enregistrer et regarder"
+
+msgctxt "#30080"
+msgid "Watch Weekly"
+msgstr "Regarder chaque semaine"
+
+msgctxt "#30081"
+msgid "Other"
+msgstr "Autres"
+
+msgctxt "#30082"
+msgid "Select Groups To Load"
+msgstr "Sélectionner les groupes de chaînes à charger"
+
+msgctxt "#30083"
+msgid "Record Weekly"
+msgstr "Enregistrer chaque semaine"
+
+msgctxt "#30084"
+msgid "Maintenance"
+msgstr "Maintenance"
+
+msgctxt "#30085"
+msgid "Load Group"
+msgstr "Charger le groupe de chaîne"
+
+msgctxt "#30086"
+msgid "Browse"
+msgstr "Parcourir"
+
+msgctxt "#30087"
+msgid "Add One Time Rule"
+msgstr "Ajouter une règle unique"
+
+msgctxt "#30088"
+msgid "Categories"
+msgstr "Categories"
+
+msgctxt "#30089"
+msgid "Remind Weekly"
+msgstr "Me le rappeler chaque semaine"
+
+msgctxt "#30090"
+msgid "Convert to mp4"
+msgstr "Convertir en mp4"
