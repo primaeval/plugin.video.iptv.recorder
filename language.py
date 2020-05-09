@@ -1,4 +1,5 @@
 #! /usr/bin/python
+from __future__ import unicode_literals
 
 __strings = {}
 
@@ -17,7 +18,7 @@ if __name__ == "__main__":
             ids_range = range(30000, 31000)
             ids_reserved = [int(m.msgctxt[1:]) for m in po]
             ids_available = [x for x in ids_range if x not in ids_reserved]
-            print "warning: missing translation for", missing
+            print("warning: missing translation for %s" % missing)
             for text in missing:
                 id = ids_available.pop(0)
                 entry = polib.POEntry(
