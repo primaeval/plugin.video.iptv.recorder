@@ -1661,7 +1661,7 @@ def search_title_dialog():
         context_items.append((_("Delete Search"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_search_title, title=search.encode("utf8")))))
         items.append({
             "label": search,
-            "path": plugin.url_for('search_title', title=search.encode("utf8")),
+            "path": plugin.url_for('search_title', title=search.encode("utf-8")),
             "thumbnail": get_icon_path('search'),
             'context_menu': context_items,
             })
@@ -1674,12 +1674,12 @@ def search_title_input(title):
     if title == "title":
         title = ""
     d = xbmcgui.Dialog()
-    what = d.input(_("Search Title"), title).decode("utf8")
+    what = d.input(_("Search Title"), title)
     #log(what)
     if not what:
         return
     searches[what] = ''
-    return search_title(what.encode("utf8"))
+    return search_title(what.encode("utf-8"))
 
 
 @plugin.route('/search_title/<title>')
