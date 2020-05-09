@@ -2674,12 +2674,17 @@ def recordings():
     items = []
     starts = []
 
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
     for path in found_files:
+        thumbnail = None
         try:
             json_file = path[:-3]+'.json'
             info = json.loads(xbmcvfs.File(json_file).read())
             programme = info["programme"]
 
+            channelid = programme.get('channelid', None)
             title = programme['title']
             sub_title = programme['sub_title'] or ''
             episode = programme['episode']
@@ -2688,8 +2693,13 @@ def recordings():
                 date = ''
             else:
                 date = "(%s) " % programme.get('date', '')
+
             start = programme['start']
             starts.append(start)
+
+            stream_found = cursor.execute("SELECT tvg_logo FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
+            if stream_found:
+                thumbnail = stream_found[0]
 
             if episode and episode != "MOVIE":
                 label = "%s%s [COLOR grey]%s[/COLOR] %s" % (date, title, episode, sub_title)
@@ -2715,6 +2725,7 @@ def recordings():
         #context_items.append((_("Convert to mp4"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(convert, path=path))))
 
         items.append({
+            'thumbnail': thumbnail,
             'label': label,
             'path': path,
             'is_playable': True,
