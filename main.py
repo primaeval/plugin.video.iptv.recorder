@@ -3082,6 +3082,8 @@ def xmltv():
                     date = re.search('<date.*?>(.*?)</date', m)
                     if date:
                         date = date.group(1)
+                    else:
+                        date = start
 
                     cats = re.findall('<category.*?>(.*?)</category>', m, flags=(re.I|re.DOTALL))
                     if cats:
