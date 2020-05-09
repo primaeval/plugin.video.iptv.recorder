@@ -4,7 +4,7 @@ msgstr ""
 
 msgctxt "#30000"
 msgid "Delete All Recordings?"
-msgstr "Supprimer tous les enregistrements?"
+msgstr "Supprimer tous les enregistrements ?"
 
 msgctxt "#30001"
 msgid "Play Channel"
@@ -32,7 +32,7 @@ msgstr "Lecteur externe"
 
 msgctxt "#30007"
 msgid "Title Search (% is wildcard)?"
-msgstr "Rechercher par titre (% est joker)?"
+msgstr "Rechercher par titre (% est joker) ?"
 
 msgctxt "#30008"
 msgid "Delete All Jobs"
@@ -80,11 +80,11 @@ msgstr "Supprimer la recherche"
 
 msgctxt "#30019"
 msgid "Cancel Record?"
-msgstr "Annuler l'enregistrement?"
+msgstr "Annuler l'enregistrement ?"
 
 msgctxt "#30020"
 msgid "Delete Recording?"
-msgstr "Supprimer l'enregistrement?"
+msgstr "Supprimer l'enregistrement ?"
 
 msgctxt "#30021"
 msgid "New"
@@ -112,7 +112,7 @@ msgstr "Ajouter une règle de recherche par description"
 
 msgctxt "#30027"
 msgid "Delete All Rules?"
-msgstr "Supprimer toutes les règles?"
+msgstr "Supprimer toutes les règles ?"
 
 msgctxt "#30028"
 msgid "Recordings Folder"
@@ -120,7 +120,7 @@ msgstr "Dossier d'enregistrement"
 
 msgctxt "#30029"
 msgid "ffmpeg exe not found!"
-msgstr "ffmpeg exe non trouvé!"
+msgstr "ffmpeg exe non trouvé !"
 
 msgctxt "#30030"
 msgid "Tomorrow"
@@ -160,7 +160,7 @@ msgstr "Hier"
 
 msgctxt "#30039"
 msgid "Delete All Jobs?"
-msgstr "Supprimer toutes les programmations?"
+msgstr "Supprimer toutes les programmations ?"
 
 msgctxt "#30040"
 msgid "Recordings"
@@ -212,7 +212,7 @@ msgstr "Mettre en veille tous les jours"
 
 msgctxt "#30052"
 msgid "Delete Everything and Start Again?"
-msgstr "Tout supprimer et recharger?"
+msgstr "Tout supprimer et recharger ?"
 
 msgctxt "#30053"
 msgid "Watch Once"
