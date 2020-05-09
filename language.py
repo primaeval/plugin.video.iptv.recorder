@@ -5,20 +5,32 @@ __strings = {}
 
 if __name__ == "__main__":
     import polib
+    import traceback
     po = polib.pofile('resources/language/English/strings.po')
 
     try:
+        import os
         import re
         import subprocess
-        r = subprocess.check_output(["grep", "-hnr", "_([\'\"]", "."])
-        strings = re.compile("_\([\"'](.*?)[\"']\)", re.IGNORECASE).findall(r)
+
+        strings = []
+        regex_to_found = re.compile("_\([\"'](.*?)[\"']\)", re.IGNORECASE)
+        for root, dirs, files in os.walk("."):
+            for file in files:
+                if file.endswith(".py"):
+                    with open(os.path.join(root, file), "r", encoding="utf-8") as file_content:
+                        for line in file_content:
+                            strings_found = regex_to_found.findall(line)
+                            if strings_found:
+                                strings.extend(strings_found)
+
         translated = [m.msgid.lower().replace("'", "\\'") for m in po]
         missing = set([s for s in strings if s.lower() not in translated])
         if missing:
             ids_range = range(30000, 31000)
             ids_reserved = [int(m.msgctxt[1:]) for m in po]
             ids_available = [x for x in ids_range if x not in ids_reserved]
-            print("warning: missing translation for %s" % missing)
+            print("New text to translate found : %s" % missing)
             for text in missing:
                 id = ids_available.pop(0)
                 entry = polib.POEntry(
@@ -29,6 +41,7 @@ if __name__ == "__main__":
                 po.append(entry)
             po.save('resources/language/English/strings.po')
     except:
+        traceback.print_exc()
         pass
 
     content = []
