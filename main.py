@@ -2683,16 +2683,20 @@ def recordings():
             title = programme['title']
             sub_title = programme['sub_title'] or ''
             episode = programme['episode']
-            date = "(%s)" % programme['date'] or ''
+            date = programme.get('date', '')
+            if date is None:
+                date = ''
+            else:
+                date = "(%s) " % programme.get('date', '')
             start = programme['start']
             starts.append(start)
 
             if episode and episode != "MOVIE":
-                label = "%s [COLOR grey]%s[/COLOR] %s" % (title, episode, sub_title)
+                label = "%s%s [COLOR grey]%s[/COLOR] %s" % (date, title, episode, sub_title)
             elif episode == "MOVIE":
-                label = "%s %s" % (title,date)
+                label = "%s%s" % (date, title)
             else:
-                label = "%s %s" % (title, sub_title)
+                label = "%s%s %s" % (date, title, sub_title)
 
             description = programme['description']
         except:
