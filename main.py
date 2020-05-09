@@ -33,8 +33,7 @@ except ImportError:
     from urllib import quote, quote_plus, unquote_plus
 
 import uuid
-import xbmc, xbmcaddon, xbmcvfs, xbmcgui, xbmcplugin
-
+from kodi_six import xbmc, xbmcaddon, xbmcvfs, xbmcgui, xbmcplugin
 
 def addon_id():
     return xbmcaddon.Addon().getAddonInfo('id')
@@ -570,7 +569,7 @@ def get_utc_from_string(date_string):
                               second=0, microsecond=0) - timedelta(seconds=utc_offset)
 
 def write_in_file(file, string):
-    file.write(string.encode('utf8'))
+    file.write(bytearray(string.encode('utf8')))
 
 def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, channelid=None, channelname=None, start=None,stop=None, play=False, title=None):
     #TODO check for ffmpeg process already recording if job is re-added
@@ -754,7 +753,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     debug = plugin.get_setting('debug.ffmpeg', unicode) == 'true'
     if watch == False and remind == False:
         if not (windows() and (plugin.get_setting('task.scheduler', unicode) == 'true')):
-            write_in_file(f, "import xbmc,xbmcvfs,xbmcgui\n")
+            write_in_file(f, "from kodi_six import xbmc,xbmcvfs,xbmcgui\n")
             notification = 'xbmcgui.Dialog().notification("Recording: %s", "%s", sound=%s)\n' % (channelname, title, plugin.get_setting('silent', unicode) == "false")
             write_in_file(f, notification)
             write_in_file(f, "cmd = %s\n" % repr(cmd))
@@ -793,7 +792,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
             write_in_file(f, "while True:\n")
             write_in_file(f, "  data = p.stdout.read(1000000)\n")
             write_in_file(f, "  if data:\n")
-            write_in_file(f, "      video.write(data)\n")
+            write_in_file(f, "      video.write(bytearray(data.encode('utf-8')))\n")
             write_in_file(f, "  else:\n")
             write_in_file(f, "      break\n")
             if play:
@@ -815,7 +814,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
         #TODO copy file somewhere else
     elif remind == True:
         cmd = 'xbmcgui.Dialog().notification("%s", "%s", sound=%s)\n' % (channelname, title, plugin.get_setting('silent', unicode)=="false")
-        write_in_file(f, "import xbmc, xbmcgui\n")
+        write_in_file(f, "from kodi_six import xbmc, xbmcgui\n")
         write_in_file(f, "%s\n" % cmd)
     else:
         if (plugin.get_setting('external.player.watch', unicode) == 'true') or (windows() and (plugin.get_setting('task.scheduler', unicode) == 'true')):
@@ -824,7 +823,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
             write_in_file(f, "p = subprocess.Popen(cmd, shell=%s)\n" % windows())
         else:
             cmd = 'xbmc.Player().play("%s")\n' % url
-            write_in_file(f, "import xbmc\n")
+            write_in_file(f, "from kodi_six import xbmc\n")
             write_in_file(f, "%s\n" % cmd)
     f.close()
 
@@ -874,11 +873,11 @@ def convert(path):
     t.start()
 
     while True:
-        data = input.read(100000)
-        log(("read",len(data)))
-        if not data:
+        data_bytes = bytes(input.readBytes(100000))
+        log(("read", len(data_bytes)))
+        if not data_bytes:
             break
-        p.stdin.write(data)
+        p.stdin.write(bytearray(data_bytes))
     p.stdin.close()
     error.close()
 
@@ -2924,33 +2923,39 @@ def xmltv():
             xbmcvfs.copy(path, tmp)
 
             f = xbmcvfs.File(tmp, "rb")
-            data = f.read()
+            data_bytes = bytes(f.readBytes())
             f.close()
-            magic = data[:3]
+            magic = data_bytes[:3]
             if magic == "\x1f\x8b\x08":
                 dialog.update(0, message=_("Unzipping xmltv file"))
                 compressedFile = StringIO.StringIO()
-                compressedFile.write(data)
+                compressedFile.write(data_bytes)
                 compressedFile.seek(0)
                 decompressedFile = gzip.GzipFile(fileobj=compressedFile, mode='rb')
-                data = decompressedFile.read()
+                data_bytes = decompressedFile.read()
                 f = xbmcvfs.File(xml, "wb")
-                write_in_file(f, data)
+                f.write(bytearray(data_bytes))
                 f.close()
             else:
                 xbmcvfs.copy(tmp, xml)
 
             f = xbmcvfs.File(xml, 'rb')
-            data = f.read()
+            data_bytes = bytes(f.readBytes())
             f.close()
 
-            match = re.search('<\?xml.*?encoding="(.*?)"',data,flags=(re.I|re.DOTALL))
+            data_test_decoding = data_bytes.decode('utf-8', errors='ignore')
+            index_end_first_line = data_test_decoding.find('\n')
+            match = None
+            if index_end_first_line != -1:
+                first_line = data_test_decoding[:index_end_first_line]
+                match = re.search('<\?xml.*?encoding=["\'](.*?)["\']', first_line, flags=(re.I|re.DOTALL))
+
             if match:
                 encoding = match.group(1)
             else:
-                chardet_encoding = chardet.detect(data)
+                chardet_encoding = chardet.detect(data_bytes)
                 encoding = chardet_encoding['encoding']
-            data = data.decode(encoding)
+            data = data_bytes.decode(encoding)
 
             htmlparser = HTMLParser()
 
@@ -3030,16 +3035,22 @@ def xmltv():
             xml = os.path.join(profilePath, 'xmltv'+x+'.xml')
 
             f = xbmcvfs.File(xml, 'rb')
-            data = f.read()
+            data_bytes = bytes(f.readBytes())
             f.close()
 
-            match = re.search('<\?xml.*?encoding="(.*?)"',data,flags=(re.I|re.DOTALL))
+            data_test_decoding = data_bytes.decode('utf-8', errors='ignore')
+            index_end_first_line = data_test_decoding.find('\n')
+            match = None
+            if index_end_first_line != -1:
+                first_line = data_test_decoding[:index_end_first_line]
+                match = re.search('<\?xml.*?encoding=["\'](.*?)["\']', first_line, flags=(re.I|re.DOTALL))
+
             if match:
                 encoding = match.group(1)
             else:
-                chardet_encoding = chardet.detect(data)
+                chardet_encoding = chardet.detect(data_bytes)
                 encoding = chardet_encoding['encoding']
-            data = data.decode(encoding)
+            data = data_bytes.decode(encoding)
 
             htmlparser = HTMLParser()
 
