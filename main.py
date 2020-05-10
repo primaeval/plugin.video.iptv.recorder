@@ -2,7 +2,6 @@
 from __future__ import unicode_literals
 
 from xbmcswift2 import Plugin, ListItem
-from HTMLParser import HTMLParser
 from collections import namedtuple
 from datetime import datetime, timedelta, tzinfo
 from language import get_string as _
@@ -13,7 +12,6 @@ import chardet
 import ctypes
 import glob
 import gzip
-import StringIO
 import json
 import os, os.path
 import platform
@@ -29,8 +27,12 @@ import threading
 import time
 try:
     from urllib.parse import quote, quote_plus, unquote_plus
+    from html.parser import HTMLParser
+    from io import StringIO
 except ImportError:
     from urllib import quote, quote_plus, unquote_plus
+    from HTMLParser import HTMLParser
+    from StringIO import StringIO
 
 import uuid
 from kodi_six import xbmc, xbmcaddon, xbmcvfs, xbmcgui, xbmcplugin
@@ -2948,7 +2950,7 @@ def xmltv():
             magic = data_bytes[:3]
             if magic == "\x1f\x8b\x08":
                 dialog.update(0, message=_("Unzipping xmltv file"))
-                compressedFile = StringIO.StringIO()
+                compressedFile = StringIO()
                 compressedFile.write(data_bytes)
                 compressedFile.seek(0)
                 decompressedFile = gzip.GzipFile(fileobj=compressedFile, mode='rb')
