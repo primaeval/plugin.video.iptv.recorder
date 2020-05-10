@@ -794,7 +794,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
             write_in_file(f, "while True:\n")
             write_in_file(f, "  data = p.stdout.read(1000000)\n")
             write_in_file(f, "  if data:\n")
-            write_in_file(f, "      video.write(bytearray(data.encode('utf-8')))\n")
+            write_in_file(f, "      video.write(data)\n")
             write_in_file(f, "  else:\n")
             write_in_file(f, "      break\n")
             if play:
