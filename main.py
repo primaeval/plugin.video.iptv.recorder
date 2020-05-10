@@ -125,11 +125,11 @@ def play_channel(channelname):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
     c = conn.cursor()
 
-    channel = c.execute("SELECT * FROM streams WHERE name=?", (channelname, )).fetchone()
+    channel = c.execute("SELECT url FROM streams WHERE name=?", (channelname, )).fetchone()
 
     if not channel:
         return
-    uid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
+    url = channel[0]
     #plugin.set_resolved_url(url)
     xbmc.Player().play(url)
 
@@ -141,10 +141,10 @@ def play_channel_external(channelname):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
     c = conn.cursor()
 
-    channel = c.execute("SELECT * FROM streams WHERE name=?", (channelname, )).fetchone()
+    channel = c.execute("SELECT url FROM streams WHERE name=?", (channelname, )).fetchone()
     if not channel:
         return
-    uid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
+    url = channel[0]
 
     if url:
         cmd = [plugin.get_setting('external.player', str)]
@@ -212,9 +212,9 @@ def jobs():
             continue
 
         url = ""
-        channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
+        channel = cursor.execute("SELECT name, url FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
         if channel:
-            uid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
+            name, url = channel
             echannelname=name.encode("utf8")
 
         context_items = []
@@ -252,7 +252,7 @@ def rules():
     for uid, channelid, channelname, title, start, stop, description, type, rulename  in rules:
 
         url = ""
-        channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
+        channel = cursor.execute("SELECT uid, name, tvg_name, tvg_id, tvg_logo, groups, url FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
         if channel:
             cuid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
             echannelname=name.encode("utf8")
@@ -589,13 +589,13 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
 
     #log((channelid,channelname))
     if channelid:
-        channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=? AND tvg_name=?", (channelid, channelname)).fetchone()
+        channel = cursor.execute("SELECT uid, name, tvg_name, tvg_id, tvg_logo, groups, url FROM streams WHERE tvg_id=? AND tvg_name=?", (channelid, channelname)).fetchone()
         if not channel:
-            channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=? AND name=?", (channelid, channelname)).fetchone()
+            channel = cursor.execute("SELECT uid, name, tvg_name, tvg_id, tvg_logo, groups, url FROM streams WHERE tvg_id=? AND name=?", (channelid, channelname)).fetchone()
     else:
-        channel = cursor.execute("SELECT * FROM streams WHERE name=?", (channelname,)).fetchone()
+        channel = cursor.execute("SELECT uid, name, tvg_name, tvg_id, tvg_logo, groups, url FROM streams WHERE name=?", (channelname,)).fetchone()
         if not channel:
-            channel = cursor.execute("SELECT * FROM streams WHERE tvg_name=?", (channelname,)).fetchone()
+            channel = cursor.execute("SELECT uid, name, tvg_name, tvg_id, tvg_logo, groups, url FROM streams WHERE tvg_name=?", (channelname,)).fetchone()
 
     if not channel:
         xbmc.log("No channel %s" % channelname, xbmc.LOGERROR)
@@ -1446,8 +1446,7 @@ def broadcast(programmeid, channelname):
     programme = cursor.execute('SELECT channelid, title, start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", episode FROM programmes WHERE uid=? LIMIT 1', (programmeid, )).fetchone()
     channelid, title, start, stop, episode = programme
 
-    #channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=? AND tvg_name=?", (channelid, channelname)).fetchone()
-    channel = cursor.execute("SELECT * FROM streams WHERE name=?", (channelname,)).fetchone()
+    channel = cursor.execute("SELECT uid, name, tvg_name, tvg_id, tvg_logo, groups, url FROM streams WHERE name=?", (channelname,)).fetchone()
     if not channel:
         channel = cursor.execute("SELECT * FROM channels WHERE tvg_name=?", (channelname, )).fetchone()
         uid, tvg_id, name, tvg_logo = channel
@@ -1865,17 +1864,13 @@ def channel(channelid,channelname):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
-    channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
-    if not channel:
-        channel = cursor.execute("SELECT * FROM channels WHERE id=?", (channelid, )).fetchone()
-        uid, tvg_id, name, tvg_logo = channel
-        url = ""
+    thumbnail = cursor.execute("SELECT tvg_logo FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
+    if not thumbnail:
+        thumbnail = cursor.execute("SELECT icon FROM channels WHERE id=?", (channelid, )).fetchone()
+    if thumbnail:
+        thumbnail = thumbnail[0]
     else:
-        uid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
-
-    thumbnail = tvg_logo
-    #channelname = name
-
+        thumbnail = ''
 
     programmes = cursor.execute(
     'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE channelid=?', (channelid, )).fetchall()
@@ -1964,7 +1959,7 @@ def listing(programmes, scroll=False, channelname=None):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
-    streams = cursor.execute("SELECT * FROM streams").fetchall()
+    streams = cursor.execute("SELECT uid, name, tvg_name, tvg_id, tvg_logo, groups, url FROM streams").fetchall()
     #streams = {x[3]:x for x in streams}
     streams = dict((x[3],x) for x in streams)
 
@@ -1986,7 +1981,7 @@ def listing(programmes, scroll=False, channelname=None):
         if channelname:
             pchannelname = channelname
 
-        stream = streams.get(channelid) #cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
+        stream = streams.get(channelid)
         channel = channels.get(channelid)
         if stream:
             cuid, schannelname, tvg_name, tvg_id, tvg_logo, groups, url = stream
@@ -2192,15 +2187,20 @@ def group(channelgroup=None,section=None):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
-    if plugin.get_setting('sort.channels', str) == 'true':
-        order = " ORDER by name"
+    order_settings = plugin.get_setting('sort.channels.v2', str)
+    if order_settings == '1':
+        order_channels = " ORDER by name"
+        order_favourites = " ORDER by channelname"
+        order_stream = " ORDER by name"
     else:
-        order = ""
+        order_channels = " INNER JOIN streams ON streams.tvg_id = channels.id ORDER BY tv_number";
+        order_favourites = " INNER JOIN streams ON streams.tvg_id = favourites.channelid ORDER BY tv_number";
+        order_stream = " ORDER by tv_number"
 
     logos = {}
     channel_logos = {}
     if section == "EPG":
-        channels = cursor.execute("SELECT * FROM channels" + order).fetchall()
+        channels = cursor.execute("SELECT channels.id, channels.name, channels.icon FROM channels" + order_channels).fetchall()
         streams = cursor.execute("SELECT tvg_id, tvg_logo FROM streams").fetchall()
         #logos = {x[0]:x[1] for x in streams}
         logos = dict((x[0],x[1]) for x in streams)
@@ -2208,26 +2208,26 @@ def group(channelgroup=None,section=None):
         collection = channels
         show_now_next = plugin.get_setting('show.now.next.all', str) == "true"
     elif section == "FAVOURITES":
-        favourite_channels = cursor.execute("SELECT * FROM favourites ORDER BY channelname").fetchall()
-        streams = cursor.execute("SELECT * FROM streams" + order).fetchall()
+        favourite_channels = cursor.execute("SELECT channelname, channelid, logo FROM favourites" + order_favourites).fetchall()
+        streams = cursor.execute("SELECT uid, name, tvg_name, tvg_id, tvg_logo, groups, url FROM streams" + order_stream).fetchall()
         collection = favourite_channels
         show_now_next = plugin.get_setting('show.now.next.favourites', str) == "true"
     else:
-        channels = cursor.execute("SELECT * FROM channels" + order).fetchall()
+        channels = cursor.execute("SELECT * FROM channels" + order_channels).fetchall()
         #channel_logos = {x[1]:x[3] for x in channels}
         channel_logos = dict((x[1],x[3]) for x in channels)
         if channelgroup == "All_Channels":
-            streams = cursor.execute("SELECT * FROM streams" + order).fetchall()
+            streams = cursor.execute("SELECT uid, name, tvg_name, tvg_id, tvg_logo, groups, url FROM streams" + order_stream).fetchall()
             show_now_next = plugin.get_setting('show.now.next.all', str) == "true"
         else:
-            streams = cursor.execute("SELECT * FROM streams WHERE groups=?" + order, (channelgroup, )).fetchall()
+            streams = cursor.execute("SELECT uid, name, tvg_name, tvg_id, tvg_logo, groups, url FROM streams WHERE groups=?" + order_stream, (channelgroup, )).fetchall()
             show_now_next = plugin.get_setting('show.now.next.lists', str) == "true"
         collection = streams
 
     favourites = cursor.execute("SELECT channelname FROM favourites").fetchall()
     favourites = [x[0] for x in favourites]
 
-    all_streams = cursor.execute("SELECT * FROM streams" + order).fetchall()
+    all_streams = cursor.execute("SELECT uid, name, tvg_name, tvg_id, tvg_logo, groups, url FROM streams" + order_stream).fetchall()
     #stream_urls = {x[3]:x[6] for x in all_streams if x}
     stream_urls = dict((x[3],x[6]) for x in all_streams if x)
 
@@ -2249,7 +2249,7 @@ def group(channelgroup=None,section=None):
 
         url = ""
         if section == "EPG":
-            uid, id, name, icon = stream_channel
+            id, name, icon = stream_channel
             channelname = name
             channelid = id
             url = stream_urls.get(channelid)
@@ -2779,7 +2779,7 @@ def xmltv():
     try: conn.execute('ALTER TABLE rules ADD COLUMN name TEXT')
     except: pass
     #TODO check primary key
-    conn.execute('CREATE TABLE IF NOT EXISTS streams(uid INTEGER PRIMARY KEY ASC, name TEXT, tvg_name TEXT, tvg_id TEXT, tvg_logo TEXT, groups TEXT, url TEXT)')
+    conn.execute('CREATE TABLE IF NOT EXISTS streams(uid INTEGER PRIMARY KEY ASC, name TEXT, tvg_name TEXT, tvg_id TEXT, tvg_logo TEXT, groups TEXT, url TEXT, tv_number INTEGER)')
     conn.execute('CREATE TABLE IF NOT EXISTS favourites(channelname TEXT, channelid TEXT, logo TEXT, PRIMARY KEY(channelname))')
     conn.execute('CREATE TABLE IF NOT EXISTS jobs(uid INTEGER PRIMARY KEY ASC, uuid TEXT, channelid TEXT, channelname TEXT, title TEXT, start TIMESTAMP, stop TIMESTAMP, type TEXT)')
 
@@ -2874,8 +2874,8 @@ def xmltv():
                 if groups:
                     groups = groups.group(1) or None
 
-                conn.execute("INSERT OR IGNORE INTO streams(name, tvg_name, tvg_id, tvg_logo, groups, url) VALUES (?, ?, ?, ?, ?, ?)",
-                [name, tvg_name, tvg_id, tvg_logo, groups, url.strip()])
+                conn.execute("INSERT OR IGNORE INTO streams(name, tvg_name, tvg_id, tvg_logo, groups, url, tv_number) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                [name, tvg_name, tvg_id, tvg_logo, groups, url.strip(), i])
 
                 i += 1
                 percent = 0 + int(100.0 * i / total)
