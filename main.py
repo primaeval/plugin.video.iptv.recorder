@@ -3344,7 +3344,7 @@ def estuary():
 
     filename = xbmc.translatePath('special://home/addons/skin.estuary.iptv.recorder/addon.xml')
     with open(filename,'r') as f:
-        text = f.read()
+        text = f.read().decode('utf-8')
     text = text.replace('skin.estuary','skin.estuary.iptv.recorder').replace('Estuary','Estuary (IPTV Recorder)')
     with open(filename,'w') as f:
         write_in_file(f, text)
@@ -3352,14 +3352,14 @@ def estuary():
     files = glob.glob(os.path.join(to_path,'language','*','*.po'))
     for filename in files:
         with open(filename,'r') as f:
-            text = f.read()
+            text = f.read().decode('utf-8')
         text = text.replace('skin.estuary','skin.estuary.iptv.recorder')
         with open(filename,'w') as f:
             write_in_file(f, text)
 
     filename = xbmc.translatePath('special://home/addons/skin.estuary.iptv.recorder/xml/DialogPVRInfo.xml')
     with open(filename,'r') as f:
-        text = f.read()
+        text = f.read().decode('utf-8')
     text = text.replace('<control type="grouplist" id="9000">',
     '''<control type="grouplist" id="9000">
 					<include content="InfoDialogButton">
