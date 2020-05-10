@@ -2766,6 +2766,26 @@ def xml2utc(xml):
         return dt
     return ''
 
+def find_xml_bytes_encoding(data_bytes):
+    data_test_decoding = data_bytes.decode('utf-8', errors='ignore')
+    index_end_first_line = data_test_decoding.find('\n')
+    match = None
+    if index_end_first_line != -1:
+        first_line = data_test_decoding[:index_end_first_line]
+        match = re.search('<\?xml.*?encoding=["\'](.*?)["\']', first_line, flags=(re.I|re.DOTALL))
+
+    if match:
+        encoding = match.group(1)
+    else:
+        # Improve performance by limiting the detection of the encoding
+        # to the first 50k characters if the XML file is bigger
+        if len(data_bytes) > 50000:
+            chardet_encoding = chardet.detect(data_bytes[:50000])
+        else:
+            chardet_encoding = chardet.detect(data_bytes)
+        encoding = chardet_encoding['encoding']
+
+    return encoding
 
 @plugin.route('/xmltv')
 def xmltv():
@@ -2943,23 +2963,7 @@ def xmltv():
             data_bytes = bytes(f.readBytes())
             f.close()
 
-            data_test_decoding = data_bytes.decode('utf-8', errors='ignore')
-            index_end_first_line = data_test_decoding.find('\n')
-            match = None
-            if index_end_first_line != -1:
-                first_line = data_test_decoding[:index_end_first_line]
-                match = re.search('<\?xml.*?encoding=["\'](.*?)["\']', first_line, flags=(re.I|re.DOTALL))
-
-            if match:
-                encoding = match.group(1)
-            else:
-                # Improve performance by limiting the detection of the encoding
-                # to the first 50k characters if the XML file is bigger
-                if len(data) > 50000:
-                    chardet_encoding = chardet.detect(data[:50000])
-                else:
-                    chardet_encoding = chardet.detect(data)
-                encoding = chardet_encoding['encoding']
+            encoding = find_xml_bytes_encoding(data_bytes)
             data = data_bytes.decode(encoding)
 
             htmlparser = HTMLParser()
@@ -3043,23 +3047,7 @@ def xmltv():
             data_bytes = bytes(f.readBytes())
             f.close()
 
-            data_test_decoding = data_bytes.decode('utf-8', errors='ignore')
-            index_end_first_line = data_test_decoding.find('\n')
-            match = None
-            if index_end_first_line != -1:
-                first_line = data_test_decoding[:index_end_first_line]
-                match = re.search('<\?xml.*?encoding=["\'](.*?)["\']', first_line, flags=(re.I|re.DOTALL))
-
-            if match:
-                encoding = match.group(1)
-            else:
-                # Improve performance by limiting the detection of the encoding
-                # to the first 50k characters if the XML file is bigger
-                if len(data) > 50000:
-                    chardet_encoding = chardet.detect(data[:50000])
-                else:
-                    chardet_encoding = chardet.detect(data)
-                encoding = chardet_encoding['encoding']
+            encoding = find_xml_bytes_encoding(data_bytes)
             data = data_bytes.decode(encoding)
 
             htmlparser = HTMLParser()
