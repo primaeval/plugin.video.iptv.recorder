@@ -55,7 +55,7 @@ if __name__ == "__main__":
             line = "__strings['{0}'] = {1}\n".format(m.msgid.lower().replace("'", "\\'"), m.msgctxt.replace('#', '').strip())
             f.write(line)
 else:
-    import xbmc, xbmcaddon
+    from kodi_six import xbmc, xbmcaddon
     __language__ = xbmcaddon.Addon().getLocalizedString
 
     def get_string(t):

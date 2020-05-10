@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-import xbmc,xbmcgui,xbmcaddon,xbmcvfs,xbmcplugin
+from kodi_six import xbmc,xbmcgui,xbmcaddon,xbmcvfs,xbmcplugin
 import sys
 import time,datetime
 import sqlite3

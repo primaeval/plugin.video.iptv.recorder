@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
-import xbmcaddon
-import xbmc, xbmcgui, xbmcvfs
+from kodi_six import xbmc, xbmcgui, xbmcaddon, xbmcvfs
+
 import requests
 import base64
 import time, datetime

@@ -5,8 +5,7 @@ import time
 from datetime import datetime
 import urllib
 
-import xbmc
-import xbmcgui
+from kodi_six import xbmc, xbmcgui
 
 DATE_FORMAT = "%Y-%m-%d %H:%M:00"
 
