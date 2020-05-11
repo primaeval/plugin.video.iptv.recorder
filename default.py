@@ -1,11 +1,16 @@
-import xbmc,xbmcgui,xbmcaddon,xbmcvfs,xbmcplugin
+from __future__ import unicode_literals
+from kodi_six import xbmc,xbmcgui,xbmcaddon,xbmcvfs,xbmcplugin
 import sys
 import time,datetime
 import sqlite3
 import pytz
 import tzlocal
 import re
-import urllib
+
+try:
+    from urllib.parse import quote_plus
+except ImportError:
+    from urllib import quote_plus
 
 def log(x):
     xbmc.log(repr(x),xbmc.LOGERROR)
@@ -24,7 +29,6 @@ if len(sys.argv) == 1:
 channel = sys.argv[1]
 channel = channel.decode("utf8")
 #channel = channel.encode("utf8")
-#channel = urllib.quote_plus(channel)
 
 title = sys.argv[2]
 date = sys.argv[3]
@@ -56,9 +60,9 @@ try:
         program_id = cursor.execute('SELECT uid FROM programmes WHERE channelid=? AND start=?',(channel_id,start_time)).fetchone()[0]
         #log((channel_id, program_id, start_time))
         if program_id:
-            channel = channel.encode("utf8")
-            channel = urllib.quote_plus(channel)
-            xbmc.executebuiltin("ActivateWindow(videos,plugin://plugin.video.iptv.recorder/broadcast/%s/%s,return)" % (program_id,channel))
+            channel_encoded = channel.encode("utf8")
+            channel_encoded = quote_plus(channel_encoded)
+            xbmc.executebuiltin("ActivateWindow(videos,plugin://plugin.video.iptv.recorder/broadcast/%s/%s,return)" % (program_id,channel_encoded))
 
 except Exception as e:
     #log(e)

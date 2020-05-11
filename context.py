@@ -1,7 +1,8 @@
+from __future__ import unicode_literals
+
 import urllib
 
-import xbmc
-import xbmcgui
+from kodi_six import xbmc, xbmcgui
 
 
 def log(x):

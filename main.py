@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 from xbmcswift2 import Plugin, ListItem
-from HTMLParser import HTMLParser
 from collections import namedtuple
 from datetime import datetime, timedelta, tzinfo
 from language import get_string as _
@@ -11,7 +12,6 @@ import chardet
 import ctypes
 import glob
 import gzip
-import StringIO
 import json
 import os, os.path
 import platform
@@ -25,10 +25,17 @@ import subprocess
 import sys
 import threading
 import time
-import urllib
-import uuid
-import xbmc, xbmcaddon, xbmcvfs, xbmcgui, xbmcplugin
+try:
+    from urllib.parse import quote, quote_plus, unquote_plus
+    from html.parser import HTMLParser
+    from io import StringIO
+except ImportError:
+    from urllib import quote, quote_plus, unquote_plus
+    from HTMLParser import HTMLParser
+    from StringIO import StringIO
 
+import uuid
+from kodi_six import xbmc, xbmcaddon, xbmcvfs, xbmcgui, xbmcplugin
 
 def addon_id():
     return xbmcaddon.Addon().getAddonInfo('id')
@@ -43,7 +50,7 @@ plugin = Plugin()
 big_list_view = True
 
 
-if plugin.get_setting("multiline") == "true":
+if plugin.get_setting('multiline', str) == "true":
     CR = "[CR]"
 else:
     CR = ""
@@ -115,16 +122,15 @@ def find(path):
 @plugin.route('/play_channel/<channelname>')
 def play_channel(channelname):
     channelname = channelname.decode("utf8")
-    #channelname = urllib.quote_plus(channelname.encode("utf8"))
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
     c = conn.cursor()
 
-    channel = c.execute("SELECT * FROM streams WHERE name=?", (channelname, )).fetchone()
+    channel = c.execute("SELECT url FROM streams WHERE name=?", (channelname, )).fetchone()
 
     if not channel:
         return
-    uid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
+    url = channel[0]
     #plugin.set_resolved_url(url)
     xbmc.Player().play(url)
 
@@ -132,20 +138,19 @@ def play_channel(channelname):
 @plugin.route('/play_channel_external/<channelname>')
 def play_channel_external(channelname):
     channelname = channelname.decode("utf8")
-    #channelname = urllib.quote_plus(channelname.encode("utf8"))
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')))
     c = conn.cursor()
 
-    channel = c.execute("SELECT * FROM streams WHERE name=?", (channelname, )).fetchone()
+    channel = c.execute("SELECT url FROM streams WHERE name=?", (channelname, )).fetchone()
     if not channel:
         return
-    uid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
+    url = channel[0]
 
     if url:
-        cmd = [plugin.get_setting('external.player')]
+        cmd = [plugin.get_setting('external.player', str)]
 
-        args = plugin.get_setting('external.player.args')
+        args = plugin.get_setting('external.player.args', str)
         if args:
             cmd.append(args)
 
@@ -157,9 +162,9 @@ def play_channel_external(channelname):
 
 @plugin.route('/play_external/<path>')
 def play_external(path):
-    cmd = [plugin.get_setting('external.player')]
+    cmd = [plugin.get_setting('external.player', str)]
 
-    args = plugin.get_setting('external.player.args')
+    args = plugin.get_setting('external.player.args', str)
     if args:
         cmd.append(args)
 
@@ -208,9 +213,9 @@ def jobs():
             continue
 
         url = ""
-        channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
+        channel = cursor.execute("SELECT name, url FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
         if channel:
-            uid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
+            name, url = channel
             echannelname=name.encode("utf8")
 
         context_items = []
@@ -220,7 +225,7 @@ def jobs():
 
         if url:
             context_items.append((_("Play Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=echannelname))))
-            if plugin.get_setting('external.player'):
+            if plugin.get_setting('external.player', str):
                 context_items.append((_("Play Channel External"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external, channelname=echannelname))))
 
 
@@ -248,7 +253,7 @@ def rules():
     for uid, channelid, channelname, title, start, stop, description, type, rulename  in rules:
 
         url = ""
-        channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
+        channel = cursor.execute("SELECT uid, name, tvg_name, tvg_id, tvg_logo, groups, url FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
         if channel:
             cuid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
             echannelname=name.encode("utf8")
@@ -259,7 +264,7 @@ def rules():
 
         if url:
             context_items.append((_("Play Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=echannelname))))
-            if plugin.get_setting('external.player'):
+            if plugin.get_setting('external.player', str):
                 context_items.append((_("Play Channel External"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external, channelname=echannelname))))
 
         if type.startswith("WATCH"):
@@ -356,7 +361,7 @@ def delete_job(job, kill=True, ask=True):
     if ask and not (xbmcgui.Dialog().yesno("IPTV Recorder", _("Cancel Record?"))):
         return
 
-    if windows() and plugin.get_setting('task.scheduler') == 'true':
+    if windows() and plugin.get_setting('task.scheduler', str) == 'true':
         cmd = ["schtasks", "/delete", "/f", "/tn", job]
         subprocess.Popen(cmd, shell=True)
     else:
@@ -405,14 +410,14 @@ def delete_ffmpeg():
 
 
 def ffmpeg_location():
-    ffmpeg_src = xbmc.translatePath(plugin.get_setting('ffmpeg'))
+    ffmpeg_src = xbmc.translatePath(plugin.get_setting('ffmpeg', str))
 
     if xbmc.getCondVisibility('system.platform.android'):
         ffmpeg_dst = '/data/data/%s/ffmpeg' % android_get_current_appid()
 
-        if (plugin.get_setting('ffmpeg') != plugin.get_setting('ffmpeg.last')) or (not xbmcvfs.exists(ffmpeg_dst) and ffmpeg_src != ffmpeg_dst):
+        if (plugin.get_setting('ffmpeg', str) != plugin.get_setting('ffmpeg.last', str)) or (not xbmcvfs.exists(ffmpeg_dst) and ffmpeg_src != ffmpeg_dst):
             xbmcvfs.copy(ffmpeg_src, ffmpeg_dst)
-            plugin.set_setting('ffmpeg.last',plugin.get_setting('ffmpeg'))
+            plugin.set_setting('ffmpeg.last',plugin.get_setting('ffmpeg', str))
 
         ffmpeg = ffmpeg_dst
     else:
@@ -565,10 +570,11 @@ def get_utc_from_string(date_string):
         return utcnow.replace(day=int(day), month=int(month), year=int(year), hour=int(hour), minute=int(minute),
                               second=0, microsecond=0) - timedelta(seconds=utc_offset)
 
+def write_in_file(file, string):
+    file.write(bytearray(string.encode('utf8')))
 
 def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, channelid=None, channelname=None, start=None,stop=None, play=False, title=None):
     #TODO check for ffmpeg process already recording if job is re-added
-    #channelname = urllib.unquote_plus(channelname)
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
@@ -584,13 +590,13 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
 
     #log((channelid,channelname))
     if channelid:
-        channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=? AND tvg_name=?", (channelid, channelname)).fetchone()
+        channel = cursor.execute("SELECT uid, name, tvg_name, tvg_id, tvg_logo, groups, url FROM streams WHERE tvg_id=? AND tvg_name=?", (channelid, channelname)).fetchone()
         if not channel:
-            channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=? AND name=?", (channelid, channelname)).fetchone()
+            channel = cursor.execute("SELECT uid, name, tvg_name, tvg_id, tvg_logo, groups, url FROM streams WHERE tvg_id=? AND name=?", (channelid, channelname)).fetchone()
     else:
-        channel = cursor.execute("SELECT * FROM streams WHERE name=?", (channelname,)).fetchone()
+        channel = cursor.execute("SELECT uid, name, tvg_name, tvg_id, tvg_logo, groups, url FROM streams WHERE name=?", (channelname,)).fetchone()
         if not channel:
-            channel = cursor.execute("SELECT * FROM streams WHERE tvg_name=?", (channelname,)).fetchone()
+            channel = cursor.execute("SELECT uid, name, tvg_name, tvg_id, tvg_logo, groups, url FROM streams WHERE tvg_name=?", (channelname,)).fetchone()
 
     if not channel:
         xbmc.log("No channel %s" % channelname, xbmc.LOGERROR)
@@ -615,7 +621,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
         if aheaders:
             for h in aheaders:
                 k, v = h.split('=', 1)
-                headers[k] = urllib.unquote_plus(v)
+                headers[k] = unquote_plus(v)
 
     local_starttime = utc2local(start)
     local_endtime = utc2local(stop)
@@ -669,8 +675,8 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     if job:
         return
 
-    before = int(plugin.get_setting('minutes.before') or "0")
-    after = int(plugin.get_setting('minutes.after') or "0")
+    before = int(plugin.get_setting('minutes.before', str) or "0")
+    after = int(plugin.get_setting('minutes.after', str) or "0")
     local_starttime = local_starttime - timedelta(minutes=before)
     local_endtime = local_endtime + timedelta(minutes=after)
 
@@ -684,8 +690,8 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     length = local_endtime - local_starttime
     seconds = total_seconds(length)
 
-    kodi_recordings = xbmc.translatePath(plugin.get_setting('recordings'))
-    ffmpeg_recordings = plugin.get_setting('ffmpeg.recordings') or kodi_recordings
+    kodi_recordings = xbmc.translatePath(plugin.get_setting('recordings', str))
+    ffmpeg_recordings = plugin.get_setting('ffmpeg.recordings', str) or kodi_recordings
     if series:
         dir = os.path.join(kodi_recordings, "TV", folder)
         ffmpeg_dir = os.path.join(ffmpeg_recordings, "TV", folder)
@@ -698,15 +704,15 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     xbmcvfs.mkdirs(dir)
     path = os.path.join(dir, filename)
     json_path = path + '.json'
-    path = path + '.' + plugin.get_setting("ffmpeg.ext")
+    path = path + '.' + plugin.get_setting('ffmpeg.ext', str)
     ffmpeg = ffmpeg_location()
     if not ffmpeg:
         return
 
-    if plugin.get_setting('json',bool):
+    if plugin.get_setting('json', bool):
         json_nfo = json.dumps(nfo)
         f = xbmcvfs.File(json_path,'w')
-        f.write(json_nfo)
+        write_in_file(f, json_nfo)
         f.close()
 
     cmd = [ffmpeg]
@@ -718,23 +724,23 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
 
     probe_cmd = cmd
 
-    ffmpeg_recording_path = os.path.join(ffmpeg_dir, filename + '.' + plugin.get_setting("ffmpeg.ext"))
+    ffmpeg_recording_path = os.path.join(ffmpeg_dir, filename + '.' + plugin.get_setting('ffmpeg.ext', str))
 
     cmd = probe_cmd + ["-y", "-t", str(seconds), "-fflags","+genpts","-vcodec","copy","-acodec","copy"]
-    ffmpeg_reconnect = plugin.get_setting('ffmpeg.reconnect',bool)
+    ffmpeg_reconnect = plugin.get_setting('ffmpeg.reconnect', bool)
     if ffmpeg_reconnect:
         cmd = cmd + ["-reconnect_at_eof", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "300"]
-    ffmpeg_args = plugin.get_setting('ffmpeg.args')
+    ffmpeg_args = plugin.get_setting('ffmpeg.args', str)
     if ffmpeg_args:
         cmd = cmd + ffmpeg_args.split(' ')
-    if (plugin.get_setting('ffmpeg.pipe') == 'true') and not (windows() and (plugin.get_setting('task.scheduler') == 'true')):
+    if (plugin.get_setting('ffmpeg.pipe', str) == 'true') and not (windows() and (plugin.get_setting('task.scheduler', str) == 'true')):
         cmd = cmd + ['-f', 'mpegts','-']
     else:
-        cmd.append(ffmpeg_recording_path.encode('utf8'))
+        cmd.append(ffmpeg_recording_path)
 
-    post_command = plugin.get_setting('post.command')
+    post_command = plugin.get_setting('post.command', str)
     post_cmd = post_command.split(' ')
-    post_cmd = [s.replace("$p",ffmpeg_recording_path.encode('utf8')).replace("$d",ffmpeg_dir.encode('utf8')).replace("$f",filename.encode('utf8') + '.' + plugin.get_setting("ffmpeg.ext")) for s in post_cmd]
+    post_cmd = [s.replace("$p",ffmpeg_recording_path).replace("$d",ffmpeg_dir).replace("$f",filename + '.' + plugin.get_setting('ffmpeg.ext', str)) for s in post_cmd]
 
     directory = "special://profile/addon_data/plugin.video.iptv.recorder/jobs/"
     xbmcvfs.mkdirs(directory)
@@ -742,95 +748,95 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     pyjob = directory + job + ".py"
 
     f = xbmcvfs.File(pyjob, 'wb')
-    f.write("# -*- coding: utf-8 -*-\n")
-    f.write("import os, subprocess, time\n")
+    write_in_file(f, "# -*- coding: utf-8 -*-\n")
+    write_in_file(f, "import os, subprocess, time\n")
 
 
-    debug = plugin.get_setting('debug.ffmpeg') == 'true'
+    debug = plugin.get_setting('debug.ffmpeg', str) == 'true'
     if watch == False and remind == False:
-        if not (windows() and (plugin.get_setting('task.scheduler') == 'true')):
-            f.write("import xbmc,xbmcvfs,xbmcgui\n")
-            notification = 'xbmcgui.Dialog().notification("Recording: %s", "%s", sound=%s)\n' % (channelname, title, plugin.get_setting('silent')=="false")
-            f.write(notification.encode("utf8"))
-            f.write("cmd = %s\n" % repr(cmd))
+        if not (windows() and (plugin.get_setting('task.scheduler', str) == 'true')):
+            write_in_file(f, "from kodi_six import xbmc,xbmcvfs,xbmcgui\n")
+            notification = 'xbmcgui.Dialog().notification("Recording: %s", "%s", sound=%s)\n' % (channelname, title, plugin.get_setting('silent', str) == "false")
+            write_in_file(f, notification)
+            write_in_file(f, "cmd = %s\n" % repr(cmd))
 
             if url.startswith('plugin://'):
-                f.write("player = xbmc.Player()\n")
-                f.write("player.play('%s')\n" % url.encode("utf8"))
-                f.write("new_url = ''\n")
-                f.write("for _ in range(60):\n")
-                f.write("    time.sleep(1)\n")
-                f.write("    if player.isPlaying():\n")
-                f.write("        new_url = player.getPlayingFile()\n")
-                f.write("        break\n")
-                f.write("time.sleep(1)\n")
-                f.write("player.stop()\n")
-                f.write("time.sleep(1)\n")
-                f.write("if new_url:\n")
-                f.write("    cmd[2] = new_url\n")
+                write_in_file(f, "player = xbmc.Player()\n")
+                write_in_file(f, "player.play('%s')\n" % url)
+                write_in_file(f, "new_url = ''\n")
+                write_in_file(f, "for _ in range(60):\n")
+                write_in_file(f, "    time.sleep(1)\n")
+                write_in_file(f, "    if player.isPlaying():\n")
+                write_in_file(f, "        new_url = player.getPlayingFile()\n")
+                write_in_file(f, "        break\n")
+                write_in_file(f, "time.sleep(1)\n")
+                write_in_file(f, "player.stop()\n")
+                write_in_file(f, "time.sleep(1)\n")
+                write_in_file(f, "if new_url:\n")
+                write_in_file(f, "    cmd[2] = new_url\n")
         else:
-            f.write("cmd = %s\n" % repr(cmd))
+            write_in_file(f, "cmd = %s\n" % repr(cmd))
         if debug:
-            f.write("stdout = open(r'%s','w+')\n" % xbmc.translatePath(pyjob+'.stdout.txt'))
-            f.write("stderr = open(r'%s','w+')\n" % xbmc.translatePath(pyjob+'.stderr.txt'))
-            f.write("p = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, shell=%s)\n" % windows())
+            write_in_file(f, "stdout = open(r'%s','w+')\n" % xbmc.translatePath(pyjob+'.stdout.txt'))
+            write_in_file(f, "stderr = open(r'%s','w+')\n" % xbmc.translatePath(pyjob+'.stderr.txt'))
+            write_in_file(f, "p = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, shell=%s)\n" % windows())
         else:
-            if (plugin.get_setting('ffmpeg.pipe') == 'true') and not (windows() and (plugin.get_setting('task.scheduler') == 'true')):
-                f.write("p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=%s)\n" % windows())
+            if (plugin.get_setting('ffmpeg.pipe', str) == 'true') and not (windows() and (plugin.get_setting('task.scheduler', str) == 'true')):
+                write_in_file(f, "p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=%s)\n" % windows())
             else:
-                f.write("p = subprocess.Popen(cmd, shell=%s)\n" % windows())
-        f.write("f = open(r'%s', 'w+')\n" % xbmc.translatePath(pyjob+'.pid'))
-        f.write("f.write(repr(p.pid))\n")
-        f.write("f.close()\n")
-        if (plugin.get_setting('ffmpeg.pipe') == 'true') and not (windows() and (plugin.get_setting('task.scheduler') == 'true')):
-            f.write('video = xbmcvfs.File(r"%s","wb")\n' % path.encode('utf8'))
-            f.write('playing = False\n')
-            f.write("while True:\n")
-            f.write("  data = p.stdout.read(1000000)\n")
-            f.write("  if data:\n")
-            f.write("      video.write(data)\n")
-            f.write("  else:\n")
-            f.write("      break\n")
+                write_in_file(f, "p = subprocess.Popen(cmd, shell=%s)\n" % windows())
+        write_in_file(f, "f = open(r'%s', 'w+')\n" % xbmc.translatePath(pyjob+'.pid'))
+        write_in_file(f, "f.write(repr(p.pid).encode('utf-8'))\n")
+        write_in_file(f, "f.close()\n")
+        if (plugin.get_setting('ffmpeg.pipe', str) == 'true') and not (windows() and (plugin.get_setting('task.scheduler', str) == 'true')):
+            write_in_file(f, 'video = xbmcvfs.File(r"%s","wb")\n' % path)
+            write_in_file(f, 'playing = False\n')
+            write_in_file(f, "while True:\n")
+            write_in_file(f, "  data = p.stdout.read(1000000)\n")
+            write_in_file(f, "  if data:\n")
+            write_in_file(f, "      video.write(data)\n")
+            write_in_file(f, "  else:\n")
+            write_in_file(f, "      break\n")
             if play:
-                f.write("  if not playing:\n")
-                f.write("    xbmc.Player().play(r'%s')\n" % path.encode('utf8'))
-                f.write("    playing = True\n")
-            f.write("video.close()\n")
+                write_in_file(f, "  if not playing:\n")
+                write_in_file(f, "    xbmc.Player().play(r'%s')\n" % path)
+                write_in_file(f, "    playing = True\n")
+            write_in_file(f, "video.close()\n")
         else:
-            f.write("p.wait()\n")
+            write_in_file(f, "p.wait()\n")
         if debug:
-            f.write("stderr.close()\n")
-            f.write("stdout.close()\n")
-        if not (windows() and (plugin.get_setting('task.scheduler') == 'true')):
-            notification = 'xbmcgui.Dialog().notification("Recording finished: %s", "%s", sound=%s)\n' % (channelname, title, plugin.get_setting('silent')=="false")
-            f.write(notification.encode("utf8"))
+            write_in_file(f, "stderr.close()\n")
+            write_in_file(f, "stdout.close()\n")
+        if not (windows() and (plugin.get_setting('task.scheduler', str) == 'true')):
+            notification = 'xbmcgui.Dialog().notification("Recording finished: %s", "%s", sound=%s)\n' % (channelname, title, plugin.get_setting('silent', str)=="false")
+            write_in_file(f, notification)
         if post_command:
-            f.write("post_cmd = %s\n" % repr(post_cmd))
-            f.write("p = subprocess.Popen(post_cmd, shell=%s)\n" % windows())
+            write_in_file(f, "post_cmd = %s\n" % repr(post_cmd))
+            write_in_file(f, "p = subprocess.Popen(post_cmd, shell=%s)\n" % windows())
         #TODO copy file somewhere else
     elif remind == True:
-        cmd = 'xbmcgui.Dialog().notification("%s", "%s", sound=%s)\n' % (channelname, title, plugin.get_setting('silent')=="false")
-        f.write("import xbmc, xbmcgui\n")
-        f.write("%s\n" % cmd.encode("utf8"))
+        cmd = 'xbmcgui.Dialog().notification("%s", "%s", sound=%s)\n' % (channelname, title, plugin.get_setting('silent', str)=="false")
+        write_in_file(f, "from kodi_six import xbmc, xbmcgui\n")
+        write_in_file(f, "%s\n" % cmd)
     else:
-        if (plugin.get_setting('external.player.watch') == 'true') or (windows() and (plugin.get_setting('task.scheduler') == 'true')):
-            cmd = [plugin.get_setting('external.player'), plugin.get_setting('external.player.args'), url]
-            f.write("cmd = %s\n" % repr(cmd))
-            f.write("p = subprocess.Popen(cmd, shell=%s)\n" % windows())
+        if (plugin.get_setting('external.player.watch', str) == 'true') or (windows() and (plugin.get_setting('task.scheduler', str) == 'true')):
+            cmd = [plugin.get_setting('external.player', str), plugin.get_setting('external.player.args', str), url]
+            write_in_file(f, "cmd = %s\n" % repr(cmd))
+            write_in_file(f, "p = subprocess.Popen(cmd, shell=%s)\n" % windows())
         else:
             cmd = 'xbmc.Player().play("%s")\n' % url
-            f.write("import xbmc\n")
-            f.write("%s\n" % cmd.encode("utf8"))
+            write_in_file(f, "from kodi_six import xbmc\n")
+            write_in_file(f, "%s\n" % cmd)
     f.close()
 
-    if windows() and (plugin.get_setting('task.scheduler') == 'true') and remind == False:
+    if windows() and (plugin.get_setting('task.scheduler', str) == 'true') and remind == False:
         if immediate:
             cmd = 'RunScript(%s)' % (pyjob)
             xbmc.executebuiltin(cmd)
         else:
             st = "%02d:%02d" % (local_starttime.hour, local_starttime.minute)
             sd = "%02d/%02d/%04d" % (local_starttime.day, local_starttime.month, local_starttime.year)
-            cmd = ["schtasks", "/create", "/f", "/tn", job, "/sc", "once", "/st", st, "/sd", sd, "/tr", "%s %s" % (xbmc.translatePath(plugin.get_setting('python')), xbmc.translatePath(pyjob))]
+            cmd = ["schtasks", "/create", "/f", "/tn", job, "/sc", "once", "/st", st, "/sd", sd, "/tr", "%s %s" % (xbmc.translatePath(plugin.get_setting('python', str)), xbmc.translatePath(pyjob))]
             subprocess.Popen(cmd, shell=True)
     else:
         now = datetime.now()
@@ -869,11 +875,11 @@ def convert(path):
     t.start()
 
     while True:
-        data = input.read(100000)
-        log(("read",len(data)))
-        if not data:
+        data_bytes = bytes(input.readBytes(100000))
+        log(("read", len(data_bytes)))
+        if not data_bytes:
             break
-        p.stdin.write(data)
+        p.stdin.write(bytearray(data_bytes))
     p.stdin.close()
     error.close()
 
@@ -904,8 +910,8 @@ def renew_jobs():
         local_starttime = utc2local(start)
         local_endtime = utc2local(stop)
 
-        before = int(plugin.get_setting('minutes.before') or "0")
-        after = int(plugin.get_setting('minutes.after') or "0")
+        before = int(plugin.get_setting('minutes.before', str) or "0")
+        after = int(plugin.get_setting('minutes.after', str) or "0")
         local_starttime = local_starttime - timedelta(minutes=before)
         local_endtime = local_endtime + timedelta(minutes=after)
 
@@ -927,7 +933,7 @@ def renew_jobs():
 
         #TODO reduce time of job if already started
 
-        if windows() and (plugin.get_setting('task.scheduler') == 'true'):
+        if windows() and (plugin.get_setting('task.scheduler', str) == 'true'):
             if immediate:
                 cmd = 'RunScript(%s)' % (pyjob)
                 xbmc.executebuiltin(cmd)
@@ -954,21 +960,21 @@ def renew_jobs():
 def sane_name(name):
     if not name:
         return
-    if windows() or (plugin.get_setting('filename.urlencode') == 'true'):
-        name = urllib.quote(name.encode("utf8"))
+    if windows() or (plugin.get_setting('filename.urlencode', str) == 'true'):
+        name = quote(name.encode('utf-8'))
         name = name.replace("%20",' ')
         name = name.replace('/',"%2F")
     else:
-        quote = {'"': '%22', '|': '%7C', '*': '%2A', '/': '%2F', '<': '%3C', ':': '%3A', '\\': '%5C', '?': '%3F', '>': '%3E'}
-        for char in quote:
-            name = name.replace(char, quote[char])
+        _quote = {'"': '%22', '|': '%7C', '*': '%2A', '/': '%2F', '<': '%3C', ':': '%3A', '\\': '%5C', '?': '%3F', '>': '%3E'}
+        for char in _quote:
+            name = name.replace(char, _quote[char])
     return name
 
 
 def refresh():
     containerAddonName = xbmc.getInfoLabel('Container.PluginName')
     AddonName = xbmcaddon.Addon().getAddonInfo('id')
-    if (containerAddonName == AddonName) and (plugin.get_setting('refresh') == 'true') :
+    if (containerAddonName == AddonName) and (plugin.get_setting('refresh', str) == 'true') :
         xbmc.executebuiltin('Container.Refresh')
 
 
@@ -1433,7 +1439,6 @@ def remind_always_search_plot(channelid, channelname):
 @plugin.route('/broadcast/<programmeid>/<channelname>')
 def broadcast(programmeid, channelname):
     channelname = channelname.decode("utf8")
-    #channelname = urllib.unquote_plus(channelname)
     #log(channelname)
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
@@ -1442,8 +1447,7 @@ def broadcast(programmeid, channelname):
     programme = cursor.execute('SELECT channelid, title, start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", episode FROM programmes WHERE uid=? LIMIT 1', (programmeid, )).fetchone()
     channelid, title, start, stop, episode = programme
 
-    #channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=? AND tvg_name=?", (channelid, channelname)).fetchone()
-    channel = cursor.execute("SELECT * FROM streams WHERE name=?", (channelname,)).fetchone()
+    channel = cursor.execute("SELECT uid, name, tvg_name, tvg_id, tvg_logo, groups, url FROM streams WHERE name=?", (channelname,)).fetchone()
     if not channel:
         channel = cursor.execute("SELECT * FROM channels WHERE tvg_name=?", (channelname, )).fetchone()
         uid, tvg_id, name, tvg_logo = channel
@@ -1542,7 +1546,7 @@ def broadcast(programmeid, channelname):
         'is_playable': True,
     })
 
-    if plugin.get_setting('external.player'):
+    if plugin.get_setting('external.player', str):
         items.append({
             'label': _("Play Channel External") + " - %s" % (channelname),
             'path': plugin.url_for(play_channel_external, channelname=echannelname),
@@ -1552,9 +1556,9 @@ def broadcast(programmeid, channelname):
             'is_playable': True,
         })
 
-    if xbmc.getCondVisibility('System.HasAddon(%s)' % plugin.get_setting('meta')) == 1:
-        icon = xbmcaddon.Addon(plugin.get_setting('meta')).getAddonInfo('icon')
-        name = xbmcaddon.Addon(plugin.get_setting('meta')).getAddonInfo('name')
+    if xbmc.getCondVisibility('System.HasAddon(%s)' % plugin.get_setting('meta', str)) == 1:
+        icon = xbmcaddon.Addon(plugin.get_setting('meta', str)).getAddonInfo('icon')
+        name = xbmcaddon.Addon(plugin.get_setting('meta', str)).getAddonInfo('name')
         if episode:
             #log((channelname,channelid,title,episode))
             tvdb_url = "http://thetvdb.com/api/GetSeries.php?seriesname=%s&language=en" % title
@@ -1570,27 +1574,27 @@ def broadcast(programmeid, channelname):
                         found = True
                         season = match.group(1)
                         ep = match.group(2)
-                        meta_url = "plugin://%s/tv/play/%s/%d/%d/library" % (plugin.get_setting('meta').lower(),tvdb_id,int(season),int(ep))
+                        meta_url = "plugin://%s/tv/play/%s/%d/%d/library" % (plugin.get_setting('meta', str).lower(),tvdb_id,int(season),int(ep))
                         items.append({
                             'label': "%s - %s %s" % (name,title,episode),
                             'path': meta_url,
                             'thumbnail': icon,
                         })
             if not found:
-                meta_url = "plugin://%s/tv/search_term/%s/1" % (plugin.get_setting('meta').lower(),urllib.quote_plus(title.encode("utf8")))
+                meta_url = "plugin://%s/tv/search_term/%s/1" % (plugin.get_setting('meta', str).lower(),quote_plus(title.encode("utf8")))
                 items.append({
                     'label': "%s - %s" % (name,title),
                     'path': meta_url,
                     'thumbnail': icon,
                 })
         else:
-            meta_url = "plugin://%s/movies/search_term/%s/1" % (plugin.get_setting('meta').lower(),urllib.quote_plus(title.encode("utf8")))
+            meta_url = "plugin://%s/movies/search_term/%s/1" % (plugin.get_setting('meta', str).lower(),quote_plus(title.encode("utf8")))
             items.append({
                 'label': "%s - Movie - %s" % (name,title),
                 'path': meta_url,
                 'thumbnail': icon,
             })
-            meta_url = "plugin://%s/tv/search_term/%s/1" % (plugin.get_setting('meta').lower(),urllib.quote_plus(title.encode("utf8")))
+            meta_url = "plugin://%s/tv/search_term/%s/1" % (plugin.get_setting('meta', str).lower(),quote_plus(title.encode("utf8")))
             items.append({
                 'label': "%s - TV Show - %s" % (name,title),
                 'path': meta_url,
@@ -1659,7 +1663,7 @@ def search_title_dialog():
         context_items.append((_("Delete Search"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_search_title, title=search.encode("utf8")))))
         items.append({
             "label": search,
-            "path": plugin.url_for('search_title', title=search.encode("utf8")),
+            "path": plugin.url_for('search_title', title=search.encode("utf-8")),
             "thumbnail": get_icon_path('search'),
             'context_menu': context_items,
             })
@@ -1672,19 +1676,19 @@ def search_title_input(title):
     if title == "title":
         title = ""
     d = xbmcgui.Dialog()
-    what = d.input(_("Search Title"), title).decode("utf8")
+    what = d.input(_("Search Title"), title)
     #log(what)
     if not what:
         return
     searches[what] = ''
-    return search_title(what.encode("utf8"))
+    return search_title(what.encode("utf-8"))
 
 
 @plugin.route('/search_title/<title>')
 def search_title(title):
     title = title.decode("utf8")
 
-    if plugin.get_setting('add.context.searches') == 'true':
+    if plugin.get_setting('add.context.searches', str) == 'true':
         searches = plugin.get_storage('search_title')
         searches[title] = ''
 
@@ -1834,7 +1838,7 @@ def search_categories_input(categories):
 def search_categories(categories):
     categories = categories.decode("utf8")
 
-    if plugin.get_setting('add.context.searches') == 'true':
+    if plugin.get_setting('add.context.searches', str) == 'true':
         searches = plugin.get_storage('search_categories')
         searches[categories] = ''
 
@@ -1861,17 +1865,13 @@ def channel(channelid,channelname):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
-    channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
-    if not channel:
-        channel = cursor.execute("SELECT * FROM channels WHERE id=?", (channelid, )).fetchone()
-        uid, tvg_id, name, tvg_logo = channel
-        url = ""
+    thumbnail = cursor.execute("SELECT tvg_logo FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
+    if not thumbnail:
+        thumbnail = cursor.execute("SELECT icon FROM channels WHERE id=?", (channelid, )).fetchone()
+    if thumbnail:
+        thumbnail = thumbnail[0]
     else:
-        uid, name, tvg_name, tvg_id, tvg_logo, groups, url = channel
-
-    thumbnail = tvg_logo
-    #channelname = name
-
+        thumbnail = ''
 
     programmes = cursor.execute(
     'SELECT uid, channelid , title , sub_title , start AS "start [TIMESTAMP]", stop AS "stop [TIMESTAMP]", date , description , episode, categories FROM programmes WHERE channelid=?', (channelid, )).fetchall()
@@ -1879,7 +1879,7 @@ def channel(channelid,channelname):
     conn.commit()
     conn.close()
 
-    if plugin.get_setting('add.favourite.channel') == 'true':
+    if plugin.get_setting('add.favourite.channel', str) == 'true':
         add_favourite_channel(channelname.encode("utf8"), channelid.encode("utf8"), thumbnail)
 
     return listing(programmes, scroll=True, channelname=echannelname)
@@ -1955,12 +1955,12 @@ def movie(title, date):
 
 def listing(programmes, scroll=False, channelname=None):
     if channelname:
-        channelname = urllib.unquote_plus(channelname.decode("utf8"))
+        channelname = unquote_plus(channelname.decode("utf8"))
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
-    streams = cursor.execute("SELECT * FROM streams").fetchall()
+    streams = cursor.execute("SELECT uid, name, tvg_name, tvg_id, tvg_logo, groups, url FROM streams").fetchall()
     #streams = {x[3]:x for x in streams}
     streams = dict((x[3],x) for x in streams)
 
@@ -1982,7 +1982,7 @@ def listing(programmes, scroll=False, channelname=None):
         if channelname:
             pchannelname = channelname
 
-        stream = streams.get(channelid) #cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
+        stream = streams.get(channelid)
         channel = channels.get(channelid)
         if stream:
             cuid, schannelname, tvg_name, tvg_id, tvg_logo, groups, url = stream
@@ -2011,14 +2011,14 @@ def listing(programmes, scroll=False, channelname=None):
         starttime = utc2local(start)
         endtime = utc2local(stop)
 
-        if plugin.get_setting('show.categories') == 'true':
+        if plugin.get_setting('show.categories', str) == 'true':
             categories_label = "[COLOR grey]%s[/COLOR]" % categories
         else:
             categories_label = ""
 
         if endtime < now:
             color = "orange"
-            if plugin.get_setting('show.finished') == 'false':
+            if plugin.get_setting('show.finished', str) == 'false':
                 continue
         else:
             if current == None:
@@ -2036,10 +2036,10 @@ def listing(programmes, scroll=False, channelname=None):
         else:
             stitle = "[COLOR %s]%s[/COLOR][COLOR grey]%s[/COLOR]" % (color, title, episode)
 
-        if (plugin.get_setting('hide.channel.name') == "true") and thumbnail:
+        if (plugin.get_setting('hide.channel.name', str) == "true") and thumbnail:
             channelname_label = ""
         else:
-            channelname_label = urllib.unquote_plus(pchannelname)
+            channelname_label = unquote_plus(pchannelname)
 
         label = "%02d:%02d [COLOR grey]%s[/COLOR] %s %s %s%s %s" % (starttime.hour, starttime.minute, day(starttime), channelname_label, categories_label, CR, stitle, recording)
 
@@ -2070,7 +2070,7 @@ def listing(programmes, scroll=False, channelname=None):
 
         if url:
             context_items.append((_("Play Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=echannelname))))
-            if plugin.get_setting('external.player'):
+            if plugin.get_setting('external.player', str):
                 context_items.append((_("Play Channel External"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external, channelname=echannelname))))
 
         context_items.append((echannelname, 'ActivateWindow(%s,%s,return)' % (xbmcgui.getCurrentWindowId(), plugin.url_for('channel', channelid=echannelid, channelname=echannelname))))
@@ -2099,7 +2099,7 @@ def listing(programmes, scroll=False, channelname=None):
     conn.commit()
     conn.close()
 
-    if scroll and plugin.get_setting('scroll.now') == 'true':
+    if scroll and plugin.get_setting('scroll.now', str) == 'true':
         threading.Thread(target=focus,args=[current]).start()
 
     return items
@@ -2108,7 +2108,7 @@ def listing(programmes, scroll=False, channelname=None):
 def focus(i):
 
     #TODO find way to check this has worked (clist.getSelectedPosition returns -1)
-    xbmc.sleep(int(plugin.get_setting('scroll.ms') or "0"))
+    xbmc.sleep(int(plugin.get_setting('scroll.ms', str) or "0"))
     #TODO deal with hidden ..
     win = xbmcgui.Window(xbmcgui.getCurrentWindowId())
     cid = win.getFocusId()
@@ -2188,42 +2188,47 @@ def group(channelgroup=None,section=None):
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
-    if plugin.get_setting('sort.channels') == 'true':
-        order = " ORDER by name"
+    order_settings = plugin.get_setting('sort.channels.v2', str)
+    if order_settings == '1':
+        order_channels = " ORDER by name"
+        order_favourites = " ORDER by channelname"
+        order_stream = " ORDER by name"
     else:
-        order = ""
+        order_channels = " INNER JOIN streams ON streams.tvg_id = channels.id ORDER BY tv_number";
+        order_favourites = " INNER JOIN streams ON streams.tvg_id = favourites.channelid ORDER BY tv_number";
+        order_stream = " ORDER by tv_number"
 
     logos = {}
     channel_logos = {}
     if section == "EPG":
-        channels = cursor.execute("SELECT * FROM channels" + order).fetchall()
+        channels = cursor.execute("SELECT channels.id, channels.name, channels.icon FROM channels" + order_channels).fetchall()
         streams = cursor.execute("SELECT tvg_id, tvg_logo FROM streams").fetchall()
         #logos = {x[0]:x[1] for x in streams}
         logos = dict((x[0],x[1]) for x in streams)
 
         collection = channels
-        show_now_next = plugin.get_setting('show.now.next.all') == "true"
+        show_now_next = plugin.get_setting('show.now.next.all', str) == "true"
     elif section == "FAVOURITES":
-        favourite_channels = cursor.execute("SELECT * FROM favourites ORDER BY channelname").fetchall()
-        streams = cursor.execute("SELECT * FROM streams" + order).fetchall()
+        favourite_channels = cursor.execute("SELECT channelname, channelid, logo FROM favourites" + order_favourites).fetchall()
+        streams = cursor.execute("SELECT uid, name, tvg_name, tvg_id, tvg_logo, groups, url FROM streams" + order_stream).fetchall()
         collection = favourite_channels
-        show_now_next = plugin.get_setting('show.now.next.favourites') == "true"
+        show_now_next = plugin.get_setting('show.now.next.favourites', str) == "true"
     else:
-        channels = cursor.execute("SELECT * FROM channels" + order).fetchall()
+        channels = cursor.execute("SELECT * FROM channels" + order_channels).fetchall()
         #channel_logos = {x[1]:x[3] for x in channels}
         channel_logos = dict((x[1],x[3]) for x in channels)
-        if channelgroup == "All Channels":
-            streams = cursor.execute("SELECT * FROM streams" + order).fetchall()
-            show_now_next = plugin.get_setting('show.now.next.all') == "true"
+        if channelgroup == "All_Channels":
+            streams = cursor.execute("SELECT uid, name, tvg_name, tvg_id, tvg_logo, groups, url FROM streams" + order_stream).fetchall()
+            show_now_next = plugin.get_setting('show.now.next.all', str) == "true"
         else:
-            streams = cursor.execute("SELECT * FROM streams WHERE groups=?" + order, (channelgroup, )).fetchall()
-            show_now_next = plugin.get_setting('show.now.next.lists') == "true"
+            streams = cursor.execute("SELECT uid, name, tvg_name, tvg_id, tvg_logo, groups, url FROM streams WHERE groups=?" + order_stream, (channelgroup, )).fetchall()
+            show_now_next = plugin.get_setting('show.now.next.lists', str) == "true"
         collection = streams
 
     favourites = cursor.execute("SELECT channelname FROM favourites").fetchall()
     favourites = [x[0] for x in favourites]
 
-    all_streams = cursor.execute("SELECT * FROM streams" + order).fetchall()
+    all_streams = cursor.execute("SELECT uid, name, tvg_name, tvg_id, tvg_logo, groups, url FROM streams" + order_stream).fetchall()
     #stream_urls = {x[3]:x[6] for x in all_streams if x}
     stream_urls = dict((x[3],x[6]) for x in all_streams if x)
 
@@ -2245,7 +2250,7 @@ def group(channelgroup=None,section=None):
 
         url = ""
         if section == "EPG":
-            uid, id, name, icon = stream_channel
+            id, name, icon = stream_channel
             channelname = name
             channelid = id
             url = stream_urls.get(channelid)
@@ -2266,7 +2271,6 @@ def group(channelgroup=None,section=None):
             logo = tvg_logo
 
             #channelname = channelname.encode("ascii")
-            #channelname = urllib.unquote_plus(channelname)
             #channelname = channelname.decode("utf8")
 
         description = ""
@@ -2278,7 +2282,7 @@ def group(channelgroup=None,section=None):
                 title = now_titles[channelid][0]
                 local_start = utc2local(now_titles[channelid][1])
                 description = now_titles[channelid][2]
-                if plugin.get_setting('show.categories') == 'true':
+                if plugin.get_setting('show.categories', str) == 'true':
                     categories = "[COLOR grey]%s[/COLOR]" % now_titles[channelid][3]
                 else:
                     categories = ""
@@ -2289,7 +2293,7 @@ def group(channelgroup=None,section=None):
             if channelid in next_titles:
                 title = next_titles[channelid][0]
                 local_start = utc2local(next_titles[channelid][1])
-                if plugin.get_setting('show.categories') == 'true':
+                if plugin.get_setting('show.categories', str) == 'true':
                     next_categories = "[COLOR grey]%s[/COLOR]" % next_titles[channelid][2]
                 else:
                     next_categories = ""
@@ -2297,10 +2301,10 @@ def group(channelgroup=None,section=None):
             else:
                 next_title = ""
 
-            if plugin.get_setting('show.now.next.hide.empty') == "true" and not now_title and not next_title:
+            if plugin.get_setting('show.now.next.hide.empty', str) == "true" and not now_title and not next_title:
                 continue
 
-            if (plugin.get_setting('hide.channel.name') == "true") and logo:
+            if (plugin.get_setting('hide.channel.name', str) == "true") and logo:
                 label = "%s %s%s" % (now_title, CR, next_title)
             else:
                 label = u"%s %s %s%s" % (channelname, now_title, CR, next_title)
@@ -2311,29 +2315,29 @@ def group(channelgroup=None,section=None):
 
         context_items = []
 
-        channelname = channelname.encode("utf8")
+        channelname_encoded = channelname.encode("utf8")
         if channelid:
-            channelid =channelid.encode("utf8")
+            channelid_encoded = channelid.encode("utf8")
 
         if url:
-            context_items.append((_("Add One Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_one_time, channelname=channelname))))
-            context_items.append((_("Add Daily Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_daily_time, channelname=channelname))))
-            context_items.append((_("Add Weekly Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_weekly_time, channelname=channelname))))
-            context_items.append((_("Record and Play"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_and_play, channelname=channelname))))
+            context_items.append((_("Add One Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_one_time, channelname=channelname_encoded))))
+            context_items.append((_("Add Daily Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_daily_time, channelname=channelname_encoded))))
+            context_items.append((_("Add Weekly Time Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_weekly_time, channelname=channelname_encoded))))
+            context_items.append((_("Record and Play"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_and_play, channelname=channelname_encoded))))
             if channelid:
-                context_items.append((_("Add Title Search Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search, channelid=channelid, channelname=channelname))))
-                context_items.append((_("Add Plot Search Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search_plot, channelid=channelid, channelname=channelname))))
-            context_items.append((_("Play Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=channelname))))
-            if plugin.get_setting('external.player'):
-                context_items.append((_("Play Channel External"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external, channelname=channelname))))
+                context_items.append((_("Add Title Search Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search, channelid=channelid_encoded, channelname=channelname_encoded))))
+                context_items.append((_("Add Plot Search Rule"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(record_always_search_plot, channelid=channelid_encoded, channelname=channelname_encoded))))
+            context_items.append((_("Play Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel, channelname=channelname_encoded))))
+            if plugin.get_setting('external.player', str):
+                context_items.append((_("Play Channel External"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_channel_external, channelname=channelname_encoded))))
 
         if channelname not in favourites and channelid:
-            context_items.append((_("Add Favourite Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(add_favourite_channel, channelname=channelname, channelid=channelid, thumbnail=thumbnail))))
+            context_items.append((_("Add Favourite Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(add_favourite_channel, channelname=channelname_encoded, channelid=channelid_encoded, thumbnail=thumbnail))))
         else:
-            context_items.append((_("Remove Favourite Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_favourite_channel, channelname=channelname))))
+            context_items.append((_("Remove Favourite Channel"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_favourite_channel, channelname=channelname_encoded))))
 
         if url and channelid:
-            path = plugin.url_for(channel, channelid=channelid, channelname=channelname)
+            path = plugin.url_for(channel, channelid=channelid_encoded, channelname=channelname_encoded)
         else:
             path = sys.argv[0]
 
@@ -2358,7 +2362,7 @@ def groups():
 
     channelgroups = cursor.execute("SELECT DISTINCT groups FROM streams ORDER BY groups").fetchall()
 
-    for channelgroup in [("All Channels", )] + channelgroups:
+    for channelgroup in [("All_Channels", )] + channelgroups:
         channelgroup = channelgroup[0]
 
         if not channelgroup:
@@ -2370,8 +2374,11 @@ def groups():
         else:
             context_items.append((_("Do Not Load Group"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(remove_load_group, channelgroup=channelgroup.encode("utf8")))))
 
+        channel_name = channelgroup
+        if channel_name == "All_Channels":
+            channel_name = _("All Channels")
         items.append({
-            'label': channelgroup,
+            'label': channel_name,
             'path': plugin.url_for(group, channelgroup=channelgroup.encode("utf8")),
             'thumbnail': get_icon_path('folder'),
             'context_menu': context_items,
@@ -2621,7 +2628,7 @@ def delete_recording(label, path):
     if not (xbmcgui.Dialog().yesno("IPTV Recorder", "[COLOR red]" + _("Delete Recording?") + "[/COLOR]", label)):
         return
     xbmcvfs.delete(path)
-    length = int(len('.' + plugin.get_setting("ffmpeg.ext")))
+    length = int(len('.' + plugin.get_setting('ffmpeg.ext', str)))
     xbmcvfs.delete(path[:-length]+'.json')
     refresh()
 
@@ -2632,13 +2639,13 @@ def delete_all_recordings():
     if not result:
         return
 
-    dir = plugin.get_setting('recordings')
+    dir = plugin.get_setting('recordings', str)
     dirs, files = find(dir)
     for file in sorted(files):
-        if file.endswith('.' + plugin.get_setting("ffmpeg.ext")):
+        if file.endswith('.' + plugin.get_setting('ffmpeg.ext', str)):
             success = xbmcvfs.delete(file)
             if success:
-                length = int(len('.' + plugin.get_setting("ffmpeg.ext")))
+                length = int(len('.' + plugin.get_setting('ffmpeg.ext', str)))
                 json_file = file[:-length]+'.json'
                 xbmcvfs.delete(json_file)
 
@@ -2654,7 +2661,7 @@ def find_files(root):
         found_files = found_files + find_files(path)
     file_list = []
     for file in files:
-        if file.endswith('.' + plugin.get_setting("ffmpeg.ext")):
+        if file.endswith('.' + plugin.get_setting('ffmpeg.ext', str)):
             file = os.path.join(xbmc.translatePath(root), file)
             file_list.append(file)
     return found_files + file_list
@@ -2662,49 +2669,64 @@ def find_files(root):
 
 @plugin.route('/recordings')
 def recordings():
-    dir = plugin.get_setting('recordings')
+    dir = plugin.get_setting('recordings', str)
     found_files = find_files(dir)
 
     items = []
     starts = []
 
+    conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
+    cursor = conn.cursor()
+
     for path in found_files:
+        thumbnail = None
         try:
             json_file = path[:-3]+'.json'
             info = json.loads(xbmcvfs.File(json_file).read())
             programme = info["programme"]
 
+            channelid = programme.get('channelid', None)
             title = programme['title']
             sub_title = programme['sub_title'] or ''
             episode = programme['episode']
-            date = "(%s)" % programme['date'] or ''
+            date = programme.get('date', '')
+            if date is None:
+                date = ''
+            else:
+                date = "(%s) " % programme.get('date', '')
+
             start = programme['start']
             starts.append(start)
 
+            stream_found = cursor.execute("SELECT tvg_logo FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
+            if stream_found:
+                thumbnail = stream_found[0]
+
             if episode and episode != "MOVIE":
-                label = "%s [COLOR grey]%s[/COLOR] %s" % (title, episode, sub_title)
+                label = "%s%s [COLOR grey]%s[/COLOR] %s" % (date, title, episode, sub_title)
             elif episode == "MOVIE":
-                label = "%s %s" % (title,date)
+                label = "%s%s" % (date, title)
             else:
-                label = "%s %s" % (title, sub_title)
+                label = "%s%s %s" % (date, title, sub_title)
 
             description = programme['description']
         except:
             label = os.path.splitext(os.path.basename(path))[0]
             description = ""
             starts.append("0")
-            label = urllib.unquote_plus(label)
+            label = unquote_plus(label)
             label = label.decode("utf8")
 
         context_items = []
 
         context_items.append((_("Delete Recording"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_recording, label=label.encode("utf8"), path=path))))
         context_items.append((_("Delete All Recordings"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(delete_all_recordings))))
-        if plugin.get_setting('external.player'):
+        if plugin.get_setting('external.player', str):
             context_items.append((_("External Player"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(play_external, path=path))))
         #context_items.append((_("Convert to mp4"), 'XBMC.RunPlugin(%s)' % (plugin.url_for(convert, path=path))))
 
         items.append({
+            'thumbnail': thumbnail,
             'label': label,
             'path': path,
             'is_playable': True,
@@ -2746,6 +2768,26 @@ def xml2utc(xml):
         return dt
     return ''
 
+def find_xml_bytes_encoding(data_bytes):
+    data_test_decoding = data_bytes.decode('utf-8', errors='ignore')
+    index_end_first_line = data_test_decoding.find('\n')
+    match = None
+    if index_end_first_line != -1:
+        first_line = data_test_decoding[:index_end_first_line]
+        match = re.search('<\?xml.*?encoding=["\'](.*?)["\']', first_line, flags=(re.I|re.DOTALL))
+
+    if match:
+        encoding = match.group(1)
+    else:
+        # Improve performance by limiting the detection of the encoding
+        # to the first 50k characters if the XML file is bigger
+        if len(data_bytes) > 50000:
+            chardet_encoding = chardet.detect(data_bytes[:50000])
+        else:
+            chardet_encoding = chardet.detect(data_bytes)
+        encoding = chardet_encoding['encoding']
+
+    return encoding
 
 @plugin.route('/xmltv')
 def xmltv():
@@ -2773,7 +2815,7 @@ def xmltv():
     try: conn.execute('ALTER TABLE rules ADD COLUMN name TEXT')
     except: pass
     #TODO check primary key
-    conn.execute('CREATE TABLE IF NOT EXISTS streams(uid INTEGER PRIMARY KEY ASC, name TEXT, tvg_name TEXT, tvg_id TEXT, tvg_logo TEXT, groups TEXT, url TEXT)')
+    conn.execute('CREATE TABLE IF NOT EXISTS streams(uid INTEGER PRIMARY KEY ASC, name TEXT, tvg_name TEXT, tvg_id TEXT, tvg_logo TEXT, groups TEXT, url TEXT, tv_number INTEGER)')
     conn.execute('CREATE TABLE IF NOT EXISTS favourites(channelname TEXT, channelid TEXT, logo TEXT, PRIMARY KEY(channelname))')
     conn.execute('CREATE TABLE IF NOT EXISTS jobs(uid INTEGER PRIMARY KEY ASC, uuid TEXT, channelid TEXT, channelname TEXT, title TEXT, start TIMESTAMP, stop TIMESTAMP, type TEXT)')
 
@@ -2782,7 +2824,7 @@ def xmltv():
     for x in ["1","2"]:
 
         dialog.update(0, message=_("Finding streams"))
-        mode = plugin.get_setting('external.m3u.'+x)
+        mode = plugin.get_setting('external.m3u.'+x, str)
         if mode == "0":
             if x == "1":
                 try:
@@ -2797,9 +2839,9 @@ def xmltv():
             else:
                 path = ""
         elif mode == "1":
-            path = plugin.get_setting('external.m3u.file.'+x)
+            path = plugin.get_setting('external.m3u.file.'+x, str)
         else:
-            path = plugin.get_setting('external.m3u.url.'+x)
+            path = plugin.get_setting('external.m3u.url.'+x, str)
 
         if path:
 
@@ -2816,7 +2858,7 @@ def xmltv():
                 log(encoding)
                 data = data.decode(encoding['encoding'])
 
-            settings_shift = float(plugin.get_setting('external.m3u.shift.'+x))
+            settings_shift = float(plugin.get_setting('external.m3u.shift.'+x, str))
             global_shift = settings_shift
 
             header = re.search('#EXTM3U(.*)', data)
@@ -2836,7 +2878,6 @@ def xmltv():
                 if ',' in re.sub('tvg-[a-z]+"[^"]*"','',channel[0], flags=re.I):
                     name = channel[0].rsplit(',', 1)[-1].strip()
                     #name = name.encode("utf8")
-                    #name = urllib.quote_plus(name)
 
                 tvg_name = re.search('tvg-name="(.*?)"', channel[0], flags=re.I)
                 if tvg_name:
@@ -2860,8 +2901,8 @@ def xmltv():
                         shifts[tvg_id] = float(tvg_shift) + settings_shift
 
                 url = channel[1]
-                search = plugin.get_setting('m3u.regex.search')
-                replace = plugin.get_setting('m3u.regex.replace')
+                search = plugin.get_setting('m3u.regex.search', str)
+                replace = plugin.get_setting('m3u.regex.replace', str)
                 if search:
                     url = re.sub(search, replace, url)
 
@@ -2869,8 +2910,8 @@ def xmltv():
                 if groups:
                     groups = groups.group(1) or None
 
-                conn.execute("INSERT OR IGNORE INTO streams(name, tvg_name, tvg_id, tvg_logo, groups, url) VALUES (?, ?, ?, ?, ?, ?)",
-                [name, tvg_name, tvg_id, tvg_logo, groups, url.strip()])
+                conn.execute("INSERT OR IGNORE INTO streams(name, tvg_name, tvg_id, tvg_logo, groups, url, tv_number) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                [name, tvg_name, tvg_id, tvg_logo, groups, url.strip(), i])
 
                 i += 1
                 percent = 0 + int(100.0 * i / total)
@@ -2878,7 +2919,7 @@ def xmltv():
 
     for x in ["1","2"]:
 
-        mode = plugin.get_setting('external.xmltv.'+x)
+        mode = plugin.get_setting('external.xmltv.'+x, str)
         if mode == "0":
             if x == "1":
                 try:
@@ -2892,9 +2933,9 @@ def xmltv():
             else:
                 path = ""
         elif mode == "1":
-            path = plugin.get_setting('external.xmltv.file.'+x)
+            path = plugin.get_setting('external.xmltv.file.'+x, str)
         else:
-            path = plugin.get_setting('external.xmltv.url.'+x)
+            path = plugin.get_setting('external.xmltv.url.'+x, str)
 
         if path:
 
@@ -2904,33 +2945,28 @@ def xmltv():
             xbmcvfs.copy(path, tmp)
 
             f = xbmcvfs.File(tmp, "rb")
-            data = f.read()
+            data_bytes = bytes(f.readBytes())
             f.close()
-            magic = data[:3]
+            magic = data_bytes[:3]
             if magic == "\x1f\x8b\x08":
                 dialog.update(0, message=_("Unzipping xmltv file"))
-                compressedFile = StringIO.StringIO()
-                compressedFile.write(data)
+                compressedFile = StringIO()
+                compressedFile.write(data_bytes)
                 compressedFile.seek(0)
                 decompressedFile = gzip.GzipFile(fileobj=compressedFile, mode='rb')
-                data = decompressedFile.read()
+                data_bytes = decompressedFile.read()
                 f = xbmcvfs.File(xml, "wb")
-                f.write(data)
+                f.write(bytearray(data_bytes))
                 f.close()
             else:
                 xbmcvfs.copy(tmp, xml)
 
             f = xbmcvfs.File(xml, 'rb')
-            data = f.read()
+            data_bytes = bytes(f.readBytes())
             f.close()
 
-            match = re.search('<\?xml.*?encoding="(.*?)"',data,flags=(re.I|re.DOTALL))
-            if match:
-                encoding = match.group(1)
-            else:
-                chardet_encoding = chardet.detect(data)
-                encoding = chardet_encoding['encoding']
-            data = data.decode(encoding)
+            encoding = find_xml_bytes_encoding(data_bytes)
+            data = data_bytes.decode(encoding)
 
             htmlparser = HTMLParser()
 
@@ -2987,7 +3023,7 @@ def xmltv():
 
     for x in ["1","2"]:
 
-        mode = plugin.get_setting('external.xmltv.'+x)
+        mode = plugin.get_setting('external.xmltv.'+x, str)
         if mode == "0":
             if x == "1":
                 try:
@@ -3001,25 +3037,20 @@ def xmltv():
             else:
                 path = ""
         elif mode == "1":
-            path = plugin.get_setting('external.xmltv.file.'+x)
+            path = plugin.get_setting('external.xmltv.file.'+x, str)
         else:
-            path = plugin.get_setting('external.xmltv.url.'+x)
+            path = plugin.get_setting('external.xmltv.url.'+x, str)
 
         if path:
 
             xml = os.path.join(profilePath, 'xmltv'+x+'.xml')
 
             f = xbmcvfs.File(xml, 'rb')
-            data = f.read()
+            data_bytes = bytes(f.readBytes())
             f.close()
 
-            match = re.search('<\?xml.*?encoding="(.*?)"',data,flags=(re.I|re.DOTALL))
-            if match:
-                encoding = match.group(1)
-            else:
-                chardet_encoding = chardet.detect(data)
-                encoding = chardet_encoding['encoding']
-            data = data.decode(encoding)
+            encoding = find_xml_bytes_encoding(data_bytes)
+            data = data_bytes.decode(encoding)
 
             htmlparser = HTMLParser()
 
@@ -3059,8 +3090,8 @@ def xmltv():
                     title = re.search('<title.*?>(.*?)</title', m, flags=(re.I|re.DOTALL))
                     if title:
                         title = htmlparser.unescape(title.group(1))
-                    search = plugin.get_setting('xmltv.title.regex.search')
-                    replace = plugin.get_setting('xmltv.title.regex.replace')
+                    search = plugin.get_setting('xmltv.title.regex.search', str)
+                    replace = plugin.get_setting('xmltv.title.regex.replace', str)
                     if search:
                         title = re.sub(search, replace, title)
                     if title:
@@ -3077,6 +3108,8 @@ def xmltv():
                     date = re.search('<date.*?>(.*?)</date', m)
                     if date:
                         date = date.group(1)
+                    else:
+                        date = start
 
                     cats = re.findall('<category.*?>(.*?)</category>', m, flags=(re.I|re.DOTALL))
                     if cats:
@@ -3233,7 +3266,7 @@ def maintenance_index():
         'context_menu': context_items,
     })
 
-    if plugin.get_setting('debug') == "true":
+    if plugin.get_setting('debug', str) == "true":
         items.append(
         {
             'label': _("Service"),
@@ -3311,22 +3344,22 @@ def estuary():
 
     filename = xbmc.translatePath('special://home/addons/skin.estuary.iptv.recorder/addon.xml')
     with open(filename,'r') as f:
-        text = f.read()
+        text = f.read().decode('utf-8')
     text = text.replace('skin.estuary','skin.estuary.iptv.recorder').replace('Estuary','Estuary (IPTV Recorder)')
     with open(filename,'w') as f:
-        f.write(text)
+        write_in_file(f, text)
 
     files = glob.glob(os.path.join(to_path,'language','*','*.po'))
     for filename in files:
         with open(filename,'r') as f:
-            text = f.read()
+            text = f.read().decode('utf-8')
         text = text.replace('skin.estuary','skin.estuary.iptv.recorder')
         with open(filename,'w') as f:
-            f.write(text)
+            write_in_file(f, text)
 
     filename = xbmc.translatePath('special://home/addons/skin.estuary.iptv.recorder/xml/DialogPVRInfo.xml')
     with open(filename,'r') as f:
-        text = f.read()
+        text = f.read().decode('utf-8')
     text = text.replace('<control type="grouplist" id="9000">',
     '''<control type="grouplist" id="9000">
 					<include content="InfoDialogButton">
@@ -3348,7 +3381,7 @@ def estuary():
 						<param name="visible" value="System.hasAddon(plugin.video.iptv.recorder)" />
 					</include>''')
     with open(filename,'w') as f:
-        f.write(text)
+        write_in_file(f, text)
 
     xbmc.executebuiltin("UpdateLocalAddons")
     time.sleep(1)
@@ -3390,7 +3423,7 @@ def index():
 
 
 
-    if plugin.get_setting('show.skin',bool):
+    if plugin.get_setting('show.skin', bool):
         items.append(
         {
             'label': "[COLOR yellow]NEW! Create Estuary (IPTV Recorder) Skin[/COLOR]",
@@ -3430,7 +3463,7 @@ def index():
     items.append(
     {
         'label': _("Recordings Folder"),
-        'path': plugin.get_setting('recordings'),
+        'path': plugin.get_setting('recordings', str),
         'thumbnail':get_icon_path('recordings'),
         'context_menu': context_items,
     })
@@ -3467,7 +3500,7 @@ def index():
         'context_menu': context_items,
     })
 
-    free = get_free_space_mb(xbmc.translatePath(plugin.get_setting('recordings')))
+    free = get_free_space_mb(xbmc.translatePath(plugin.get_setting('recordings', str)))
     if free:
         items.append(
         {
@@ -3490,7 +3523,7 @@ if __name__ == '__main__':
 
         if big_list_view == True:
 
-            view_mode = int(plugin.get_setting('view.mode') or "0")
+            view_mode = int(plugin.get_setting('view.mode', str) or "0")
 
             if view_mode:
                 plugin.set_view_mode(view_mode)
