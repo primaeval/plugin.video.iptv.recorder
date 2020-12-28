@@ -1432,9 +1432,9 @@ def remind_always_search_plot(channelid, channelname):
 
 @plugin.route('/broadcast/<programmeid>/<channelname>')
 def broadcast(programmeid, channelname):
-    channelname = channelname.decode("utf8")
-    #channelname = urllib.unquote_plus(channelname)
     #log(channelname)
+    channelname = channelname.decode("utf8")
+    channelname = urllib.unquote_plus(channelname)
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
@@ -1445,7 +1445,7 @@ def broadcast(programmeid, channelname):
     #channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=? AND tvg_name=?", (channelid, channelname)).fetchone()
     channel = cursor.execute("SELECT * FROM streams WHERE name=?", (channelname,)).fetchone()
     if not channel:
-        channel = cursor.execute("SELECT * FROM channels WHERE tvg_name=?", (channelname, )).fetchone()
+        channel = cursor.execute("SELECT * FROM channels WHERE name=?", (channelname, )).fetchone()
         uid, tvg_id, name, tvg_logo = channel
         url = ""
     else:
@@ -1854,9 +1854,11 @@ def search_categories(categories):
 
 @plugin.route('/channel/<channelid>/<channelname>')
 def channel(channelid,channelname):
+    log('channel request %s %s' %(channelid,channelname))
     channelid = channelid.decode("utf8")
     echannelname = channelname
     channelname = channelname.decode("utf8")
+    log('channel converted %s %s' %(channelid,channelname)) 
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
@@ -1954,9 +1956,9 @@ def movie(title, date):
 
 
 def listing(programmes, scroll=False, channelname=None):
+    inchannelname = channelname
     if channelname:
         channelname = urllib.unquote_plus(channelname.decode("utf8"))
-
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
@@ -1979,8 +1981,8 @@ def listing(programmes, scroll=False, channelname=None):
         pchannelname = cchannelname = schannelname = ""
         uid, channelid , title , sub_title , start , stop , date , description , episode, categories = p
 
-        if channelname:
-            pchannelname = channelname
+        if inchannelname:
+            pchannelname = inchannelname
 
         stream = streams.get(channelid) #cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
         channel = channels.get(channelid)
@@ -2046,7 +2048,7 @@ def listing(programmes, scroll=False, channelname=None):
         context_items = []
 
         echannelid = channelid.encode("utf8")
-        echannelname=pchannelname.encode("utf8")
+        echannelname=urllib.quote_plus(pchannelname)
         etitle=title.encode("utf8")
         ecategories=categories.encode("utf8")
 
@@ -2080,6 +2082,7 @@ def listing(programmes, scroll=False, channelname=None):
 
         if url:
             path = plugin.url_for(broadcast, programmeid=uid, channelname=echannelname)
+            #log(path)
         else:
             path = plugin.url_for('channel', channelid=echannelid, channelname=echannelname)
 
