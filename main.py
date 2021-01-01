@@ -37,6 +37,8 @@ def addon_id():
 def log(v):
     xbmc.log(repr(v), xbmc.LOGERROR)
 
+def log_info(v):
+    xbmc.log(repr(v), xbmc.LOGNOTICE)
 
 
 plugin = Plugin()
@@ -404,23 +406,21 @@ def delete_ffmpeg():
         xbmcvfs.delete(ffmpeg_dst)
 
 
-def ffmpeg_location():
-    ffmpeg_src = xbmc.translatePath(plugin.get_setting('ffmpeg'))
-
+def recorder_location():
+    recorder_src = xbmc.translatePath(plugin.get_setting('recorder.path'))
+    recorder = recorder_src
     if xbmc.getCondVisibility('system.platform.android'):
         ffmpeg_dst = '/data/data/%s/ffmpeg' % android_get_current_appid()
 
-        if (plugin.get_setting('ffmpeg') != plugin.get_setting('ffmpeg.last')) or (not xbmcvfs.exists(ffmpeg_dst) and ffmpeg_src != ffmpeg_dst):
-            xbmcvfs.copy(ffmpeg_src, ffmpeg_dst)
+        if (plugin.get_setting('recorder.path') != plugin.get_setting('ffmpeg.last')) or (not xbmcvfs.exists(ffmpeg_dst) and recoder_src != ffmpeg_dst):
+            xbmcvfs.copy(recoder_src, ffmpeg_dst)
             plugin.set_setting('ffmpeg.last',plugin.get_setting('ffmpeg'))
 
-        ffmpeg = ffmpeg_dst
-    else:
-        ffmpeg = ffmpeg_src
+        recorder = ffmpeg_dst
 
-    if ffmpeg:
+    if recorder:
         try:
-            st = os.stat(ffmpeg)
+            st = os.stat(recorder)
             if not (st.st_mode & stat.S_IXUSR):
                 try:
                     os.chmod(ffmpeg, st.st_mode | stat.S_IXUSR)
@@ -428,10 +428,10 @@ def ffmpeg_location():
                     pass
         except:
             pass
-    if xbmcvfs.exists(ffmpeg):
-        return ffmpeg
+    if xbmcvfs.exists(recorder):
+        return recorder
     else:
-        xbmcgui.Dialog().notification("IPTV Recorder", _("ffmpeg exe not found!"))
+        xbmcgui.Dialog().notification("IPTV Recorder", _("recorder exe not found!"))
 
 
 @plugin.route('/record_once/<programmeid>/<channelid>/<channelname>')
@@ -698,43 +698,56 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     xbmcvfs.mkdirs(dir)
     path = os.path.join(dir, filename)
     json_path = path + '.json'
-    path = path + '.' + plugin.get_setting("ffmpeg.ext")
-    ffmpeg = ffmpeg_location()
-    if not ffmpeg:
+    path = path + '.' + plugin.get_setting("recorder.ext")
+    recorder = recorder_location()
+    if not recorder:
         return
 
+    recording_path = os.path.join(ffmpeg_dir, filename + '.' + plugin.get_setting("recorder.ext"))
+    
     if plugin.get_setting('json',bool):
         json_nfo = json.dumps(nfo)
         f = xbmcvfs.File(json_path,'w')
         f.write(json_nfo)
         f.close()
 
-    cmd = [ffmpeg]
-    cmd.append("-i")
-    cmd.append(url)
-    for h in headers:
-        cmd.append("-headers")
-        cmd.append("%s:%s" % (h, headers[h]))
 
-    probe_cmd = cmd
+    cmd = [recorder]
+    vlc = plugin.get_setting('vlc', bool)
 
-    ffmpeg_recording_path = os.path.join(ffmpeg_dir, filename + '.' + plugin.get_setting("ffmpeg.ext"))
-
-    cmd = probe_cmd + ["-y", "-t", str(seconds), "-fflags","+genpts","-vcodec","copy","-acodec","copy"]
-    ffmpeg_reconnect = plugin.get_setting('ffmpeg.reconnect',bool)
-    if ffmpeg_reconnect:
-        cmd = cmd + ["-reconnect_at_eof", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "300"]
-    ffmpeg_args = plugin.get_setting('ffmpeg.args')
-    if ffmpeg_args:
-        cmd = cmd + ffmpeg_args.split(' ')
-    if (plugin.get_setting('ffmpeg.pipe') == 'true') and not (windows() and (plugin.get_setting('task.scheduler') == 'true')):
-        cmd = cmd + ['-f', 'mpegts','-']
+    if vlc:
+        log_info("Selected VLC recorder")
+        cmd.append(url)
+        cmd.append("--sout")
+        cmd.append("file/ts:%s" %recording_path)
     else:
-        cmd.append(ffmpeg_recording_path.encode('utf8'))
+        cmd.append("-i")
+        cmd.append(url)
+        for h in headers:
+            cmd.append("-headers")
+            cmd.append("%s:%s" % (h, headers[h]))
+
+        probe_cmd = cmd
+        cmd = probe_cmd + ["-y", "-t", str(seconds), "-fflags","+genpts","-vcodec","copy","-acodec","copy"]
+        ffmpeg_reconnect = plugin.get_setting('ffmpeg.reconnect',bool)
+        if ffmpeg_reconnect:
+            cmd = cmd + ["-reconnect_at_eof", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "300"]
+    
+    recorder_args = plugin.get_setting('recorder.args')
+    if recorder_args:
+        cmd = cmd + recorder_args.split(' ')
+
+    if not vlc:
+        if (plugin.get_setting('ffmpeg.pipe') == 'true') and not (windows() and (plugin.get_setting('task.scheduler') == 'true')):
+            cmd = cmd + ['-f', 'mpegts','-']
+        else:
+            cmd.append(recording_path.encode('utf8'))
 
     post_command = plugin.get_setting('post.command')
     post_cmd = post_command.split(' ')
-    post_cmd = [s.replace("$p",ffmpeg_recording_path.encode('utf8')).replace("$d",ffmpeg_dir.encode('utf8')).replace("$f",filename.encode('utf8') + '.' + plugin.get_setting("ffmpeg.ext")) for s in post_cmd]
+    post_cmd = [s.replace("$p",recording_path.encode('utf8')).replace("$d",ffmpeg_dir.encode('utf8')).replace("$f",filename.encode('utf8') + '.' + plugin.get_setting("recorder.ext")) for s in post_cmd]
+
+    log_info(cmd)
 
     directory = "special://profile/addon_data/plugin.video.iptv.recorder/jobs/"
     xbmcvfs.mkdirs(directory)
@@ -750,8 +763,11 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
     if watch == False and remind == False:
         if not (windows() and (plugin.get_setting('task.scheduler') == 'true')):
             f.write("import xbmc,xbmcvfs,xbmcgui\n")
+            f.write("def logInfo(v):\n     xbmc.log(repr(v), xbmc.LOGNOTICE)\n")
             notification = 'xbmcgui.Dialog().notification("Recording: %s", "%s", sound=%s)\n' % (channelname, title, plugin.get_setting('silent')=="false")
             f.write(notification.encode("utf8"))
+            logTxt = 'logInfo("Recording: %s/%s")\n' % (channelname, title)
+            f.write(logTxt.encode("utf8"))
             f.write("cmd = %s\n" % repr(cmd))
 
             if url.startswith('plugin://'):
@@ -775,20 +791,25 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
             f.write("stderr = open(r'%s','w+')\n" % xbmc.translatePath(pyjob+'.stderr.txt'))
             f.write("p = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, shell=%s)\n" % windows())
         else:
-            if (plugin.get_setting('ffmpeg.pipe') == 'true') and not (windows() and (plugin.get_setting('task.scheduler') == 'true')):
+            if vlc:
+                f.write("p = subprocess.Popen(cmd)\n")
+            elif (plugin.get_setting('ffmpeg.pipe') == 'true') and not (windows() and (plugin.get_setting('task.scheduler') == 'true')):
                 f.write("p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=%s)\n" % windows())
             else:
                 f.write("p = subprocess.Popen(cmd, shell=%s)\n" % windows())
         f.write("f = open(r'%s', 'w+')\n" % xbmc.translatePath(pyjob+'.pid'))
         f.write("f.write(repr(p.pid))\n")
         f.write("f.close()\n")
-        if (plugin.get_setting('ffmpeg.pipe') == 'true') and not (windows() and (plugin.get_setting('task.scheduler') == 'true')):
+        if (plugin.get_setting('ffmpeg.pipe') == 'true') and not (windows() and (plugin.get_setting('task.scheduler') == 'true')) and not vlc:
             f.write('video = xbmcvfs.File(r"%s","wb")\n' % path.encode('utf8'))
+            f.write('logInfo("video path %s")\n' % path.encode('utf8'))
             f.write('playing = False\n')
+            f.write('count = 0\n')
             f.write("while True:\n")
             f.write("  data = p.stdout.read(1000000)\n")
             f.write("  if data:\n")
             f.write("      video.write(data)\n")
+            f.write("      count += 1\n")
             f.write("  else:\n")
             f.write("      break\n")
             if play:
@@ -796,6 +817,7 @@ def record_once_thread(programmeid, do_refresh=True, watch=False, remind=False, 
                 f.write("    xbmc.Player().play(r'%s')\n" % path.encode('utf8'))
                 f.write("    playing = True\n")
             f.write("video.close()\n")
+            f.write('logInfo("%%i Mb copied into %s" %% count)\n' % path.encode('utf8') )
         else:
             f.write("p.wait()\n")
         if debug:
@@ -1432,9 +1454,9 @@ def remind_always_search_plot(channelid, channelname):
 
 @plugin.route('/broadcast/<programmeid>/<channelname>')
 def broadcast(programmeid, channelname):
-    channelname = channelname.decode("utf8")
-    #channelname = urllib.unquote_plus(channelname)
     #log(channelname)
+    channelname = channelname.decode("utf8")
+    channelname = urllib.unquote_plus(channelname)
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
@@ -1445,7 +1467,7 @@ def broadcast(programmeid, channelname):
     #channel = cursor.execute("SELECT * FROM streams WHERE tvg_id=? AND tvg_name=?", (channelid, channelname)).fetchone()
     channel = cursor.execute("SELECT * FROM streams WHERE name=?", (channelname,)).fetchone()
     if not channel:
-        channel = cursor.execute("SELECT * FROM channels WHERE tvg_name=?", (channelname, )).fetchone()
+        channel = cursor.execute("SELECT * FROM channels WHERE name=?", (channelname, )).fetchone()
         uid, tvg_id, name, tvg_logo = channel
         url = ""
     else:
@@ -1854,9 +1876,11 @@ def search_categories(categories):
 
 @plugin.route('/channel/<channelid>/<channelname>')
 def channel(channelid,channelname):
+    #log('channel request %s %s' %(channelid,channelname))
     channelid = channelid.decode("utf8")
     echannelname = channelname
     channelname = channelname.decode("utf8")
+    #log('channel converted %s %s' %(channelid,channelname)) 
 
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
@@ -1954,9 +1978,9 @@ def movie(title, date):
 
 
 def listing(programmes, scroll=False, channelname=None):
+    inchannelname = channelname
     if channelname:
         channelname = urllib.unquote_plus(channelname.decode("utf8"))
-
     conn = sqlite3.connect(xbmc.translatePath('%sxmltv.db' % plugin.addon.getAddonInfo('profile')), detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
     cursor = conn.cursor()
 
@@ -1979,8 +2003,8 @@ def listing(programmes, scroll=False, channelname=None):
         pchannelname = cchannelname = schannelname = ""
         uid, channelid , title , sub_title , start , stop , date , description , episode, categories = p
 
-        if channelname:
-            pchannelname = channelname
+        if inchannelname:
+            pchannelname = inchannelname
 
         stream = streams.get(channelid) #cursor.execute("SELECT * FROM streams WHERE tvg_id=?", (channelid, )).fetchone()
         channel = channels.get(channelid)
@@ -2046,7 +2070,7 @@ def listing(programmes, scroll=False, channelname=None):
         context_items = []
 
         echannelid = channelid.encode("utf8")
-        echannelname=pchannelname.encode("utf8")
+        echannelname=urllib.quote_plus(pchannelname)
         etitle=title.encode("utf8")
         ecategories=categories.encode("utf8")
 
@@ -2080,6 +2104,7 @@ def listing(programmes, scroll=False, channelname=None):
 
         if url:
             path = plugin.url_for(broadcast, programmeid=uid, channelname=echannelname)
+            #log(path)
         else:
             path = plugin.url_for('channel', channelid=echannelid, channelname=echannelname)
 
@@ -2621,7 +2646,7 @@ def delete_recording(label, path):
     if not (xbmcgui.Dialog().yesno("IPTV Recorder", "[COLOR red]" + _("Delete Recording?") + "[/COLOR]", label)):
         return
     xbmcvfs.delete(path)
-    length = int(len('.' + plugin.get_setting("ffmpeg.ext")))
+    length = int(len('.' + plugin.get_setting("recorder.ext")))
     xbmcvfs.delete(path[:-length]+'.json')
     refresh()
 
@@ -2635,10 +2660,10 @@ def delete_all_recordings():
     dir = plugin.get_setting('recordings')
     dirs, files = find(dir)
     for file in sorted(files):
-        if file.endswith('.' + plugin.get_setting("ffmpeg.ext")):
+        if file.endswith('.' + plugin.get_setting("recorder.ext")):
             success = xbmcvfs.delete(file)
             if success:
-                length = int(len('.' + plugin.get_setting("ffmpeg.ext")))
+                length = int(len('.' + plugin.get_setting("recorder.ext")))
                 json_file = file[:-length]+'.json'
                 xbmcvfs.delete(json_file)
 
@@ -2654,7 +2679,7 @@ def find_files(root):
         found_files = found_files + find_files(path)
     file_list = []
     for file in files:
-        if file.endswith('.' + plugin.get_setting("ffmpeg.ext")):
+        if file.endswith('.' + plugin.get_setting("recorder.ext")):
             file = os.path.join(xbmc.translatePath(root), file)
             file_list.append(file)
     return found_files + file_list
